@@ -4,15 +4,7 @@ import flixel.FlxBasic;
 import flixel.tweens.FlxEase.EaseFunction;
 import flixel.util.FlxSort;
 import haxe.ds.Vector;
-import modchart.backend.core.ArrowData;
-import modchart.backend.core.ModifierParameters;
 import modchart.backend.core.Node.NodeFunction;
-import modchart.backend.core.VisualParameters;
-import modchart.backend.graphics.renderers.*;
-import modchart.backend.util.ModchartUtil;
-import modchart.engine.modifiers.list.*;
-import modchart.events.*;
-import modchart.events.types.*;
 
 @:allow(modchart.backend.ModifierGroup)
 @:access(modchart.engine.PlayField)

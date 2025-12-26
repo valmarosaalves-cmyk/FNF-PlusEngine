@@ -1,7 +1,6 @@
 package modchart.engine.events.types;
 
 import flixel.math.FlxMath;
-import flixel.tweens.FlxEase.EaseFunction;
 import flixel.tweens.FlxEase;
 
 class AddEvent extends EaseEvent {

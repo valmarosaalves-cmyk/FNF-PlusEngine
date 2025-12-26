@@ -1,6 +1,5 @@
 package psychlua;
 
-import flixel.FlxBasic;
 import objects.Character;
 import psychlua.LuaUtils;
 import psychlua.CustomSubstate;
@@ -9,9 +8,6 @@ import psychlua.CustomSubstate;
 import psychlua.FunkinLua;
 #end
 
-#if hxvlc
-import hxvlc.flixel.FlxVideoSprite;
-#end
 
 #if HSCRIPT_ALLOWED
 import crowplexus.iris.Iris;

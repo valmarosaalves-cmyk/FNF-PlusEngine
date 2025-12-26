@@ -25,7 +25,6 @@ package mobile.backend;
 import haxe.ds.Map;
 import haxe.Json;
 import haxe.io.Path;
-import openfl.utils.Assets;
 import flixel.util.FlxSave;
 
 /**

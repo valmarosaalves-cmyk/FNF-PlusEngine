@@ -4,16 +4,13 @@ import debug.FPSCounter;
 import debug.TraceDisplay;
 import debug.TraceButton;
 import debug.DebugButton;
-import backend.Highscore;
 import backend.ClientPrefs;
 import flixel.FlxGame;
 import flixel.FlxState;
-import shaders.ColorblindFilter;
 import openfl.Lib;
 import openfl.display.Sprite;
 import openfl.display.Bitmap;
 import openfl.display.BitmapData;
-import openfl.events.Event;
 import openfl.display.StageScaleMode;
 import lime.app.Application;
 import states.TitleState;
@@ -22,9 +19,7 @@ import crowplexus.iris.Iris;
 import psychlua.HScript.HScriptInfos;
 import psychlua.SScript.SScriptCompat;
 #end
-import mobile.backend.MobileScaleMode;
 import openfl.events.KeyboardEvent;
-import lime.system.System as LimeSystem;
 
 #if (linux || mac)
 import lime.graphics.Image;

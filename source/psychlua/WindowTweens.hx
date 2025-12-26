@@ -2,7 +2,6 @@ package psychlua;
 
 import openfl.Lib;
 import openfl.system.Capabilities;
-import openfl.display.StageDisplayState;
 import flixel.FlxG;
 import flixel.tweens.FlxTween;
 import flixel.tweens.FlxEase;
@@ -13,6 +12,8 @@ import states.PlayState;
 #if windows
 import winapi.WindowsAPI;
 #end
+
+// Thanks Slushi for these functions =p
 
 class WindowTweens {
     public static function winTweenX(tag:String, targetX:Int, duration:Float = 1, ease:String = "linear", ?onComplete:Void->Void) {

@@ -10,7 +10,6 @@ import openfl.events.Event;
 import openfl.events.IOErrorEvent;
 import openfl.events.MouseEvent;
 import openfl.geom.Point;
-import openfl.utils.Assets;
 
 import objects.Character;
 import objects.HealthIcon;

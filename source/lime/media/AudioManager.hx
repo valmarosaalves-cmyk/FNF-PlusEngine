@@ -2,12 +2,6 @@
 
 package lime.media;
 
-import haxe.Timer;
-import lime._internal.backend.native.NativeCFFI;
-import lime.media.openal.AL;
-import lime.media.openal.ALC;
-import lime.media.openal.ALContext;
-import lime.media.openal.ALDevice;
 import backend.ALSoftConfig;
 #if (js && html5)
 import js.Browser;

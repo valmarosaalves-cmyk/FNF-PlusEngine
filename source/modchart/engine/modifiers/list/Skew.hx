@@ -1,9 +1,7 @@
 package modchart.engine.modifiers.list;
 
-import modchart.backend.core.ArrowData;
 import modchart.backend.core.ModifierParameters;
 import modchart.backend.core.VisualParameters;
-import modchart.backend.util.ModchartUtil;
 
 class Skew extends Modifier {
 	var xID = 0;

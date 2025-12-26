@@ -1,7 +1,6 @@
 package modchart.engine.modifiers.list.false_paradise;
 
 import flixel.math.FlxAngle;
-import modchart.backend.core.ArrowData;
 import modchart.backend.core.ModifierParameters;
 
 class Wiggle extends Modifier {

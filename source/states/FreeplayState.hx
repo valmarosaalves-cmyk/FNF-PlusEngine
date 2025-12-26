@@ -1,6 +1,5 @@
 package states;
 
-import psychlua.FunkinLua;
 import backend.StageData;
 import backend.WeekData;
 import FunkinPreloader;
@@ -27,7 +26,6 @@ import mobile.backend.StorageUtil;
 #end
 
 import haxe.Json;
-import objects.AudioVisualizer;
 
 class FreeplayState extends MusicBeatState
 {

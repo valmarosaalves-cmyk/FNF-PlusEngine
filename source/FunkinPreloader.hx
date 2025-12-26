@@ -3,7 +3,6 @@ import flixel.FlxSprite;
 import flixel.text.FlxText;
 import flixel.util.FlxColor;
 import flixel.ui.FlxBar;
-import flash.media.Sound;
 import haxe.Timer;
 import backend.shaders.VFDOverlay;
 import backend.MusicBeatState;

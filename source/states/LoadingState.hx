@@ -7,7 +7,7 @@ import lime.utils.Assets;
 import openfl.display.BitmapData;
 import openfl.utils.AssetType;
 import openfl.utils.Assets as OpenFlAssets;
-import flixel.graphics.FlxGraphic;
+
 import flixel.system.FlxAssets;
 import flixel.FlxState;
 
@@ -15,9 +15,7 @@ import flash.media.Sound;
 
 import backend.Song;
 import backend.StageData;
-import objects.Character;
 
-import sys.thread.Thread;
 import sys.thread.Mutex;
 
 import objects.Note;

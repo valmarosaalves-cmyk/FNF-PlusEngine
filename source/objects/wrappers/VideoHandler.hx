@@ -2,8 +2,6 @@ package objects.wrappers;
 
 import flixel.FlxG;
 import flixel.FlxSprite;
-import openfl.Lib;
-import openfl.events.Event;
 import openfl.display.BitmapData;
 import sys.FileSystem;
 

@@ -1,9 +1,5 @@
 package lenin;
 
-import flixel.FlxG;
-import objects.Note;
-import states.PlayState;
-
 /**
  * Gestor del sistema de Heavy Charts
  * Controla la activación y desactivación del modo de charts pesados

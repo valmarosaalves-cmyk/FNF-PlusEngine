@@ -1,28 +1,17 @@
 package debug;
 
 import flixel.FlxG;
-import openfl.Lib;
 import openfl.text.TextField;
 import openfl.text.TextFormat;
 import openfl.events.KeyboardEvent;
 import openfl.ui.Keyboard;
-import openfl.display.Graphics;
 import openfl.display.Shape;
 import openfl.display.Sprite;
 import haxe.Log;
 import haxe.PosInfos;
-import backend.Paths;
-import flixel.util.FlxColor;
 
 #if HSCRIPT_ALLOWED
-import psychlua.HScript;
-import crowplexus.hscript.Expr.Error as IrisError;
-import crowplexus.hscript.Printer;
 import crowplexus.iris.Iris;
-#end
-
-#if LUA_ALLOWED
-import psychlua.FunkinLua;
 #end
 
 /**

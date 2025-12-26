@@ -1,6 +1,5 @@
 package modchart.engine.events;
 
-import modchart.Manager;
 import modchart.engine.events.EventType;
 
 class Event {

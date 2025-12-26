@@ -2,7 +2,6 @@ package objects;
 
 import backend.animation.PsychAnimationController;
 
-import shaders.RGBPalette;
 import shaders.RGBPalette.RGBShaderReference;
 
 class StrumNote extends FlxSprite

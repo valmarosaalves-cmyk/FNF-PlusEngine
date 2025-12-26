@@ -1,9 +1,7 @@
 package modchart.engine.modifiers;
 
 import flixel.FlxG;
-import flixel.math.FlxMath;
 import modchart.Manager;
-import modchart.backend.core.ArrowData;
 import modchart.backend.core.ModifierParameters;
 import modchart.backend.core.VisualParameters;
 import modchart.engine.PlayField;

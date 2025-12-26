@@ -5,7 +5,6 @@ import backend.ClientPrefs;
 import backend.Conductor;
 import objects.Note;
 import objects.NoteSplash;
-import objects.SustainSplash;
 import objects.StrumNote as Strum;
 import states.PlayState;
 #else
@@ -18,7 +17,6 @@ import StrumNote as Strum;
 import flixel.FlxCamera;
 import flixel.FlxG;
 import flixel.FlxSprite;
-import modchart.Manager;
 import modchart.backend.standalone.IAdapter;
 
 class Psych implements IAdapter {

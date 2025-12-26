@@ -1,6 +1,5 @@
 package modchart.engine.modifiers.list;
 
-import modchart.backend.core.ArrowData;
 import modchart.backend.core.ModifierParameters;
 import modchart.engine.PlayField;
 import modchart.engine.modifiers.list.PathModifier.PathNode;

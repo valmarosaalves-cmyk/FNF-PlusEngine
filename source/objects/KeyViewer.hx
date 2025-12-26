@@ -1,6 +1,5 @@
 package objects;
 
-import backend.Conductor;
 import backend.ClientPrefs;
 import backend.Controls;
 import backend.InputFormatter;
@@ -14,7 +13,6 @@ import flixel.tweens.FlxTween;
 import flixel.tweens.FlxEase;
 import openfl.display.BitmapData;
 import openfl.display.Shape;
-import openfl.geom.Matrix;
 
 using StringTools;
 

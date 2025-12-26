@@ -1,6 +1,5 @@
 package modchart.engine.modifiers.list.false_paradise;
 
-import modchart.backend.core.ArrowData;
 import modchart.backend.core.ModifierParameters;
 
 class Vibrate extends Modifier {

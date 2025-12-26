@@ -1,6 +1,5 @@
 package psychlua;
 
-import flixel.FlxBasic;
 import objects.Character;
 import psychlua.LuaUtils;
 import psychlua.CustomSubstate;

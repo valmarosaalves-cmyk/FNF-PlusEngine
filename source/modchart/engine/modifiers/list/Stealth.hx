@@ -1,11 +1,8 @@
 package modchart.engine.modifiers.list;
 
-import flixel.FlxG;
 import flixel.math.FlxMath;
-import modchart.backend.core.ArrowData;
 import modchart.backend.core.ModifierParameters;
 import modchart.backend.core.VisualParameters;
-import modchart.backend.util.ModchartUtil;
 
 class Stealth extends Modifier {
 	public function new(pf) {

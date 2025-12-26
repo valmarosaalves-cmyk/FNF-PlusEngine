@@ -2,9 +2,7 @@ package modchart.engine.modifiers.list;
 
 import flixel.math.FlxMath;
 import haxe.ds.Vector;
-import modchart.backend.core.ArrowData;
 import modchart.backend.core.ModifierParameters;
-import modchart.backend.util.ModchartUtil;
 import modchart.engine.PlayField;
 
 /**

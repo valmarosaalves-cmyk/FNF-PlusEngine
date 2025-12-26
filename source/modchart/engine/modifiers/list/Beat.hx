@@ -1,8 +1,5 @@
 package modchart.engine.modifiers.list;
 
-import flixel.math.FlxMath;
-import flixel.tweens.FlxEase;
-import modchart.backend.core.ArrowData;
 import modchart.backend.core.ModifierParameters;
 
 class Beat extends Modifier {

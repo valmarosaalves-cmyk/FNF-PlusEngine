@@ -1,9 +1,7 @@
 package modchart.engine.modifiers.list;
 
-import modchart.backend.core.ArrowData;
 import modchart.backend.core.ModifierParameters;
 import modchart.backend.core.VisualParameters;
-import modchart.backend.util.ModchartUtil;
 
 // Circular motion based on the lane.
 // Naming this `Radionic` since it seems like a Radionic Graphic.

@@ -1,6 +1,5 @@
 package modchart.engine.modifiers.list;
 
-import modchart.backend.core.ArrowData;
 import modchart.backend.core.ModifierParameters;
 
 class ZigZag extends Modifier {

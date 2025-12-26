@@ -1,7 +1,6 @@
 package modchart.backend.graphics;
 
 import flixel.FlxBasic;
-import flixel.FlxCamera;
 import flixel.util.FlxSort;
 
 @:publicFields

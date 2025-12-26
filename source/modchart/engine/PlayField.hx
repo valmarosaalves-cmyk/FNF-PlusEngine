@@ -1,17 +1,11 @@
 package modchart.engine;
 
-import flixel.FlxBasic;
-import flixel.FlxCamera;
-import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.tweens.FlxEase.EaseFunction;
 import modchart.backend.core.Node.NodeFunction;
 import modchart.backend.graphics.*;
 import modchart.backend.graphics.renderers.*;
-import modchart.backend.util.ModchartUtil;
 import modchart.engine.events.types.*;
-import openfl.display.BitmapData;
-import openfl.geom.Rectangle;
 
 // TODO: make this extend to flxsprite and use parented transformation matrix
 #if !openfl_debug

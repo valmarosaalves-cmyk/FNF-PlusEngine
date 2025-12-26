@@ -1,9 +1,7 @@
 package modchart.engine.modifiers.list;
 
 import flixel.FlxG;
-import modchart.backend.core.ArrowData;
 import modchart.backend.core.ModifierParameters;
-import modchart.backend.util.ModchartUtil;
 
 class CenterRotate extends Rotate {
 	override public function getOrigin(curPos:Vector3, params:ModifierParameters):Vector3 {

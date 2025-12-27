@@ -508,7 +508,7 @@ class PauseSubState extends MusicBeatSubstate
 }
 	override function create()
 	{
-		loadDeviceDateTimeSettings();
+		LocaleUtils.loadDeviceDateTimeSettings();
 		
 		if(Difficulty.list.length < 2) menuItemsOG.remove('Change Difficulty'); //No need to change difficulty if there is only one!
 		if(PlayState.chartingMode)
@@ -555,7 +555,7 @@ class PauseSubState extends MusicBeatSubstate
 		add(bg);
 
 		var now:Date = Date.now();
-		var dateTimeStr:String = formatDateTimeAccordingToDevice(now);
+		var dateTimeStr:String = LocaleUtils.formatDateTimeAccordingToDevice(now);
 		dateTimeText = new FlxText(0, 15 + 96, FlxG.width, dateTimeStr, 32);
 		dateTimeText.scrollFactor.set();
 		dateTimeText.setFormat(Paths.font('vcr.ttf'), 32, FlxColor.WHITE, CENTER);
@@ -666,7 +666,7 @@ class PauseSubState extends MusicBeatSubstate
 		if (dateTimeText != null) {
             var now:Date = Date.now();
 
-            dateTimeText.text = formatDateTimeAccordingToDevice(now);
+            dateTimeText.text = LocaleUtils.formatDateTimeAccordingToDevice(now);
         }
 
 		if(controls.BACK)

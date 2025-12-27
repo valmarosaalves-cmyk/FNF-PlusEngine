@@ -3,8 +3,8 @@
 		"blue2": {
 			"noteData": 5,
 			"offsets": [
-				107,
-				107
+				-14,
+				-16
 			],
 			"fps": [
 				22,
@@ -16,8 +16,8 @@
 		},
 		"purple": {
 			"offsets": [
-				87,
-				101
+				-14,
+				-16
 			],
 			"noteData": 0,
 			"fps": [
@@ -30,8 +30,8 @@
 		},
 		"red": {
 			"offsets": [
-				75,
-				101
+				-26,
+				-20
 			],
 			"noteData": 3,
 			"fps": [
@@ -44,8 +44,8 @@
 		},
 		"red2": {
 			"offsets": [
-				107,
-				107
+				-14,
+				-16
 			],
 			"noteData": 7,
 			"fps": [
@@ -63,8 +63,8 @@
 			],
 			"noteData": 1,
 			"fps": [
-				22,
-				26
+				-26,
+				20
 			],
 			"prefix": "vanilla splash blue 10",
 			"indices": [],
@@ -77,8 +77,8 @@
 			],
 			"noteData": 4,
 			"fps": [
-				22,
-				26
+				-14,
+				-16
 			],
 			"prefix": "vanilla splash purple 20",
 			"indices": [],
@@ -100,8 +100,8 @@
 		},
 		"green2": {
 			"offsets": [
-				107,
-				107
+				-26,
+				-20
 			],
 			"noteData": 6,
 			"fps": [

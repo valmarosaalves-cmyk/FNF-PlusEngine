@@ -9,7 +9,7 @@ class ModchartOptionsSubState extends BaseOptionsMenu
 {
 	public function new()
 	{
-		title = 'Modchart Settings';
+		title = Language.getPhrase('modchart_menu', 'Modchart Settings');
 		rpcTitle = 'Modchart Options Menu'; // for Discord Rich Presence
 
 		// 3D Camera option

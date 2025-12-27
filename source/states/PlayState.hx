@@ -2612,6 +2612,11 @@ class PlayState extends MusicBeatState
 
 		super.update(elapsed);
 
+		if(videoCutscene != null && videoCutscene.videoSprite != null)
+		{
+			videoCutscene.videoSprite.bitmap.rate = paused ? 0 : playbackRate;
+		}
+
 		setOnScripts('curDecStep', curDecStep);
 		setOnScripts('curDecBeat', curDecBeat);
 

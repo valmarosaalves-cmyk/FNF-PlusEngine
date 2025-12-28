@@ -255,4 +255,5 @@
 	<icon path="art/icons/iOS/bf-iOS-Default-40x40@2x.png" size='80' if="ios" />
 	<icon path="art/icons/iOS/bf-iOS-Default-60x60@2x.png" size='120' if="ios" />
 	<icon path="art/icons/iOS/bf-iOS-Default-60x60@3x.png" size='180' if="ios" />
+	<icon path="art/icons/iOS/bf-iOS-Default-76x76@2x.png" size='152' if="ios" />
 </project>

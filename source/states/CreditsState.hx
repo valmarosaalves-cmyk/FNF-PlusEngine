@@ -80,13 +80,34 @@ class CreditsState extends MusicBeatState
 
 		var defaultList:Array<Array<String>> = [ //Name - Icon name - Description - Link - BG Color
 			['Plus Engine Team'],
-			['Lenin Asto',          "len",              "Programmer of Plus Engine",                        "https://www.youtube.com/@Lenin_Anonimo_Of","03FC88"],
-			[''],
-			['Funkin Modchart Credits'],
-			['TheoDev',             "theo",         "Owner, Lead coder of Funkin Modchart",                       "https://github.com/TheoDevelops",    "FFB347"],
-			[''],
-			['Plus Contributors'],
-			['sirthegamercoder',	'sir',    'Indonesian translation and others PRs',       		'https://bsky.app/profile/stgmd.bsky.social',	     '7FDBFF'],
+			[
+			'Lenin Asto',
+			"len",              
+			"Programmer of Plus Engine",                        
+			"https://www.youtube.com/@Lenin_Anonimo_Of",
+			"03FC88"
+			],
+			[
+			'Andres',      
+			'slushi',  
+			'Creator and owner of several codes used based on the Slushi Engine',    
+			'https://github.com/Slushi-Github',    
+			'8FD9D1'
+			],
+			[
+			'sirthegamercoder',	
+			'sir',    
+			'Indonesian translation and others PRs',       		
+			'https://bsky.app/profile/stgmd.bsky.social',	     
+			'7FDBFF'
+			],
+			[
+			'TheoDev',             
+			"theo",         
+			"Owner, Lead coder of Funkin Modchart",                       
+			"https://github.com/TheoDevelops",    
+			"FFB347"
+			],
 			[''],
 			['Mobile Porting Team'],
 			['HomuHomu833',			'homura',             'Head Porter of Psych Engine and Author of linc_luajit-rewriten',                       'https://youtube.com/@HomuHomu833',		'FFE7C0'],

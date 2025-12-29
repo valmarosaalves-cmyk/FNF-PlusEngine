@@ -3481,7 +3481,10 @@ class PlayState extends MusicBeatState
 			return;
 		}
 
+		// Opponent Mode: Invert camera logic
 		var isDad:Bool = (SONG.notes[sec].mustHitSection != true);
+		if (playOpponent) isDad = !isDad; // In opponent mode, flip camera focus
+		
 		moveCamera(isDad);
 		if (isDad)
 			callOnScripts('onMoveCamera', ['dad']);
@@ -4262,7 +4265,9 @@ class PlayState extends MusicBeatState
 
 	private function keyPressed(key:Int)
 	{
-		if(cpuControlled || paused || inCutscene || key < 0 || key >= playerStrums.length || !generatedMusic || endingSong || boyfriend.stunned) return;
+		// Opponent Mode: Check the correct character's stunned state
+		var controlledChar:Character = playOpponent ? dad : boyfriend;
+		if(cpuControlled || paused || inCutscene || key < 0 || key >= playerStrums.length || !generatedMusic || endingSong || controlledChar.stunned) return;
 
 		// Key Viewer
 		if(keyViewer != null) {
@@ -4465,25 +4470,28 @@ class PlayState extends MusicBeatState
 				if(pressArray[i] && strumsBlocked[i] != true)
 					keyPressed(i);
 
-		if (startedCountdown && !inCutscene && !boyfriend.stunned && generatedMusic)
-		{
-			if (notes.length > 0) {
-				for (n in notes) { // I can't do a filter here, that's kinda awesome
-					var canHit:Bool = (n != null && !strumsBlocked[n.noteData] && n.canBeHit
-						&& n.mustPress && !n.tooLate && !n.wasGoodHit && !n.blockHit);
+		// Opponent Mode: Check the correct character's stunned state
+			var controlledChar:Character = playOpponent ? dad : boyfriend;
+			if (startedCountdown && !inCutscene && !controlledChar.stunned && generatedMusic)
+			{
+				if (notes.length > 0) {
+					for (n in notes) { // I can't do a filter here, that's kinda awesome
+						var canHit:Bool = (n != null && !strumsBlocked[n.noteData] && n.canBeHit
+							&& n.mustPress && !n.tooLate && !n.wasGoodHit && !n.blockHit);
 
-					if (guitarHeroSustains)
-						canHit = canHit && n.parent != null && n.parent.wasGoodHit;
+						if (guitarHeroSustains)
+							canHit = canHit && n.parent != null && n.parent.wasGoodHit;
 
-					if (canHit && n.isSustainNote) {
-						var released:Bool = !holdArray[n.noteData];
+						if (canHit && n.isSustainNote) {
+							var released:Bool = !holdArray[n.noteData];
 
-						if (!released)
-							goodNoteHit(n);
+							if (!released)
+								goodNoteHit(n);
+						}
 					}
 				}
-			}
 
+			// Only dance when no keys are held
 			if (!holdArray.contains(true) || endingSong)
 				playerDance();
 
@@ -4635,9 +4643,11 @@ class PlayState extends MusicBeatState
 
 	function opponentNoteHit(note:Note):Void
 	{
+		// Opponent Mode: Update the correct character's holdTimer
+		var opponentChar:Character = playOpponent ? boyfriend : dad;
 		if (!ClientPrefs.data.disableHoldAnimations || !note.isSustainNote) {
-            dad.holdTimer = 0;
-        }
+			opponentChar.holdTimer = 0;
+		}
 		
 		var result:Dynamic = callOnLuas('opponentNoteHitPre', [notes.members.indexOf(note), Math.abs(note.noteData), note.noteType, note.isSustainNote]);
 		if(result != LuaUtils.Function_Stop && result != LuaUtils.Function_StopHScript && result != LuaUtils.Function_StopAll) result = callOnHScript('opponentNoteHitPre', [note]);
@@ -4647,7 +4657,7 @@ class PlayState extends MusicBeatState
 		if (songName != 'tutorial')
 			camZooming = true;
 
-		// Opponent Mode: Invertir personajes (boyfriend es controlado por IA)
+		// Opponent Mode: Invert characters (boyfriend is controlled by AI)
 		var characterToAnimate:Character = playOpponent ? boyfriend : dad;
 		
 		if(note.noteType == 'Hey!' && characterToAnimate.hasAnimation('hey'))
@@ -4696,9 +4706,11 @@ class PlayState extends MusicBeatState
 	}
 	public function goodNoteHit(note:Note):Void
 	{
+		// Opponent Mode: Update the correct character's holdTimer
+		var playerChar:Character = playOpponent ? dad : boyfriend;
 		if (!ClientPrefs.data.disableHoldAnimations || !note.isSustainNote) {
-            boyfriend.holdTimer = 0;
-        }
+			playerChar.holdTimer = 0;
+		}
 
 		if(note.wasGoodHit) return;
 		if(cpuControlled && note.ignoreNote) return;
@@ -5128,13 +5140,9 @@ class PlayState extends MusicBeatState
 
 	public function playerDance():Void
 	{
-		// Opponent Mode: El jugador controla a dad, así que dad debe bailar cuando no canta
+		// Opponent Mode: The player controls dad, so dad should dance when not singing
 		var playerChar:Character = playOpponent ? dad : boyfriend;
 		if(playerChar == null) return;
-		
-		// No resetear animación si hay alguna tecla presionada
-		for(keyHeld in keysHeld)
-			if(keyHeld) return;
 		
 		var anim:String = playerChar.getAnimationName();
 		if(playerChar.holdTimer > Conductor.stepCrochet * (0.0011 #if FLX_PITCH / FlxG.sound.music.pitch #end) * playerChar.singDuration && anim.startsWith('sing') && !anim.endsWith('miss'))
@@ -5143,7 +5151,7 @@ class PlayState extends MusicBeatState
 	
 	public function opponentDance():Void
 	{
-		// Opponent Mode: El oponente es boyfriend (IA), en modo normal es dad (IA)
+		// Opponent Mode: The opponent is boyfriend (AI), in normal mode it's dad (AI)
 		var opponentChar:Character = playOpponent ? boyfriend : dad;
 		if(opponentChar == null) return;
 		

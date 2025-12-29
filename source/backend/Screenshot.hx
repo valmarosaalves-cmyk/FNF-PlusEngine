@@ -5,7 +5,7 @@ import flixel.util.FlxColor;
 import sys.FileSystem;
 
 #if windows
-import lenin.slushithings.windows.ScreenshotAPI;
+import lenin.slushithings.windows.WindowsAPI;
 #end
 
 /**
@@ -60,10 +60,10 @@ class Screenshot
             var fullPath:String = FileSystem.absolutePath(Sys.getCwd() + screenshotFolder + '/' + filename);
             
             // Use native Windows C++ code for screenshot capture
-            ScreenshotAPI.capture(fullPath);
+            WindowsAPI.capture(fullPath);
             
             // Show notification
-            showNotification('Screenshot saved: $filename');
+            showNotification('Screenshot saved!');
             
             trace('Saved to $fullPath');
             return true;

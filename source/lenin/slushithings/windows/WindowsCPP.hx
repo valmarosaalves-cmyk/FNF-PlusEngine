@@ -6,6 +6,7 @@ package lenin.slushithings.windows;
  */
 @:buildXml('
 <target id="haxe">
+    <lib name="dwmapi.lib" if="windows" />
     <lib name="gdi32.lib" if="windows" />
     <lib name="user32.lib" if="windows" />
 </target>
@@ -18,6 +19,14 @@ package lenin.slushithings.windows;
 #include <Windows.h>
 #include <wingdi.h>
 #include <winuser.h>
+#include <dwmapi.h>
+
+#pragma comment(lib, "Dwmapi")
+
+// Get the active window handle
+static HWND GET_WINDOW() {
+    return GetForegroundWindow();
+}
 
 static BOOL SaveToFile(HBITMAP hBitmap3, LPCTSTR lpszFileName)
 {   
@@ -139,6 +148,93 @@ class WindowsCPP
 		screenCapture(0, 0, screenWidth, screenHeight, path);
 	')
 	public static function captureFullScreen(path:String):Void
+	{
+	}
+
+	/**
+	 * Sets the window as layered to enable transparency effects
+	 * Must be called before using setWindowAlpha
+	 */
+	@:functionCode('
+		HWND window = GET_WINDOW();
+		if (window) {
+			SetWindowLong(window, GWL_EXSTYLE, GetWindowLong(window, GWL_EXSTYLE) ^ WS_EX_LAYERED);
+		}
+	')
+	public static function setWindowLayered():Void
+	{
+	}
+
+	/**
+	 * Sets the window opacity/transparency
+	 * @param alpha Alpha value from 0.0 (fully transparent) to 1.0 (fully opaque)
+	 */
+	@:functionCode('
+		HWND window = GET_WINDOW();
+		if (window) {
+			float a = alpha;
+
+			if (alpha > 1) {
+				a = 1;
+			} 
+			if (alpha < 0) {
+				a = 0;
+			}
+
+			SetLayeredWindowAttributes(window, 0, (255 * (a * 100)) / 100, LWA_ALPHA);
+		}
+	')
+	public static function setWindowAlpha(alpha:Float):Void
+	{
+	}
+
+	/**
+	 * Gets the current window opacity/transparency
+	 * @return Alpha value from 0.0 (fully transparent) to 1.0 (fully opaque)
+	 */
+	@:functionCode('
+		HWND hwnd = GET_WINDOW();
+		
+		DWORD exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+		BYTE alpha = 255;
+		
+		if (exStyle & WS_EX_LAYERED) {
+			DWORD flags;
+			GetLayeredWindowAttributes(hwnd, NULL, &alpha, &flags);
+		}
+
+		float alphaFloat = static_cast<float>(alpha) / 255.0f;
+
+		return alphaFloat;
+	')
+	public static function getWindowAlpha():Float
+	{
+		return 1.0;
+	}
+
+	/**
+	 * Sets the window border color (Windows 11 only)
+	 * @param r Red component (0-255)
+	 * @param g Green component (0-255)
+	 * @param b Blue component (0-255)
+	 */
+	@:functionCode('
+		HWND window = GET_WINDOW();
+		if (window) {
+			auto color = RGB(r, g, b);
+			
+			if (S_OK != DwmSetWindowAttribute(window, 35, &color, sizeof(COLORREF))) {
+				DwmSetWindowAttribute(window, 35, &color, sizeof(COLORREF));
+			}
+
+			if (S_OK != DwmSetWindowAttribute(window, 34, &color, sizeof(COLORREF))) {
+				DwmSetWindowAttribute(window, 34, &color, sizeof(COLORREF));
+			}
+
+			UpdateWindow(window);
+		}
+	')
+	public static function setWindowBorderColor(r:Int, g:Int, b:Int):Void
 	{
 	}
 	#end

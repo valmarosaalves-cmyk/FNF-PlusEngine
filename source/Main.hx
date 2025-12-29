@@ -31,6 +31,8 @@ import states.CopyState;
 import backend.Highscore;
 import lime.system.System as LimeSystem;
 
+import lenin.slushithings.windows.WindowsAPI;
+
 // NATIVE API STUFF, YOU CAN IGNORE THIS AND SCROLL //
 #if (linux && !debug)
 @:cppInclude('./external/gamemode_client.h')
@@ -83,6 +85,8 @@ class Main extends Sprite
 
 		#if (cpp && windows)
 		backend.Native.fixScaling();
+		// Initialize window transparency support
+		WindowsAPI.setWindowLayered();
 		#end
 
 		#if VIDEOS_ALLOWED
@@ -253,6 +257,11 @@ class Main extends Sprite
 
 		Application.current.window.vsync = ClientPrefs.data.vsync;
 
+		#if (cpp && windows)
+		// Add window close handler for fade out effect
+		Application.current.window.onClose.add(onWindowClose);
+		#end
+
 		// shader coords fix
 		FlxG.signals.gameResized.add(function (w, h) {
 			// Solo reposicionamiento del FPS, sin escalado
@@ -317,6 +326,13 @@ class Main extends Sprite
 			watermark.y = stageH - watermark.height * Math.abs(watermark.scaleY) - 30;
 		}
 	}
+
+	#if (cpp && windows)
+	function onWindowClose():Void
+	{
+		lenin.slushithings.windows.WindowsAPI.fadeOutAndExit();
+	}
+	#end
 
 	private function setupGame():Void
 	{

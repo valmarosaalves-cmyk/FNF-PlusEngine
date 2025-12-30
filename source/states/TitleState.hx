@@ -108,7 +108,7 @@ class TitleState extends MusicBeatState
 		{
 			if(FlxG.save.data != null && FlxG.save.data.fullscreen)
 			{
-				FlxG.fullscreen = FlxG.save.data.fullscreen;
+				backend.WindowMode.setBorderlessFullscreen(FlxG.save.data.fullscreen);
 				//trace('LOADED FULLSCREEN SETTING!!');
 			}
 			persistentUpdate = true;

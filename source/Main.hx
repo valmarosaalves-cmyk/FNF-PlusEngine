@@ -281,15 +281,15 @@ class Main extends Sprite
 
 		// shader coords fix
 		FlxG.signals.gameResized.add(function (w, h) {
-			// Solo reposicionamiento del FPS, sin escalado
+			// Only reposition the FPS counter, no scaling.
 			if(fpsVar != null) {
 				var marginX = 10;
 				var marginY = 3;
-				// Sin escalado, solo reposicionamiento
+				// No scaling, only reposition.
 				fpsVar.positionFPS(marginX, marginY, 1.0);
 			}
 			
-			// Reposicionar el botón de TraceDisplay
+			// Reposition TraceDisplay button.
 			#if mobile
 			if(traceButton != null) {
 				traceButton.updatePosition();
@@ -299,7 +299,7 @@ class Main extends Sprite
 			}
 			#end
 			
-			// Solo reposicionamiento de la marca de agua, sin escalado
+			// Only reposition the watermark, no scaling.
 			positionWatermark();
 			
 		     if (FlxG.cameras != null) {
@@ -325,7 +325,7 @@ class Main extends Sprite
 
 	function toggleFullScreen(event:KeyboardEvent) {
 		if (Controls.instance.justReleased('fullscreen'))
-			FlxG.fullscreen = !FlxG.fullscreen;
+			backend.WindowMode.toggleBorderlessFullscreen();
 	}
 
 	function positionWatermark():Void {

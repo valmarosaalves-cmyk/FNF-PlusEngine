@@ -12,26 +12,30 @@ class CustomFadeTransition extends MusicBeatSubstate {
 	public static var finishCallback:Void->Void;
 	var isTransIn:Bool = false;
     
-    // ← MEJORADO: Sistema de bloqueo más robusto
+    // Lock system
     public static var isTransitioning:Bool = false;
-    public static var currentTransition:CustomFadeTransition = null; // ← NUEVO: Referencia global
+    public static var currentTransition:CustomFadeTransition = null;
     
-    // Elementos de la puerta morada
+    // Custom transition elements
     var topDoor:FlxSprite;
     var bottomDoor:FlxSprite;
     var waterMark:FlxText;
     var eventText:FlxText;
     var iconSprite:FlxSprite;
     
-    // Colores morados inspirados en Psych Engine para gradientes
-    static final DOOR_COLOR_LIGHT:FlxColor = 0xFF8B5CF6;   // Morado claro
-    static final DOOR_COLOR_MAIN:FlxColor = 0xFF6B46C1;    // Morado principal
-    static final DOOR_COLOR_DARK:FlxColor = 0xFF4C1D95;    // Morado oscuro
-    static final DOOR_COLOR_DARKER:FlxColor = 0xFF2D1B69;  // Morado muy oscuro
+    // Vanilla transition elements
+    var transBlack:FlxSprite;
+    var transGradient:FlxSprite;
+    
+    // Purple colors for custom transition
+    static final DOOR_COLOR_LIGHT:FlxColor = 0xFF8B5CF6;
+    static final DOOR_COLOR_MAIN:FlxColor = 0xFF6B46C1;
+    static final DOOR_COLOR_DARK:FlxColor = 0xFF4C1D95;
+    static final DOOR_COLOR_DARKER:FlxColor = 0xFF2D1B69;
 
 	var duration:Float;
     
-    // Tweens para mejor control
+    // Tweens for better control
     var topDoorTween:FlxTween;
     var bottomDoorTween:FlxTween;
     var textTween:FlxTween;
@@ -40,31 +44,31 @@ class CustomFadeTransition extends MusicBeatSubstate {
     var isDestroyed:Bool = false;
     var isClosing:Bool = false;
     
-    // Lista de todos los tweens activos
+    // List of active tweens
     var activeTweens:Array<FlxTween> = [];
     
-    // ← NUEVO: ID único para cada transición
+    // Unique ID for each transition
     var transitionId:String;
     
-    // ← NUEVO: Función para generar ID único
+    // Generate unique ID
     static function generateId():String {
         return 'transition_' + Date.now().getTime() + '_' + Math.floor(Math.random() * 1000);
     }
     
-    // ← NUEVO: Función estática para cancelar transición actual
+    // Cancel current transition
     public static function cancelCurrentTransition():Void {
         if (currentTransition != null && !currentTransition.isDestroyed) {
             trace('Canceling current transition: ${currentTransition.transitionId}');
             currentTransition.forceClose();
         }
         
-        // ← RESETEAR ESTADOS GLOBALES
+        // Reset global states
         isTransitioning = false;
         currentTransition = null;
         finishCallback = null;
     }
     
-    // Función para registrar tweens
+    // Register tweens
     function addTween(tween:FlxTween):FlxTween {
         if (tween != null) {
             activeTweens.push(tween);
@@ -79,13 +83,13 @@ class CustomFadeTransition extends MusicBeatSubstate {
         this.activeTweens = [];
         this.transitionId = generateId();
         
-        // ← CANCELAR TRANSICIÓN ANTERIOR ANTES DE CREAR NUEVA
+        // Cancel previous transition before creating new one
         if (currentTransition != null && currentTransition != this) {
             trace('Canceling previous transition before creating new one');
             cancelCurrentTransition();
         }
         
-        // ← ESTABLECER COMO TRANSICIÓN ACTUAL
+        // Set as current transition
         currentTransition = this;
         isTransitioning = true;
         
@@ -96,19 +100,20 @@ class CustomFadeTransition extends MusicBeatSubstate {
 	{
         super.create();
         
-        // ← VERIFICAR QUE SEGUIMOS SIENDO LA TRANSICIÓN ACTUAL
+        // Check if we're still the current transition
         if (currentTransition != this) {
             trace('This transition is no longer current, destroying');
             forceClose();
             return;
         }
+        
         try {
-            // Crear cámara dedicada con configuración móvil mejorada
+            // Create dedicated camera
             var cam:FlxCamera = new FlxCamera();
             cam.bgColor = 0x00;
             
             #if mobile
-            // Configuración específica para móviles para evitar problemas de input
+            // Mobile specific configuration
             cam.followLerp = 0;
             cam.pixelPerfectRender = false;
             #end
@@ -116,55 +121,112 @@ class CustomFadeTransition extends MusicBeatSubstate {
             FlxG.cameras.add(cam, false);
             cameras = [FlxG.cameras.list[FlxG.cameras.list.length - 1]];
             
-            var width:Int = FlxG.width;
-            var height:Int = FlxG.height;
-            
-            // Crear puertas con imágenes personalizadas
-            topDoor = new FlxSprite();
-            topDoor.loadGraphic(Paths.image('ui/transUp'));
-            topDoor.scrollFactor.set();
-            topDoor.setGraphicSize(width, height);
-            topDoor.updateHitbox();
-            topDoor.antialiasing = ClientPrefs.data.antialiasing;
-            
-            bottomDoor = new FlxSprite();
-            bottomDoor.loadGraphic(Paths.image('ui/transDown'));
-            bottomDoor.scrollFactor.set();
-            bottomDoor.setGraphicSize(width, height);
-            bottomDoor.updateHitbox();
-            bottomDoor.antialiasing = ClientPrefs.data.antialiasing;
-            
-            // Crear ícono central
-            iconSprite = new FlxSprite();
-            iconSprite.loadGraphic(Paths.image('loading_screen/icon'));
-            iconSprite.scrollFactor.set();
-            iconSprite.scale.set(0.5, 0.5);
-            iconSprite.screenCenter();
-            
-            // Crear textos informativos
-            waterMark = new FlxText(0, height - 140, 300, 'Plus Engine\nv${MainMenuState.plusEngineVersion}', 32);
-            waterMark.x = (width - waterMark.width) / 2;
-            waterMark.setFormat(Paths.font("aller.ttf"), 32, FlxColor.WHITE, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
-            waterMark.scrollFactor.set();
-            waterMark.borderSize = 2;
-            
-            eventText = new FlxText(50, height - 60, 300, '', 28);
-            eventText.x = (width - eventText.width) / 2;
-            eventText.setFormat(Paths.font("aller.ttf"), 28, FlxColor.YELLOW, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
-            eventText.scrollFactor.set();
-            eventText.borderSize = 2;
-            
-            if(isTransIn) {
-                // TRANSITION IN: Empezar cerrado, luego abrir
-                createTransitionIn(width, height);
+            // Check which transition style to use
+            if(ClientPrefs.data.vanillaTransition) {
+                createVanillaTransition();
             } else {
-                // TRANSITION OUT: Empezar abierto, luego cerrar
-                createTransitionOut(width, height);
+                createCustomTransition();
             }
             
         } catch(e:Dynamic) {
             trace('Error creating transition: $e');
             forceUnlock();
+        }
+    }
+    
+    function createVanillaTransition():Void {
+        var width:Int = Std.int(FlxG.width / Math.max(camera.zoom, 0.001));
+        var height:Int = Std.int(FlxG.height / Math.max(camera.zoom, 0.001));
+        
+        transGradient = FlxGradient.createGradientFlxSprite(1, height, (isTransIn ? [0x0, FlxColor.BLACK] : [FlxColor.BLACK, 0x0]));
+        transGradient.scale.x = width;
+        transGradient.updateHitbox();
+        transGradient.scrollFactor.set();
+        transGradient.screenCenter(X);
+        add(transGradient);
+
+        transBlack = new FlxSprite().makeGraphic(1, 1, FlxColor.BLACK);
+        transBlack.scale.set(width, height + 400);
+        transBlack.updateHitbox();
+        transBlack.scrollFactor.set();
+        transBlack.screenCenter(X);
+        add(transBlack);
+
+        if(isTransIn)
+            transGradient.y = transBlack.y - transBlack.height;
+        else
+            transGradient.y = -transGradient.height;
+    }
+    
+    function createCustomTransition():Void {
+        var width:Int = FlxG.width;
+        var height:Int = FlxG.height;
+        
+        // Create doors with custom images
+        topDoor = new FlxSprite();
+        topDoor.loadGraphic(Paths.image('ui/transUp'));
+        topDoor.scrollFactor.set();
+        topDoor.setGraphicSize(width, height);
+        topDoor.updateHitbox();
+        topDoor.antialiasing = ClientPrefs.data.antialiasing;
+        
+        bottomDoor = new FlxSprite();
+        bottomDoor.loadGraphic(Paths.image('ui/transDown'));
+        bottomDoor.scrollFactor.set();
+        bottomDoor.setGraphicSize(width, height);
+        bottomDoor.updateHitbox();
+        bottomDoor.antialiasing = ClientPrefs.data.antialiasing;
+        
+        // Create central icon
+        iconSprite = new FlxSprite();
+        iconSprite.loadGraphic(Paths.image('loading_screen/icon'));
+        iconSprite.scrollFactor.set();
+        iconSprite.scale.set(0.5, 0.5);
+        iconSprite.screenCenter();
+        
+        // Create info texts
+        waterMark = new FlxText(0, height - 140, 300, 'Plus Engine\nv${MainMenuState.plusEngineVersion}', 32);
+        waterMark.x = (width - waterMark.width) / 2;
+        waterMark.setFormat(Paths.font("aller.ttf"), 32, FlxColor.WHITE, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+        waterMark.scrollFactor.set();
+        waterMark.borderSize = 2;
+        
+        eventText = new FlxText(50, height - 60, 300, '', 28);
+        eventText.x = (width - eventText.width) / 2;
+        eventText.setFormat(Paths.font("aller.ttf"), 28, FlxColor.YELLOW, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+        eventText.scrollFactor.set();
+        eventText.borderSize = 2;
+        
+        if(isTransIn) {
+            // TRANSITION IN: Start closed, then open
+            createTransitionIn(width, height);
+        } else {
+            // TRANSITION OUT: Start open, then close
+            createTransitionOut(width, height);
+        }
+    }
+    
+    override function update(elapsed:Float):Void {
+        super.update(elapsed);
+        
+        // Only update vanilla transition manually
+        if(ClientPrefs.data.vanillaTransition && transGradient != null) {
+            final height:Float = FlxG.height * Math.max(camera.zoom, 0.001);
+            final targetPos:Float = transGradient.height + 50 * Math.max(camera.zoom, 0.001);
+            if(duration > 0)
+                transGradient.y += (height + targetPos) * elapsed / duration;
+            else
+                transGradient.y = (targetPos) * elapsed;
+
+            if(isTransIn)
+                transBlack.y = transGradient.y + transGradient.height;
+            else
+                transBlack.y = transGradient.y - transBlack.height;
+
+            if(transGradient.y >= targetPos)
+            {
+                safeClose();
+            }
         }
     }
     
@@ -278,12 +340,12 @@ class CustomFadeTransition extends MusicBeatSubstate {
         }));
     }
     
-    // ← NUEVO: Verificar si esta transición sigue siendo válida
+    // Check if this transition is still valid
     function isValidTransition():Bool {
         return !isDestroyed && !isClosing && currentTransition == this;
     }
     
-    // ← NUEVO: Función para forzar desbloqueo
+    // Force unlock
     function forceUnlock():Void {
         trace('Force unlocking transition: $transitionId');
         
@@ -301,7 +363,7 @@ class CustomFadeTransition extends MusicBeatSubstate {
         }
     }
     
-    // ← NUEVO: Función para forzar cierre inmediato
+    // Force immediate close
     function forceClose():Void {
         if ( isDestroyed || isClosing) return;
         
@@ -324,12 +386,11 @@ class CustomFadeTransition extends MusicBeatSubstate {
 		}
 	}
 
-    // Función segura para ejecutar callback
+    // Safely execute callback
     function safeFinishCallback():Void {
         if(!isValidTransition()) return;
         
-        
-        // ← DESBLOQUEAR ANTES DEL CALLBACK
+        // Unlock before callback
         if (currentTransition == this) {
             isTransitioning = false;
             currentTransition = null;
@@ -346,16 +407,19 @@ class CustomFadeTransition extends MusicBeatSubstate {
         }
     }
 
-    // Función segura para cerrar
+    // Safely close transition
     function safeClose():Void {
         if(!isValidTransition()) return;
         
         isClosing = true;
         
-        // Desbloquear si somos la transición actual
-        if (currentTransition == this) {
-            isTransitioning = false;
-            currentTransition = null;
+        // For custom transition, unlock before closing
+        // For vanilla transition, the callback is handled in close()
+        if (!ClientPrefs.data.vanillaTransition) {
+            if (currentTransition == this) {
+                isTransitioning = false;
+                currentTransition = null;
+            }
         }
         
         cancelAllTweens();
@@ -367,7 +431,7 @@ class CustomFadeTransition extends MusicBeatSubstate {
         }
     }
 
-    // Cancelar todos los tweens de forma segura
+    // Cancel all tweens safely
     function cancelAllTweens():Void {
         try {
             for(tween in activeTweens) {
@@ -377,7 +441,7 @@ class CustomFadeTransition extends MusicBeatSubstate {
             }
             activeTweens = [];
             
-            // También cancelar tweens individuales por si acaso
+            // Also cancel individual tweens just in case
             if(topDoorTween != null) {
                 topDoorTween.cancel();
                 topDoorTween = null;
@@ -406,7 +470,7 @@ class CustomFadeTransition extends MusicBeatSubstate {
         isDestroyed = true;
         isClosing = true;
         
-        // Desbloquear si somos la transición actual
+        // Unlock if we're the current transition
         if (currentTransition == this) {
             isTransitioning = false;
             currentTransition = null;
@@ -414,11 +478,20 @@ class CustomFadeTransition extends MusicBeatSubstate {
         
         try {
             cancelAllTweens();
-            finishCallback = null;
+            
+            // Execute callback for vanilla transition before closing
+            if(ClientPrefs.data.vanillaTransition && finishCallback != null) {
+                var callback = finishCallback;
+                finishCallback = null;
+                callback();
+            } else {
+                finishCallback = null;
+            }
+            
 		super.close();
         } catch(e:Dynamic) {
             trace("Error in close: " + e);
-            // Forzar desbloqueo en caso de error
+            // Force unlock on error
             isTransitioning = false;
             currentTransition = null;
         }
@@ -431,7 +504,7 @@ class CustomFadeTransition extends MusicBeatSubstate {
         isDestroyed = true;
         isClosing = true;
         
-        // Desbloquear si somos la transición actual
+        // Unlock if we're the current transition
         if (currentTransition == this) {
             isTransitioning = false;
             currentTransition = null;
@@ -441,7 +514,7 @@ class CustomFadeTransition extends MusicBeatSubstate {
             cancelAllTweens();
 			finishCallback = null;
             
-            // Limpiar objetos de forma segura
+            // Clean custom transition objects safely
             if(topDoor != null) {
                 topDoor.destroy();
                 topDoor = null;
@@ -463,11 +536,21 @@ class CustomFadeTransition extends MusicBeatSubstate {
                 iconSprite = null;
             }
             
+            // Clean vanilla transition objects safely
+            if(transBlack != null) {
+                transBlack.destroy();
+                transBlack = null;
+            }
+            if(transGradient != null) {
+                transGradient.destroy();
+                transGradient = null;
+            }
+            
             super.destroy();
             
         } catch(e:Dynamic) {
             trace("Error in destroy: " + e);
-            // Forzar desbloqueo incluso en error
+            // Force unlock even on error
             isTransitioning = false;
             currentTransition = null;
 		}

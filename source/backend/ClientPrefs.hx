@@ -141,6 +141,7 @@ import states.TitleState;
 	public var language:String = 'en-US';
 	public var abbreviateScore:Bool = true;
 	public var heavyCharts:Bool = false; // Heavy Charts Mode para charts pesados
+	public var vanillaTransition:Bool = false; // Use vanilla Psych Engine transition instead of custom
 }
 
 class ClientPrefs {

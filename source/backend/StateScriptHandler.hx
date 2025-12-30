@@ -239,31 +239,31 @@ class StateScriptHandler
 		
 		script.set('setVar', function(name:String, value:Dynamic) {
 			if (FlxG.state != null && Std.isOfType(FlxG.state, MusicBeatState))
-				MusicBeatState.getVariables('Custom').set(name, value);
-		});
-		
-		script.set('getVar', function(name:String):Dynamic {
-			if (FlxG.state != null && Std.isOfType(FlxG.state, MusicBeatState))
+			MusicBeatState.getStateVariables('Custom').set(name, value);
+	});
+	
+	script.set('getVar', function(name:String):Dynamic {
+		if (FlxG.state != null && Std.isOfType(FlxG.state, MusicBeatState))
+		{
+			var map = MusicBeatState.getStateVariables('Custom');
+			if (map.exists(name))
+				return map.get(name);
+		}
+		return null;
+	});
+	
+	script.set('removeVar', function(name:String):Bool {
+		if (FlxG.state != null && Std.isOfType(FlxG.state, MusicBeatState))
+		{
+			var map = MusicBeatState.getStateVariables('Custom');
+			if (map.exists(name))
 			{
-				var map = MusicBeatState.getVariables('Custom');
-				if (map.exists(name))
-					return map.get(name);
+				map.remove(name);
+				return true;
 			}
-			return null;
-		});
-		
-		script.set('removeVar', function(name:String):Bool {
-			if (FlxG.state != null && Std.isOfType(FlxG.state, MusicBeatState))
-			{
-				var map = MusicBeatState.getVariables('Custom');
-				if (map.exists(name))
-				{
-					map.remove(name);
-					return true;
-				}
-			}
-			return false;
-		});
+		}
+		return false;
+	});
 		
 		// Keyboard helpers
 		script.set('keyboardJustPressed', function(name:String) return Reflect.getProperty(FlxG.keys.justPressed, name));
@@ -341,31 +341,31 @@ class StateScriptHandler
 		// Helper functions for variable management
 		setVar('setVar', function(name:String, value:Dynamic) {
 			if (FlxG.state != null && Std.isOfType(FlxG.state, MusicBeatState))
-				MusicBeatState.getVariables('Custom').set(name, value);
-		});
-		
-		setVar('getVar', function(name:String):Dynamic {
-			if (FlxG.state != null && Std.isOfType(FlxG.state, MusicBeatState))
+			MusicBeatState.getStateVariables('Custom').set(name, value);
+	});
+	
+	setVar('getVar', function(name:String):Dynamic {
+		if (FlxG.state != null && Std.isOfType(FlxG.state, MusicBeatState))
+		{
+			var map = MusicBeatState.getStateVariables('Custom');
+			if (map.exists(name))
+				return map.get(name);
+		}
+		return null;
+	});
+	
+	setVar('removeVar', function(name:String):Bool {
+		if (FlxG.state != null && Std.isOfType(FlxG.state, MusicBeatState))
+		{
+			var map = MusicBeatState.getStateVariables('Custom');
+			if (map.exists(name))
 			{
-				var map = MusicBeatState.getVariables('Custom');
-				if (map.exists(name))
-					return map.get(name);
+				map.remove(name);
+				return true;
 			}
-			return null;
-		});
-		
-		setVar('removeVar', function(name:String):Bool {
-			if (FlxG.state != null && Std.isOfType(FlxG.state, MusicBeatState))
-			{
-				var map = MusicBeatState.getVariables('Custom');
-				if (map.exists(name))
-				{
-					map.remove(name);
-					return true;
-				}
-			}
-			return false;
-		});
+		}
+		return false;
+	});
 		
 		// Keyboard helpers
 		setVar('keyboardJustPressed', function(name:String) return Reflect.getProperty(FlxG.keys.justPressed, name));

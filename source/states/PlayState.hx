@@ -711,7 +711,7 @@ class PlayState extends MusicBeatState
 			var list:Map<String, FlxSprite> = StageData.addObjectsToState(stageData.objects, !stageData.hide_girlfriend ? gfGroup : null, dadGroup, boyfriendGroup, this);
 			for (key => spr in list)
 				if(!StageData.reservedNames.contains(key))
-					MusicBeatState.getVariables('Graphic').set(key, spr);
+					variables.set(key, spr);
 		}
 		else
 		{
@@ -5977,13 +5977,13 @@ class PlayState extends MusicBeatState
 	public function makeLuaTouchPad(DPadMode:String, ActionMode:String) {
 		if(members.contains(luaTouchPad)) return;
 
+		if(!variables.exists("luaTouchPad"))
+			variables.set("luaTouchPad", luaTouchPad);
+
 		luaTouchPad = new TouchPad(DPadMode, ActionMode, NONE);
 		luaTouchPad.alpha = ClientPrefs.data.controlsAlpha;
-		
-		if(!MusicBeatState.getVariables('Custom').exists("luaTouchPad"))
-			MusicBeatState.getVariables('Custom').set("luaTouchPad", luaTouchPad);
 	}
-	
+
 	public function addLuaTouchPad() {
 		if(luaTouchPad == null || members.contains(luaTouchPad)) return;
 

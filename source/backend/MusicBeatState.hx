@@ -121,79 +121,104 @@ class MusicBeatState extends FlxState
 
 	var _psychCameraInitialized:Bool = false;
 
-	// Categorized variables system (Slushi-style)
-	public var variables:Map<String, Map<String, Dynamic>> = [
-		"Video" => [],          // For video sprites objects
-		"Text" => [],           // For text type objects
-		"Camera" => [],         // For camera type objects
-		"Character" => [],      // For character type objects
-		"Icon" => [],           // For icon type objects
-		"Sound" => [],          // For sound type objects
-		"Graphic" => [],        // For graphic, animated, image objects
-		"Tween" => [],          // For tweens
-		"Timer" => [],          // For timers
-		"Custom" => [],         // For custom variables set with setVar/getVar
-		"Instance" => [],       // For instance objects
-		"Shader" => [],         // For shaders objects
-		"Save" => [],           // For save objects
-		"Group" => []           // For group objects
+	/**
+	 * Simple variable system for PlayState mod scripts (Lua, HScript, SScript)
+	 * Used by getVar/setVar for backward compatibility with existing mods
+	 **/
+	public var variables:Map<String, Dynamic> = new Map<String, Dynamic>();
+	
+	/**
+	 * Separate map for video handlers - backward compatibility
+	 **/
+	public var videoHandlers:Map<String, Dynamic> = new Map<String, Dynamic>();
+
+	/**
+	 * Categorized variable system for State-specific scripts (StateScriptHandler)
+	 * This is used ONLY by State scripts, NOT by PlayState mod scripts
+	 * Categories: Video, Text, Camera, Character, Icon, Sound, Graphic, Tween, Timer, Custom, Instance, Shader, Save, Group
+	 **/
+	public var stateVariables:Map<String, Map<String, Dynamic>> = [
+		"Video" => new Map<String, Dynamic>(),
+		"Text" => new Map<String, Dynamic>(),
+		"Camera" => new Map<String, Dynamic>(),
+		"Character" => new Map<String, Dynamic>(),
+		"Icon" => new Map<String, Dynamic>(),
+		"Sound" => new Map<String, Dynamic>(),
+		"Graphic" => new Map<String, Dynamic>(),
+		"Tween" => new Map<String, Dynamic>(),
+		"Timer" => new Map<String, Dynamic>(),
+		"Custom" => new Map<String, Dynamic>(),
+		"Instance" => new Map<String, Dynamic>(),
+		"Shader" => new Map<String, Dynamic>(),
+		"Save" => new Map<String, Dynamic>(),
+		"Group" => new Map<String, Dynamic>()
 	];
 
 	public static var traceDisplay:TraceDisplay;
 	
-	// Helper functions for categorized variables
-	public static function getVariables(?type:String = "Custom")
-		return getState().variables.get(type);
+	// Helper functions for PlayState mod scripts (simple system)
+	public static function getVariables()
+		return getState().variables;
+		
+	public static function getVideoHandlers()
+		return getState().videoHandlers;
 	
-	public static function variableObj(obj:String, ?types:Array<String> = null):Dynamic
+	// Helper functions for State scripts (categorized system)
+	public static function getStateVariables(?type:String = "Custom")
+		return getState().stateVariables.get(type);
+	
+	public static function getStateVariable(obj:String, ?types:Array<String> = null):Dynamic
 	{
-		if (types == null) types = grabDefaultTypes();
+		if (types == null) types = getStateVariableTypes();
 		for (varType in types)
 		{
-			if (getVariables(varType).exists(obj)) 
-				return getVariables(varType).get(obj);
+			if (getStateVariables(varType).exists(obj))
+				return getStateVariables(varType).get(obj);
 		}
 		return null;
 	}
-
-	public static function variableMap(obj:String, ?types:Array<String> = null)
+	
+	public static function setStateVariable(name:String, value:Dynamic, ?category:String = null):Void
 	{
-		if (types == null) types = grabDefaultTypes();
-		for (varType in types)
+		if (category == null)
 		{
-			if (getVariables(varType).exists(obj)) 
-				return getVariables(varType);
+			// Auto-detect category
+			var className = value != null ? Type.getClassName(Type.getClass(value)) : null;
+			category = "Custom";
+			
+			if (className != null) {
+				if (className.contains("VideoSprite") || className.contains("VideoHandler") || className.contains("MP4Handler"))
+					category = "Video";
+				else if (className.contains("FlxText") || className.contains("Alphabet"))
+					category = "Text";
+				else if (className.contains("Camera"))
+					category = "Camera";
+				else if (className.contains("Character"))
+					category = "Character";
+				else if (className.contains("HealthIcon"))
+					category = "Icon";
+				else if (className.contains("FlxSound"))
+					category = "Sound";
+				else if (className.contains("FlxSprite") || className.contains("FlxAnimate"))
+					category = "Graphic";
+				else if (className.contains("FlxTween"))
+					category = "Tween";
+				else if (className.contains("FlxTimer"))
+					category = "Timer";
+				else if (className.contains("Shader"))
+					category = "Shader";
+				else if (className.contains("Group"))
+					category = "Group";
+			}
 		}
-		return null;
+		
+		getStateVariables(category).set(name, value);
 	}
-
-	public static function findVariable(obj:String, ?types:Array<String> = null):{found:Bool, type:String}
-	{
-		if (types == null) types = grabDefaultTypes();
-		for (varType in types)
-		{
-			if (getVariables(varType).exists(obj)) 
-				return {found: true, type: varType};
-		}
-		return {found: false, type: ""};
-	}
-
-	public static function findVariableObj(obj:String, ?types:Array<String> = null):Bool
-	{
-		if (types == null) types = grabDefaultTypes();
-		return findVariable(obj, types).found;
-	}
-
-	public static function getVariableType(obj:String, ?types:Array<String> = null):String
-	{
-		if (types == null) types = grabDefaultTypes();
-		return findVariable(obj, types).type;
-	}
-
-	public static function grabDefaultTypes():Array<String>
+	
+	public static function getStateVariableTypes():Array<String>
 	{
 		var list:Array<String> = [];
-		for (key in getState().variables.keys())
+		for (key in getState().stateVariables.keys())
 			list.push(key);
 		return list;
 	}

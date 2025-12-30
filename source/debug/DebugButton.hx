@@ -6,6 +6,7 @@ import openfl.display.Shape;
 import openfl.text.TextField;
 import openfl.text.TextFormat;
 import openfl.events.TouchEvent;
+import openfl.events.MouseEvent;
 import backend.Paths;
 
 /**

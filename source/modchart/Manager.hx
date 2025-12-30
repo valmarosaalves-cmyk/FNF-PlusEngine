@@ -28,7 +28,7 @@ final class Manager extends FlxBasic {
 	 */
 	public var playfields:Vector<PlayField> = new Vector<PlayField>(16);
 
-	private var playfieldCount:Int = 0;
+	public var playfieldCount:Int = 0;
 
 	public function new() {
 		super();

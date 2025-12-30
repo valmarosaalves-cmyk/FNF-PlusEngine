@@ -40,9 +40,9 @@ final class ModchartArrowRenderer extends ModchartRenderer<FlxSprite> {
 		if (arrow.alpha <= 0)
 			return;
 
-		// Validar que el sprite tiene frames válidos antes de procesarlo
+		// Validate that the sprite has valid frames before processing it
 		if (arrow.frame == null || arrow.frame.frame == null) {
-			return; // Skip sprites sin frames válidos (ej: SustainSplash con makeGraphic fallback)
+			return; // Skip sprites without valid frames (e.g. SustainSplash with a makeGraphic fallback)
 		}
 
 		final arrowPosition = helperVector;

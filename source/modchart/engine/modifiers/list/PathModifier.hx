@@ -20,20 +20,36 @@ class PathModifier extends Modifier {
 	private var __boundDiv:Float;
 
 	function set___pathBound(value:Float):Float {
+		if (value <= 0) {
+			__boundDiv = 0;
+			return __pathBound = 0;
+		}
 		__boundDiv = 1 / value;
 		return __pathBound = value;
 	}
 
 	public var pathOffset:Vector3 = new Vector3();
 
-	public function new(pf:PlayField, path:Array<PathNode>) {
+	public function new(pf:PlayField, ?path:Array<PathNode>) {
 		super(pf);
 
 		__pathBound = 1500;
 		loadPath(path);
 	}
 
+	public inline function setPathBound(value:Float):Void {
+		__pathBound = value;
+	}
+
+	public inline function getPathBound():Float {
+		return __pathBound;
+	}
+
 	public function loadPath(newPath:Array<PathNode>) {
+		if (newPath == null || newPath.length <= 0) {
+			__path = new Vector<PathNode>(0);
+			return;
+		}
 		__path = Vector.fromArrayCopy(newPath);
 	}
 
@@ -46,7 +62,12 @@ class PathModifier extends Modifier {
 			return new Vector3(pathNode.x, pathNode.y, pathNode.z);
 		}
 
-		final nodeProgress = (__path_length - 1) * Math.min(__pathBound, params.distance) * __boundDiv;
+		if (__pathBound <= 0 || __boundDiv == 0 || Math.isNaN(params.distance))
+			return pos;
+
+		final cappedDistance = Math.min(__pathBound, params.distance);
+		final rawProgress = (__path_length - 1) * cappedDistance * __boundDiv;
+		final nodeProgress = FlxMath.bound(rawProgress, 0, __path_length - 1);
 		final thisNodeIndex = Math.floor(nodeProgress);
 		final nextNodeIndex = FlxMath.minInt(thisNodeIndex + 1, __path_length - 1);
 		final nextNodeRatio = nodeProgress - thisNodeIndex;

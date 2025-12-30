@@ -121,16 +121,8 @@ class MusicBeatState extends FlxState
 
 	var _psychCameraInitialized:Bool = false;
 
-	/**
-	 * Simple variable system for PlayState mod scripts (Lua, HScript, SScript)
-	 * Used by getVar/setVar for backward compatibility with existing mods
-	 **/
 	public var variables:Map<String, Dynamic> = new Map<String, Dynamic>();
-	
-	/**
-	 * Separate map for video handlers - backward compatibility
-	 **/
-	public var videoHandlers:Map<String, Dynamic> = new Map<String, Dynamic>();
+	public var videoHandlers:Map<String, Dynamic> = new Map<String, Dynamic>(); // Separar videos de variables normales
 
 	/**
 	 * Categorized variable system for State-specific scripts (StateScriptHandler)

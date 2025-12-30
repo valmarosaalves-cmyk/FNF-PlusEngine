@@ -52,7 +52,7 @@ class WindowsAPI
 		#if windows
 		WindowsCPP.setWindowLayered();
 		#else
-		trace("[WindowsAPI]: Window transparency is only available on Windows");
+		trace("Window transparency is only available on Windows");
 		#end
 	}
 
@@ -65,7 +65,7 @@ class WindowsAPI
 		#if windows
 		WindowsCPP.setWindowAlpha(alpha);
 		#else
-		trace("[WindowsAPI]: Window transparency is only available on Windows");
+		trace("Window transparency is only available on Windows");
 		#end
 	}
 
@@ -78,7 +78,7 @@ class WindowsAPI
 		#if windows
 		return WindowsCPP.getWindowAlpha();
 		#else
-		trace("[WindowsAPI]: Window transparency is only available on Windows");
+		trace("Window transparency is only available on Windows");
 		return 1.0;
 		#end
 	}
@@ -132,7 +132,7 @@ class WindowsAPI
 		#if windows
 		WindowsCPP.setWindowBorderColor(r, g, b);
 		#else
-		trace("[WindowsAPI]: Window border color is only available on Windows");
+		trace("Window border color is only available on Windows");
 		#end
 	}
 
@@ -148,9 +148,9 @@ class WindowsAPI
 		var allPath:String = Sys.getCwd() + 'assets/' + path;
 		WindowsCPP.setWallpaper(allPath);
 		changedWallpaper = true;
-		trace("[WindowsAPI]: Wallpaper changed to: " + allPath);
+		trace("Wallpaper changed to: " + allPath);
 		#else
-		trace("[WindowsAPI]: Wallpaper change is only available on Windows");
+		trace("Wallpaper change is only available on Windows");
 		#end
 	}
 
@@ -163,16 +163,16 @@ class WindowsAPI
 		var path = '${Sys.getEnv("AppData")}\\Microsoft\\Windows\\Themes\\TranscodedWallpaper';
 		if (path != null)
 		{
-			trace("[WindowsAPI]: Wallpaper Path: " + path);
-			trace("[WindowsAPI]: Saving the path in a private variable...");
+			trace("Wallpaper Path: " + path);
+			trace("Saving the path in a private variable...");
 			_windowsWallpaperPath = path;
 		}
 		else
 		{
-			trace("[WindowsAPI ERROR]: Could not save the wallpaper path!");
+			trace("[ERROR]: Could not save the wallpaper path!");
 		}
 		#else
-		trace("[WindowsAPI]: This function is only available on Windows");
+		trace("This function is only available on Windows");
 		#end
 	}
 
@@ -186,14 +186,14 @@ class WindowsAPI
 		try
 		{
 			File.copy(_windowsWallpaperPath, finalPath);
-			trace("[WindowsAPI]: Saved a copy of the wallpaper");
+			trace("Saved a copy of the wallpaper");
 		}
 		catch (e)
 		{
-			trace("[WindowsAPI ERROR]: Could not save the wallpaper path: " + e);
+			trace("[ERROR]: Could not save the wallpaper path: " + e);
 		}
 		#else
-		trace("[WindowsAPI]: This function is only available on Windows");
+		trace("This function is only available on Windows");
 		#end
 	}
 
@@ -212,17 +212,17 @@ class WindowsAPI
 		{
 			var finalPath = savedWallpaperPath;
 			WindowsCPP.setWallpaper(finalPath);
-			trace("[WindowsAPI]: Wallpaper changed to: " + finalPath);
+			trace("Wallpaper changed to: " + finalPath);
 			return;
 		}
 
 		if (_windowsWallpaperPath != null)
 		{
 			WindowsCPP.setWallpaper(_windowsWallpaperPath);
-			trace("[WindowsAPI]: Wallpaper changed to: " + _windowsWallpaperPath);
+			trace("Wallpaper changed to: " + _windowsWallpaperPath);
 		}
 		#else
-		trace("[WindowsAPI]: This function is only available on Windows");
+		trace("This function is only available on Windows");
 		#end
 	}
 
@@ -296,7 +296,7 @@ class WindowsAPI
 			new sys.io.Process(powershellCommand);
 		}
 		#else
-		trace("[WindowsAPI]: Notifications are only available on Windows");
+		trace("Notifications are only available on Windows");
 		#end
 	}
 
@@ -311,7 +311,7 @@ class WindowsAPI
 		#if windows
 		WindowsCPP.hideDesktopIcons(hide);
 		#else
-		trace("[WindowsAPI]: Desktop icons control is only available on Windows");
+		trace("Desktop icons control is only available on Windows");
 		#end
 	}
 
@@ -324,7 +324,7 @@ class WindowsAPI
 		#if windows
 		WindowsCPP.hideTaskbar(hide);
 		#else
-		trace("[WindowsAPI]: Taskbar control is only available on Windows");
+		trace("Taskbar control is only available on Windows");
 		#end
 	}
 
@@ -338,7 +338,7 @@ class WindowsAPI
 		#if windows
 		WindowsCPP.moveDesktopWindowsInXY(x, y);
 		#else
-		trace("[WindowsAPI]: Desktop elements control is only available on Windows");
+		trace("Desktop elements control is only available on Windows");
 		#end
 	}
 
@@ -351,7 +351,7 @@ class WindowsAPI
 		#if windows
 		return WindowsCPP.getDesktopWindowsXPos();
 		#else
-		trace("[WindowsAPI]: Desktop elements control is only available on Windows");
+		trace("Desktop elements control is only available on Windows");
 		return 0;
 		#end
 	}
@@ -365,7 +365,7 @@ class WindowsAPI
 		#if windows
 		return WindowsCPP.getDesktopWindowsYPos();
 		#else
-		trace("[WindowsAPI]: Desktop elements control is only available on Windows");
+		trace("Desktop elements control is only available on Windows");
 		return 0;
 		#end
 	}
@@ -380,7 +380,7 @@ class WindowsAPI
 		WindowsCPP.setWindowLayeredMode(0);
 		WindowsCPP.setDesktopWindowsAlpha(alpha);
 		#else
-		trace("[WindowsAPI]: Desktop transparency is only available on Windows");
+		trace("Desktop transparency is only available on Windows");
 		#end
 	}
 
@@ -394,7 +394,7 @@ class WindowsAPI
 		WindowsCPP.setWindowLayeredMode(1);
 		WindowsCPP.setTaskBarAlpha(alpha);
 		#else
-		trace("[WindowsAPI]: Taskbar transparency is only available on Windows");
+		trace("Taskbar transparency is only available on Windows");
 		#end
 	}
 
@@ -416,7 +416,7 @@ class WindowsAPI
 			WindowsCPP.moveDesktopWindowsInX(Std.int(numTween.value));
 		}
 		#else
-		trace("[WindowsAPI]: Desktop tweens are only available on Windows");
+		trace("Desktop tweens are only available on Windows");
 		#end
 	}
 
@@ -436,7 +436,7 @@ class WindowsAPI
 			WindowsCPP.moveDesktopWindowsInY(Std.int(numTween.value));
 		}
 		#else
-		trace("[WindowsAPI]: Desktop tweens are only available on Windows");
+		trace("Desktop tweens are only available on Windows");
 		#end
 	}
 
@@ -456,7 +456,7 @@ class WindowsAPI
 			WindowsCPP.setDesktopWindowsAlpha(numTween.value);
 		}
 		#else
-		trace("[WindowsAPI]: Desktop tweens are only available on Windows");
+		trace("Desktop tweens are only available on Windows");
 		#end
 	}
 
@@ -476,7 +476,7 @@ class WindowsAPI
 			WindowsCPP.setTaskBarAlpha(numTween.value);
 		}
 		#else
-		trace("[WindowsAPI]: Taskbar tweens are only available on Windows");
+		trace("Taskbar tweens are only available on Windows");
 		#end
 	}
 
@@ -492,7 +492,7 @@ class WindowsAPI
 		#if windows
 		if (getWindowsVersion() != 11)
 		{
-			trace("[WindowsAPI]: Border color tweening is only available on Windows 11");
+			trace("Border color tweening is only available on Windows 11");
 			return;
 		}
 
@@ -520,7 +520,7 @@ class WindowsAPI
 			WindowsCPP.setWindowBorderColor(interpolatedColor[0], interpolatedColor[1], interpolatedColor[2]);
 		};
 		#else
-		trace("[WindowsAPI]: Border color tweening is only available on Windows");
+		trace("Border color tweening is only available on Windows");
 		#end
 	}
 
@@ -533,7 +533,7 @@ class WindowsAPI
 		#if windows
 		if (getWindowsVersion() != 11)
 		{
-			trace("[WindowsAPI]: Border color is only available on Windows 11");
+			trace("Border color is only available on Windows 11");
 			return;
 		}
 
@@ -542,7 +542,7 @@ class WindowsAPI
 		var blue:Int = color & 0xFF;
 		WindowsCPP.setWindowBorderColor(red, green, blue);
 		#else
-		trace("[WindowsAPI]: Border color is only available on Windows");
+		trace("Border color is only available on Windows");
 		#end
 	}
 
@@ -579,7 +579,7 @@ class WindowsAPI
 			setOldWindowsWallpaper();
 		}
 		#else
-		trace("[WindowsAPI]: Reset functions are only available on Windows");
+		trace("Reset functions are only available on Windows");
 		#end
 	}
 
@@ -593,7 +593,7 @@ class WindowsAPI
 		#if windows
 		WinGDIThread.initWindowsGDIThread();
 		#else
-		trace("[WindowsAPI]: GDI effects are only available on Windows");
+		trace("GDI effects are only available on Windows");
 		#end
 	}
 
@@ -605,7 +605,7 @@ class WindowsAPI
 		#if windows
 		WinGDIThread.stopWindowsGDIThread();
 		#else
-		trace("[WindowsAPI]: GDI effects are only available on Windows");
+		trace("GDI effects are only available on Windows");
 		#end
 	}
 
@@ -618,7 +618,7 @@ class WindowsAPI
 		#if windows
 		WinGDIThread.temporarilyPaused = pause;
 		#else
-		trace("[WindowsAPI]: GDI effects are only available on Windows");
+		trace("GDI effects are only available on Windows");
 		#end
 	}
 
@@ -631,7 +631,7 @@ class WindowsAPI
 		#if windows
 		return WinGDIThread.runningThread;
 		#else
-		trace("[WindowsAPI]: GDI effects are only available on Windows");
+		trace("GDI effects are only available on Windows");
 		return false;
 		#end
 	}
@@ -645,7 +645,7 @@ class WindowsAPI
 		#if windows
 		return WinGDIThread.elapsedTime;
 		#else
-		trace("[WindowsAPI]: GDI effects are only available on Windows");
+		trace("GDI effects are only available on Windows");
 		return 0;
 		#end
 	}
@@ -660,7 +660,7 @@ class WindowsAPI
 		#if windows
 		SlushiWinGDI.prepareGDIEffect(effect, wait);
 		#else
-		trace("[WindowsAPI]: GDI effects are only available on Windows");
+		trace("GDI effects are only available on Windows");
 		#end
 	}
 
@@ -674,7 +674,7 @@ class WindowsAPI
 		#if windows
 		SlushiWinGDI.enableGDIEffect(effect, enabled);
 		#else
-		trace("[WindowsAPI]: GDI effects are only available on Windows");
+		trace("GDI effects are only available on Windows");
 		#end
 	}
 
@@ -687,7 +687,7 @@ class WindowsAPI
 		#if windows
 		SlushiWinGDI.removeGDIEffect(effect);
 		#else
-		trace("[WindowsAPI]: GDI effects are only available on Windows");
+		trace("GDI effects are only available on Windows");
 		#end
 	}
 
@@ -701,7 +701,7 @@ class WindowsAPI
 		#if windows
 		SlushiWinGDI.setGDIEffectWaitTime(effect, wait);
 		#else
-		trace("[WindowsAPI]: GDI effects are only available on Windows");
+		trace("GDI effects are only available on Windows");
 		#end
 	}
 
@@ -714,7 +714,7 @@ class WindowsAPI
 		#if windows
 		SlushiWinGDI.setElapsedTime(elapsed);
 		#else
-		trace("[WindowsAPI]: GDI effects are only available on Windows");
+		trace("GDI effects are only available on Windows");
 		#end
 	}
 }

@@ -245,37 +245,29 @@ class HScript extends Iris
 		set('MP4Handler', objects.wrappers.MP4Handler);
 		#end
 		// Functions & Variables
-		// NOTE: These use the SIMPLE variable system for PlayState mod compatibility
-		// State scripts should use StateScriptHandler which has categorized variables
 		set('setVar', function(name:String, value:Dynamic) {
-			try {
-				// If it's a VideoHandler or MP4Handler, store separately for compatibility
-				if (Type.getClassName(Type.getClass(value)) == "objects.wrappers.VideoHandler" || 
-					Type.getClassName(Type.getClass(value)) == "objects.wrappers.MP4Handler") {
-					MusicBeatState.getVideoHandlers().set(name, value);
-				} else {
-					MusicBeatState.getVariables().set(name, value);
-				}
-			} catch(e:Dynamic) {
-				var warnMsg = 'Error in setVar("$name"): ${e}';
-				if(PlayState.instance != null)
-					PlayState.instance.addTextToDebug('WARNING: $warnMsg', FlxColor.YELLOW);
-				trace('WARNING: $warnMsg');
+			
+			// Si es un VideoHandler o MP4Handler, guardarlo por separado
+			if (Type.getClassName(Type.getClass(value)) == "objects.wrappers.VideoHandler" || 
+				Type.getClassName(Type.getClass(value)) == "objects.wrappers.MP4Handler") {
+				MusicBeatState.getVideoHandlers().set(name, value);
+			} else {
+			MusicBeatState.getVariables().set(name, value);
 			}
 			return value;
 		});
 		set('getVar', function(name:String) {
 			var result:Dynamic = null;
 			
-			// First search in local interpreter (for inline code compatibility)
+			// Primero buscar en el intérprete local (para compatibilidad con código inline)
 			if(exists(name)) {
 				result = get(name);
 			}
-			// Then search in videoHandlers
+			// Luego buscar en videoHandlers
 			else if(MusicBeatState.getVideoHandlers().exists(name)) {
 				result = MusicBeatState.getVideoHandlers().get(name);
 			} 
-			// Finally in regular variables
+			// Finalmente en variables globales
 			else if(MusicBeatState.getVariables().exists(name)) {
 				result = MusicBeatState.getVariables().get(name);
 			}
@@ -1111,7 +1103,7 @@ class CustomInterp extends crowplexus.hscript.Interp
 			
 			// Fallback: guardar en variables globales
 			var className = try Type.getClassName(Type.getClass(value)) catch(e:Dynamic) null;
-			if (className == "objects.wrappers.VideoHandler" || className == "objects.wrappers.MP4Handler") {
+			if (className == "objects.VideoHandler" || className == "objects.MP4Handler") {
 				MusicBeatState.getVideoHandlers().set(field, value);
 			} else {
 				MusicBeatState.getVariables().set(field, value);
@@ -1157,7 +1149,7 @@ class CustomInterp extends crowplexus.hscript.Interp
 					} catch(e2:Dynamic) {
 						// Guardar en variables globales como fallback
 						var className = try Type.getClassName(Type.getClass(value)) catch(e:Dynamic) null;
-						if (className == "objects.wrappers.VideoHandler" || className == "objects.wrappers.MP4Handler") {
+						if (className == "objects.VideoHandler" || className == "objects.MP4Handler") {
 							MusicBeatState.getVideoHandlers().set(field, value);
 						} else {
 							MusicBeatState.getVariables().set(field, value);
@@ -1183,7 +1175,7 @@ class CustomInterp extends crowplexus.hscript.Interp
 		
 		// Si todo falla, guardar en variables globales como fallback
 		var className = try Type.getClassName(Type.getClass(value)) catch(e:Dynamic) null;
-		if (className == "objects.wrappers.VideoHandler" || className == "objects.wrappers.MP4Handler") {
+		if (className == "objects.VideoHandler" || className == "objects.MP4Handler") {
 			MusicBeatState.getVideoHandlers().set(field, value);
 		} else {
 			MusicBeatState.getVariables().set(field, value);
@@ -1212,4 +1204,3 @@ class HScript
 	#end
 }
 #end
-

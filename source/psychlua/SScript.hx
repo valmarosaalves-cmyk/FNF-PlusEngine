@@ -1,4 +1,4 @@
-	package psychlua;
+package psychlua;
 
 import objects.Character;
 import psychlua.LuaUtils;
@@ -178,11 +178,9 @@ class SScriptCompat extends SScript
 		#end
 
 		// Functions & Variables
-		// NOTE: These use the SIMPLE variable system for PlayState mod compatibility
-		// State scripts should use StateScriptHandler which has categorized variables
 		set('setVar', function(name:String, value:Dynamic) {
 			try {
-				// If it's a VideoHandler or MP4Handler, store separately for compatibility
+				// Si es un VideoHandler o MP4Handler, guardarlo por separado
 				if (Type.getClassName(Type.getClass(value)) == "objects.wrappers.VideoHandler" || 
 					Type.getClassName(Type.getClass(value)) == "objects.wrappers.MP4Handler") {
 					MusicBeatState.getVideoHandlers().set(name, value);
@@ -199,11 +197,11 @@ class SScriptCompat extends SScript
 		});
 		set('getVar', function(name:String) {
 			var result:Dynamic = null;
-			// First search in videoHandlers for compatibility
+			// Primero buscar en videoHandlers
 			if(MusicBeatState.getVideoHandlers().exists(name)) {
 				result = MusicBeatState.getVideoHandlers().get(name);
 			}
-			// Then in regular variables
+			// Luego en variables globales
 			else if(MusicBeatState.getVariables().exists(name)) {
 				result = MusicBeatState.getVariables().get(name);
 			}
@@ -665,4 +663,3 @@ class SScriptCompat
 	#end
 }
 #end
-

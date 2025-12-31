@@ -1,5 +1,11 @@
-- Fixed vanilla note splashes
-- New & added credit icons of sir, lenin and slushi in CreditsState
-- Updated Indonesian translation
-- Removed Little Timmy Mode from Gameplay Changers due to its useless and didn't work
-- Refactor PauseSubState and ResultsState where the date and time detection has been moved to the backend in the form of a hx file named LocaleUtils
+- New option for a gradient time bar.
+- New option to use the vanilla Psych transition.
+- New option to hide hold splashes.
+- New option for heavy note support (only notes).
+- New transition sound and achievement unlock.
+- New X button on Android to exit from the Main Menu.
+- Added ModchartTweens, a variable used in Psych 0.7.3.
+- New option for people with color blindness and related conditions.
+- You can now load JSON in V-Slice format.
+- New LuaPath modifier fixed.
+- And More...

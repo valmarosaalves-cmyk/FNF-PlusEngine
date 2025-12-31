@@ -10,7 +10,7 @@ class EsLA
         ["Sic Parvis", "Magna"],
         ["dejese de mamadas", "skiper!"],
         ["diablo que dificil", "me la pusiste"],
-        ["descansa en paz", "shadow mario"],
+        ["descansa en paz", "psych engine"],
         ["perú...", "es clave"],
         ["Sky", "x David"],
         ["rickroll?", "watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ&start_radio=1"],
@@ -31,6 +31,8 @@ class EsLA
         "score_text" => "Puntuación: {1} | {2}: {3} | Clasificación: {4} | TPS: {5}/{6}",
         "score_text_instakill" => "Fallas: {1} | Clasificación: {2} | TPS: {3}/{4}",
         "botplay" => "Automático",
+        "perfect_mode" => "M. Perfecto",
+        "oponent_mode" => "M. Oponente",
         "misses" => "Fallas",
         "combo_breaks" => "Rupturas de Combo",
 
@@ -54,6 +56,7 @@ class EsLA
         "pause_resume" => "Reanudar",
         "pause_restart_song" => "Reiniciar la canción",
         "pause_leave_charting_mode" => "Salir del modo Chart",
+        "pause_chart_editor" => "Editor de Charts",
         "pause_skip_time" => "Saltar tiempo",
         "pause_end_song" => "Terminar canción",
         "pause_change_difficulty" => "Cambiar dificultad",
@@ -77,11 +80,12 @@ class EsLA
         "storyname_weekend1" => "Deudas vencidas",
 
         // Freeplay
-        "personal_best" => "MEJOR PUNTUACIÓN:\n{1} ({2}%)",
         "freeplay_tip" => "Toca ESPACIO para escuchar la canción / Tocar CTRL abre menú de cambios de juego / Toca REINICIAR para restablecer puntuación y precisión.",
         "musicplayer_playing" => "MÚSICA: {1}",
         "musicplayer_paused" => "MÚSICA: {1} (PAUSADO)",
         "musicplayer_tip" => "Toca ESPACIO para pausar / Toca ESC para salir / Toca R para Reiniciar la canción",
+        "no_score" => "Aún no hay puntuación",
+        "score_accuracy" => "Puntuación: {1}\nPrecisión: {2}% ({3})",
 
         // Mods Menu
         "no_mods_installed" => "NO HAY MODS INSTALADOS\nPRESIONE ATRAS PARA SALIR O INSTALAR UN MOD",
@@ -152,6 +156,9 @@ class EsLA
         "language_menu" => "Ajustes de idioma",
         "mobile_controls_tip" => "Presiona {1} para ir al Menú de Controles Móviles",
 
+        // XD
+        "link_hint" => "Presiona A/ENTER para abrir el enlace | B/ESC para salir",
+
         // Note Colors Menu
         "note_colors_notitg" => "Shaders RGB Desactivados - La skin NotITG preserva los colores originales",
         "note_colors_tip" => "Presione RESET para restablecer la parte de nota seleccionada.",
@@ -176,6 +183,7 @@ class EsLA
         "keygroup_ui" => "UI",
         "keygroup_volume" => "VOLUMEN",
         "keygroup_debug" => "DESARROLLADOR",
+        "keygroup_window" => "VENTANA",
         "key_note_left" => "Izquier.",
         "key_note_down" => "Abajo",
         "key_note_up" => "Arriba",
@@ -209,7 +217,8 @@ class EsLA
         "setting_instakill_on_miss" => "Muerte al perder notas",
         "setting_practice_mode" => "Modo Práctica",
         "setting_perfect_mode" => "Modo Perfecto",
-        "setting_no_drop_penalty" => "No fallas al soltar notas largas",
+        "opponent_mode" => "Modo Oponente",
+        "setting_no_drop_penalty" => "No fallas al soltar holds",
         "setting_botplay" => "Modo Automático",
 
         // Graphics Settings
@@ -219,6 +228,8 @@ class EsLA
         "description_anti-aliasing" => "Si no está marcado, se desactiva el suavizado y aumenta el rendimiento sin las imágenes más nítidas.",
         "setting_shaders" => "Shaders",
         "description_shaders" => "Si no está marcado, desactiva sahders.\nSe utiliza para algunos efectos visuales y también requiere un uso intensivo de CPU en PC más débiles.",
+        "setting_color_accessibility" => "Accesibilidad de color",
+        "description_color_accessibility" => "Seleccione varias opciones de acuerdo con su trastorno de daltonismo.",
         "setting_gpu_caching" => "Almac. caché del CPU",
         "description_gpu_caching" => "Si está marcado, permite que la GPU se use para almacenar en caché texturas, reduce el uso de RAM.\nNo actives esto si tienes una Tarjeta Gráfica de la puta mare.",
         "setting_framerate" => "Fotogramas x Segundo",
@@ -237,18 +248,22 @@ class EsLA
         "setting_note_splashes-diamond" => "Diamante",
         "setting_note_splashes-electric" => "Elétrico",
         "setting_note_splashes-sparkles" => "Brillo",
-        "setting_note_splashes-vanilla" => "Vainilla",
+        "setting_note_splashes-vanilla" => "Vanilla",
         "description_note_splashes" => "Seleccione su Salpicadura de Notas preferida o desactivalo.",
         "setting_note_splash_opacity" => "Opacidad de Salpicaduras",
         "description_note_splash_opacity" => "¿Qué tan transparentes deben ser las Salpicaduras?",
         "setting_hide_hud" => "Ocultar UI",
         "description_hide_hud" => "Si está marcado, oculta la mayoría de los elementos UI.",
+        "setting_hide_sustain_splash" => "Ocultar Hold Splashes",
+        "description_hide_sustain_splash" => "Si está marcado, oculta las salpicaduras de las notas largas.",
         "setting_time_bar" => "Barra de tiempo:",
         "setting_time_bar-time_left" => "Tiempo restante",
         "setting_time_bar-time_elapsed" => "Tiempo pasado",
         "setting_time_bar-song_name" => "Nombre de la\ncanción",
         "setting_time_bar-disabled" => "Desactivado",
         "description_time_bar" => "¿Qué debería mostrar la barra de tiempo?",
+        "setting_gradient_time_bar" => "Barra de tiempo degradada",
+        "description_gradient_time_bar" => "Si está marcado, la barra de tiempo tendrá un degradado de color dependiendo de los colores de la barra de salud.",
         "setting_flashing_lights" => "Luces Intermitentes",
         "description_flashing_lights" => "¡¡Desmarca esto si eres sensible a las luces intermitentes!!",
         "setting_show_key_viewer" => "Mostrar Visor de Teclas",
@@ -276,6 +291,8 @@ class EsLA
         "setting_pause_music" => "Canción de Pausa:",
         "setting_pause_music-none" => "Ninguno",
         "description_pause_music" => "¿Qué canción prefieres para la pantalla de pausa?",
+        "setting_vanilla_transition" => "Transición Vanilla",
+        "description_vanilla_transition" => "Si está marcado, usa la transición vanilla de Psych Engine en lugar de la personalizada.",
         "setting_check_for_updates" => "Buscar actualizaciones",
         "description_check_for_updates" => "Marca esta casilla para notificarte sobre las actualizaciones cuando inicies el juego.",
         "setting_discord_rich_presence" => "Precencia en Discord",
@@ -286,6 +303,8 @@ class EsLA
         "description_show_current_state" => "Si está activado, el contador de FPS mostrará el state actual.",
         "setting_combo_and_rating_in_camgame" => "Combo y Rating en camGame",
         "description_combo_and_rating_in_camgame" => "Si está activado, Combo y Rating se renderizarán en la capa camGame en lugar de camHUD.",
+        "setting_change_window_border_color_with_note_hit" => "Cambiar color del borde de la ventana al tocar notas",
+        "description_change_window_border_color_with_note_hit" => "Si está activado, el borde de la ventana cambiará de color de la nota tocada.\n(Solo para Windows 11, lo siento)",
 
         // Gameplay Settings
         "setting_downscroll" => "Downscroll",
@@ -304,6 +323,8 @@ class EsLA
         "description_pop_up_score" => "Si está marcado, al golpear notas aparecerán sprites de Combo y Rating.",
         "setting_disable_reset_button" => "Desactivar botón de reinicio",
         "description_disable_reset_button" => "Si está marcado, presionar reiniciar no hará nada",
+        "setting_disable_hold_animations" => "Desactivar animaciones sostenidas",
+        "description_disable_hold_animations" => "Si está marcado, las animaciones de notas sostenidas estarán desactivadas.",
         "setting_game_over_vibration" => "Vibración al perder",
         "description_game_over_vibration" => "Si está marcado, su dispositivo vibrará al perder.",
         "setting_hitsound_volume" => "Sonido al tocar notas",
@@ -322,6 +343,10 @@ class EsLA
         "description_safe_frames" => "Cambia la cantidad de fotogramas que tienes\npara tocar una nota antes o después",
         "setting_sustains_as_one_note" => "Pulsacion larga de notas",
         "description_sustains_as_one_note" => "Si está marcado, las notas retenidas no se pueden presionar si fallas y cuentan como un solo acierto/fallo.\nSi se desmarca, esto significa que prefieres el antiguo sistema de entrada",
+        "setting_hitsound_in_what_way" => "Hitsound al tocar:",
+        "description_hitsound_in_what_way" => "¿Cuándo quieres que se reproduzca el hitsound?",
+        "setting_hitsound_sound" => "Sonido del hitsound:",
+        "description_hitsound_sound" => "¿Qué sonido quieres para el hitsound?",
         "setting_judgement_counter" => "Contador de juicios",
         "description_judgement_counter" => "Si está marcado, muestra un contador de juicios en juego.",
         "setting_show_end_countdown" => "Cuenta regresiva",
@@ -330,8 +355,10 @@ class EsLA
         "description_end_countdown_seconds" => "Cuántos segundos debe durar la cuenta regresiva al final de la canción.\n(10 - 30)",
         "setting_accuracy_system" => "Sistema de precisión:",
         "description_accuracy_system" => "¿Qué sistema de cálculo de precisión prefieres?\nWife3 - Precisión en ms de StepMania\nPsych - Basado en Rating Mod\nSimple - Aciertos básicos/total\nosu!mania - Sistema de juicio ponderado\nDJMAX - Sistema de bonificación de combo\nITG - Sistema de puntos de baile\n\n",
-        "setting_system_score_multiplier" => "Multiplicador de puntuación del sistema",
+        "setting_system_score_multiplier" => "Mult. de puntuación",
         "description_system_score_multiplier" => "Ajusta el multiplicador de puntuación al tocar notas.",
+        "setting_heavy_charts_mode" => "Modo Chart Pesado",
+        "description_heavy_charts_mode" => "Si está marcado, se optimiza la carga de los charts pesados para mejor rendimiento.\nSolo notas, no holds, por bugs encontrados",
 
         // Modchart Options
         "setting_hold_subdivisions" => "Subdivisiones de notas largas",
@@ -434,7 +461,7 @@ class EsLA
         "reset_score_confirm" => "¿Estás seguro de que quieres restablecer tu puntuación y precisión para esta canción?",
 
         // Master Editor Menu
-        "chart_editor" => "Editor de Gráficos",
+        "chart_editor" => "Editor de Chart",
         "character_editor" => "Editor de Personajes", 
         "stage_editor" => "Editor de Escenarios",
         "week_editor" => "Editor de Semanas",

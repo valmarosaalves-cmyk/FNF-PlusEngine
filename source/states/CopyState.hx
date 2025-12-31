@@ -24,6 +24,8 @@ package states;
 
 #if COPYSTATE_ALLOWED
 import states.TitleState;
+import backend.ClientPrefs;
+import backend.Language;
 import lime.utils.Assets as LimeAssets;
 import openfl.utils.Assets as OpenFLAssets;
 import openfl.utils.ByteArray;
@@ -57,6 +59,25 @@ class CopyState extends MusicBeatState
 
 	override function create()
 	{
+		// Load ClientPrefs and Language early for translations
+		ClientPrefs.loadPrefs();
+		
+		// Auto-detect system language on first run
+		#if (TRANSLATIONS_ALLOWED && mobile)
+		if (FlxG.save.data.languageAutoDetected == null) {
+			var detectedLang = Language.detectSystemLanguage();
+			if (detectedLang != null && detectedLang != ClientPrefs.data.language) {
+				ClientPrefs.data.language = detectedLang;
+				FlxG.save.data.language = detectedLang;
+			}
+			FlxG.save.data.languageAutoDetected = true;
+			FlxG.save.flush();
+		}
+		#end
+		
+		Language.reloadPhrases();
+		shaders.ColorblindFilter.UpdateColors();
+		
 		locatedFiles = [];
 		maxLoopTimes = 0;
 		checkExistingFiles();

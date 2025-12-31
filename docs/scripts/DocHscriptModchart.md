@@ -137,44 +137,25 @@ function onInitModchart() {
     instance.addPlayfield();
 }
 ```
-# Lista de modificadores =D
-# List of Modifiers =D
+# Este modifier es el que talvez buscabas y no encontrabas =p
+# This modifier is maybe what you were looking for and couldn't find =p
 
-## Estos son los modificadores que puedes usar:
-## These are the modifiers you can use:
-
-1. CounterClockWise
-    - Mueve las flechas en un patrón circular en sentido contrario a las agujas del reloj.
-    - Moves the arrows in a circular pattern counterclockwise.
-
-2. SchmovinArrowShape - ArrowShape
-    - Permite que las flechas sigan un camino alrededor de una flecha con el archivo CSV arrowShape.csv "ADVERTENCIA si el archivo noo esta en assets/modchart/arrowShape, crasheara el juego".
-    - Allows the arrows to follow a path around an arrow using the CSV file arrowShape.csv. "WARNING: If the file is not in assets/modchart/arrowShape, the game will crash."
-
-3. Spiral 
-    - Mueve las flechas en un patrón espiral hasta llegar a un punto central.
-    - Moves the arrows in a spiral pattern towards a central point.
-    - Hay una variable para este modifier que se llama:
-    - There is a variable for this modifier called:
-```haxe
-spiralDist
-```
-    - Puedes editarlo para modificar la distancia de la espiral.
-    - You can edit it to modify the spiral distance.
-
-4. Wiggle
-    - Mueve las flechas de forma ondulatoria en los ejes X e Y, y ajusta la rotación en el eje Z.
-    - Moves the arrows in a wavy motion on the X and Y axes, and adjusts the rotation on the Z axis.
-    - Hay una variable para este modifier que se llama:
-    - There is a variable for this modifier called:
-```haxe
-rotateZ
-```
-    - Puedes editarlo para que modifiques la profundidad.
-    - You can edit it to modify the depth.
-
-5. Vibrate
-    - Mueve las flechas de forma aleatoria en los ejes X e Y, simulando un efecto de vibración.
-    - Moves the arrows randomly on the X and Y axes, simulating a vibration effect.
+- LuaPath - luapath
+        - Español (cómo usar las variables):
+            - `pathBound`: controla qué tan “separadas” aparecen las notas/receptores sobre la ruta. Si está muy bajo, todo se junta; si está alto, queda más distribuido.
+            - `pathOffset`: mueve el origen de la ruta (por ejemplo al centro de la pantalla).
+            - `nodes`: lista de puntos `{x, y, z}` que forman la ruta; `z` es opcional y sirve para profundidad.
+            - Se configura desde Lua con:
+                - `setModifierPathBound('luapath', bound, field)`
+                - `setModifierPathOffset('luapath', x, y, z, field)`
+                - `setModifierPath('luapath', nodes, field)`
+        - English (how to use the variables):
+            - `pathBound`: controls how “spread out” notes/receptors are along the path. Too low = they bunch up; higher = more evenly distributed.
+            - `pathOffset`: moves the path origin (for example, to the screen center).
+            - `nodes`: list of `{x, y, z}` points that define the path; `z` is optional and can be used for depth.
+            - Configure it from Lua with:
+                - `setModifierPathBound('luapath', bound, field)`
+                - `setModifierPathOffset('luapath', x, y, z, field)`
+                - `setModifierPath('luapath', nodes, field)`
 
 ## Faltan mas modificadores pero estos son algunos de ellos, este codigo esta en desarrollo sorry XD

@@ -98,7 +98,7 @@ class GameplaySettingsSubState extends BaseOptionsMenu
 		option.decimals = 1;
 		option.onChange = onChangeHitsoundVolume;
 
-		var option:Option = new Option('Hitsound',
+		var option:Option = new Option('Hitsound Sound',
 			'Funny notes does \"Any Sound\" when you hit them.',
 			'hitSounds',
 			STRING,

@@ -207,6 +207,80 @@ class Language
 	}
 	#end
 
+	/**
+	 * Detects the system language and returns the appropriate language code.
+	 * Falls back to English (en-US) if the system language is not supported.
+	 */
+	public static function detectSystemLanguage():String
+	{
+		#if TRANSLATIONS_ALLOWED
+		var systemLang:String = 'en-US';
+		
+		// Get system locale
+		try {
+			#if android
+			// For Android, use JNI to get the system locale
+			var localeClass = lime.system.JNI.createStaticMethod("java/util/Locale", "getDefault", "()Ljava/util/Locale;");
+			var getLanguageMethod = lime.system.JNI.createMemberMethod("java/util/Locale", "getLanguage", "()Ljava/lang/String;");
+			var getCountryMethod = lime.system.JNI.createMemberMethod("java/util/Locale", "getCountry", "()Ljava/lang/String;");
+			
+			var locale = localeClass();
+			if (locale != null) {
+				var langCode:String = getLanguageMethod(locale);
+				var countryCode:String = getCountryMethod(locale);
+				
+				if (langCode != null) {
+					// Format: es-ES, en-US, pt-BR, etc.
+					if (countryCode != null && countryCode.length > 0) {
+						systemLang = langCode + '-' + countryCode.toUpperCase();
+					} else {
+						systemLang = langCode + '-' + langCode.toUpperCase();
+					}
+					
+					trace('Detected Android system language: ' + systemLang);
+				}
+			}
+			#else
+			// For other platforms, try to get system locale from Lime
+			var locale = lime.system.System.platformLabel;
+			if (locale != null && locale.length > 0) {
+				systemLang = locale;
+				trace('Detected system language: ' + systemLang);
+			}
+			#end
+		} catch (e:Dynamic) {
+			trace('Error detecting system language: ' + e);
+			trace('Falling back to default language (en-US)');
+		}
+		
+		// Map system language to available languages
+		systemLang = systemLang.toLowerCase();
+		var availableLanguages = getAvailableLanguages();
+		
+		// Try exact match first (e.g., "es-es" or "en-us")
+		for (lang in availableLanguages) {
+			if (lang.code.toLowerCase() == systemLang) {
+				trace('Found exact language match: ' + lang.code);
+				return lang.code;
+			}
+		}
+		
+		// Try language code match (e.g., "es" matches "es-LA" or "es-ES")
+		var langPrefix = systemLang.split('-')[0].split('_')[0];
+		for (lang in availableLanguages) {
+			if (lang.code.toLowerCase().startsWith(langPrefix)) {
+				trace('Found language prefix match: ' + lang.code + ' for prefix: ' + langPrefix);
+				return lang.code;
+			}
+		}
+		
+		trace('No language match found, using default: en-US');
+		#end
+		
+		// Fallback to English (US)
+		return 'en-US';
+	}
+
 	// Función para obtener introTexts localizados
 	public static function getLocalizedIntroTexts():Array<Array<String>>
 	{

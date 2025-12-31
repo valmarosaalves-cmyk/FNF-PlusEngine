@@ -183,12 +183,6 @@ class VisualsSettingsSubState extends BaseOptionsMenu
 			['None', 'Tea Time', 'Breakfast', 'Breakfast (Pico)']);
 		addOption(option);
 		option.onChange = onChangePauseMusic;
-
-		var option:Option = new Option('Intro Video',
-		    'Show intro video when starting the game',
-			'showIntroVideo',
-			BOOL);
-		addOption(option);
 		
 		var option:Option = new Option('Vanilla Transition',
 		    'If checked, uses the vanilla Psych Engine transition instead of the custom one.',

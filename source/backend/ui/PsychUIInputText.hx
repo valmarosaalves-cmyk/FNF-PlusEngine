@@ -475,6 +475,15 @@ class PsychUIInputText extends FlxSpriteGroup
 	{
 		if(textObj == null || !textObj.exists) return;
 
+		// Clamp indices before calling OpenFL's selection API.
+		// This prevents crashes when the text changes while the caret/selection indices
+		// still refer to a previous (longer) string (e.g. when loading a chart).
+		var len:Int = (text != null) ? text.length : 0;
+		if(caretIndex < 0) caretIndex = 0;
+		if(caretIndex > len) caretIndex = len;
+		if(selectIndex < -1) selectIndex = -1;
+		if(selectIndex > len) selectIndex = len;
+
 		var textField = textObj.textField;
 		textField.setSelection(caretIndex, caretIndex);
 		_caretTime = 0;

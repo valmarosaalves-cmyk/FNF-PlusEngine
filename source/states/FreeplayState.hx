@@ -1330,7 +1330,7 @@ class DifficultySelector
 			
 			if (score > 0)
 			{
-				scoreText.text = 'Score: ' + score + '\nAccuracy: ' + accPercent + '% (' + accSystem + ')';
+				scoreText.text = Language.getPhrase('score_accuracy', 'Score: {1}\nAccuracy: {2}% ({3})', [score, accPercent, accSystem]);
 			}
 			else
 			{

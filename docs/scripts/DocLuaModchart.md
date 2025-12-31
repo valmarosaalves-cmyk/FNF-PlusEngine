@@ -225,6 +225,50 @@ end
 
 ---
 
+## Path Modifiers (PathModifier / luapath)
+
+These helpers let you drive any modifier that extends `PathModifier` (recommended: `luapath`) by providing a custom path from Lua.
+
+### Functions
+
+```lua
+setModifierPath(modName, nodes, field)
+setModifierPathOffset(modName, x, y, z, field)
+setModifierPathBound(modName, bound, field)
+```
+
+### How to use the variables
+
+- `nodes`: An array of points that define the path. Each point can be a table like `{x=..., y=..., z=...}` (or an array like `{x, y, z}`). These points are relative offsets from `pathOffset`.
+- `pathOffset` (via `setModifierPathOffset`): The world-space origin of the path. Usually you want this at the screen center so the path is centered.
+- `pathBound` (via `setModifierPathBound`): The distance range that maps to one full traversal of the path. Larger values spread notes/receptors over more distance (less bunching). Smaller values pack them closer.
+
+### Minimal example
+
+```lua
+function onInitModchart()
+    addModifier('luapath', 0)
+
+    -- Bigger bound = less bunching
+    setModifierPathBound('luapath', 7000, 0)
+
+    -- Center the path (z is optional)
+    setModifierPathOffset('luapath', screenWidth * 0.5, screenHeight * 0.5, 0, 0)
+
+    local nodes = {
+        {x = 0,    y = 0,   z = 0},
+        {x = 200,  y = -80, z = 40},
+        {x = -200, y = -80, z = 80},
+    }
+    setModifierPath('luapath', nodes, 0)
+
+    -- 0 = off, 1 = full effect
+    setPercent('luapath', 1, -1, 0)
+end
+```
+
+---
+
 ## Practical Examples
 
 ### **Example 1: Basic Modchart**
@@ -673,6 +717,50 @@ function onInitModchart()
     -- Tamaño de las flechas
     local arrowSize = getArrowSize();       -- Tamaño completo (160)
     local arrowSizeDiv2 = getArrowSizeDiv2(); -- Tamaño / 2 (80)
+end
+```
+
+---
+
+## Modificadores de Ruta (PathModifier / luapath)
+
+Estas funciones te permiten controlar cualquier modificador que extienda `PathModifier` (recomendado: `luapath`) pasando una ruta personalizada desde Lua.
+
+### Funciones
+
+```lua
+setModifierPath(modName, nodes, field)
+setModifierPathOffset(modName, x, y, z, field)
+setModifierPathBound(modName, bound, field)
+```
+
+### Cómo usar las variables
+
+- `nodes`: Un arreglo de puntos que definen la ruta. Cada punto puede ser una tabla `{x=..., y=..., z=...}` (o un arreglo `{x, y, z}`). Estos puntos son offsets relativos desde `pathOffset`.
+- `pathOffset` (con `setModifierPathOffset`): El origen de la ruta en coordenadas de pantalla/mundo. Normalmente se usa el centro de la pantalla para centrar la ruta.
+- `pathBound` (con `setModifierPathBound`): El rango de distancia que equivale a recorrer la ruta completa. Valores grandes separan más las notas/receptores (menos “juntas”). Valores chicos las juntan.
+
+### Ejemplo mínimo
+
+```lua
+function onInitModchart()
+    addModifier('luapath', 0)
+
+    -- Bound más grande = menos “juntas”
+    setModifierPathBound('luapath', 7000, 0)
+
+    -- Centrar la ruta (z es opcional)
+    setModifierPathOffset('luapath', screenWidth * 0.5, screenHeight * 0.5, 0, 0)
+
+    local nodes = {
+        {x = 0,    y = 0,   z = 0},
+        {x = 200,  y = -80, z = 40},
+        {x = -200, y = -80, z = 80},
+    }
+    setModifierPath('luapath', nodes, 0)
+
+    -- 0 = apagado, 1 = efecto completo
+    setPercent('luapath', 1, -1, 0)
 end
 ```
 

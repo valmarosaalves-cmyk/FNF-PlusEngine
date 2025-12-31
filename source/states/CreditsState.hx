@@ -80,39 +80,15 @@ class CreditsState extends MusicBeatState
 
 		var defaultList:Array<Array<String>> = [ //Name - Icon name - Description - Link - BG Color
 			['Plus Engine Team'],
-			[
-			'Lenin Asto',
-			"len",              
-			"Programmer of Plus Engine",                        
-			"https://www.youtube.com/@Lenin_Anonimo_Of",
-			"03FC88"
-			],
-			[
-			'Andres',      
-			'slushi',  
-			'Creator and owner of several codes used based on the Slushi Engine',    
-			'https://github.com/Slushi-Github',    
-			'8FD9D1'
-			],
-			[
-			'sirthegamercoder',	
-			'sir',    
-			'Indonesian translation and others PRs',       		
-			'https://bsky.app/profile/stgmd.bsky.social',	     
-			'7FDBFF'
-			],
-			[
-			'TheoDev',             
-			"theo",         
-			"Owner, Lead coder of Funkin Modchart",                       
-			"https://github.com/TheoDevelops",    
-			"FFB347"
-			],
+			['Lenin Asto',          "len",              "Programmer of Plus Engine",                        "https://www.youtube.com/@Lenin_Anonimo_Of","03FC88"],
+			["Andres",              "slu",     "Creator and owner of several codes used based on the Slushi Engine", "https://github.com/Slushi-Github","8FD9D1"],
+			['sirthegamercoder',    "sir",              'Indonesian translation and others PRs',           'https://bsky.app/profile/stgmd.bsky.social','7FDBFF'],
+			['TheoDev',             "theo",             "Owner, Lead coder of Funkin Modchart",                    "https://github.com/TheoDevelops",   "FFB347"],
 			[''],
 			['Mobile Porting Team'],
-			['HomuHomu833',			'homura',             'Head Porter of Psych Engine and Author of linc_luajit-rewriten',                       'https://youtube.com/@HomuHomu833',		'FFE7C0'],
+			['HomuHomu833',			'homura', 'Head Porter of Psych Engine and Author of linc_luajit-rewriten',  'https://youtube.com/@HomuHomu833',	'FFE7C0'],
 			['Karim Akra',			'karim',			'Second Porter of Psych Engine',						'https://youtube.com/@Karim0690',		'FFB4F0'],
-			['Moxie',				'moxie',			'Helper of Psych Engine Mobile',							'https://twitter.com/moxie_specalist',  'F592C4'],
+			['Moxie',				'moxie',			'Helper of Psych Engine Mobile',						'https://twitter.com/moxie_specalist',  'F592C4'],
 			[''],
 			["Psych Engine Team"],
 			["Shadow Mario",		"shadowmario",		"Main Programmer and Head of Psych Engine",					"https://ko-fi.com/shadowmario",	"444444"],

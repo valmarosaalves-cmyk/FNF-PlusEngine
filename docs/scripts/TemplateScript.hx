@@ -1,4 +1,11 @@
 // HScript stuff
+//
+// NOTE: Modchart path helpers (Lua)
+// - addModifier('luapath', field)
+// - setModifierPathBound('luapath', bound, field)
+// - setModifierPathOffset('luapath', x, y, z, field)
+// - setModifierPath('luapath', nodes, field)
+// Nodes are {x=, y=, z=} points relative to the path offset.
 
 function onCreate()
 {

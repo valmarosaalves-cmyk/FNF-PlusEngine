@@ -430,6 +430,7 @@ class IdID
         "permissions_message" => "Izin penyimpanan diperlukan untuk menyimpan data game dan mod.\nSilakan berikan izin yang diminta saat diminta.",
         "create_directory_error" => "Gagal membuat direktori berikut:\n{1}\nSilakan periksa izin penyimpanan atau ruang yang tersedia.\nAplikasi mungkin tidak berfungsi dengan benar tanpa direktori-direktori ini.",
         "changed_storage_type" => "Jenis Penyimpanan telah diubah dan Anda perlu me-restart permainan!!\nTekan OK untuk menutup permainan.",
+        "files_missing" => "Sepertinya Anda memiliki beberapa file yang hilang yang diperlukan untuk menjalankan game\nTekan OK untuk memulai proses penyalinan",
 
         // Mobile Options
         "setting_extra_controls" => "Kontrol Ekstra",

@@ -423,7 +423,6 @@ class IdID
         "mobile_notice" => "Pemberitahuan!",
         "mobile_success" => "Sukses!",
         "mobile_error" => "Kesalahan!",
-        "mobile_warning" => "Peringatan!",
         "touchpad_dpadmode_missing" => "touchPad dpadMode \"{1}\" tidak ada.",
         "touchpad_actionmode_missing" => "touchPad actionMode \"{1}\" tidak ada.",
         "file_save_success" => "{1} telah disimpan.",

@@ -81,6 +81,16 @@ class CopyState extends MusicBeatState
 		locatedFiles = [];
 		maxLoopTimes = 0;
 		checkExistingFiles();
+		
+		// Check if it should skip copying based on storage type
+		#if android
+		if (ClientPrefs.data.storageType != "EXTERNAL_DATA") {
+			trace('Storage type is ${ClientPrefs.data.storageType}, skipping file copy process');
+			MusicBeatState.switchState(new TitleState());
+			return;
+		}
+		#end
+		
 		if (maxLoopTimes <= 0)
 		{
 			MusicBeatState.switchState(new TitleState());
@@ -248,6 +258,13 @@ class CopyState extends MusicBeatState
 
 	public static function checkExistingFiles():Bool
 	{
+		#if android
+		if (ClientPrefs.data.storageType != "EXTERNAL_DATA") {
+			maxLoopTimes = 0;
+			return true;
+		}
+		#end
+		
 		locatedFiles = OpenFLAssets.list();
 
 		// removes unwanted assets

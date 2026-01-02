@@ -22,22 +22,63 @@
 
 package mobile.backend;
 
+import lime.system.System as LimeSystem;
+import haxe.io.Path;
+import haxe.Exception;
+
 /**
  * A storage class for mobile.
- * @author Karim Akra and Homura Akemi (HomuHomu833)
+ * @author Karim Akra and Lily Ross (mcagabe19)
  */
 class StorageUtil
 {
 	#if sys
+	// root directory, used for handling the saved storage type and path
+	public static final rootDir:String = LimeSystem.applicationStorageDirectory;
+
 	public static function getStorageDirectory():String
-		return #if android haxe.io.Path.addTrailingSlash(AndroidContext.getExternalFilesDir()) #elseif ios lime.system.System.documentsDirectory #else Sys.getCwd() #end;
+	{
+		var daPath:String = '';
+		#if android
+		if (!FileSystem.exists(rootDir + 'storagetype.txt'))
+			File.saveContent(rootDir + 'storagetype.txt', ClientPrefs.data.storageType);
+		var curStorageType:String = File.getContent(rootDir + 'storagetype.txt');
+		daPath = StorageType.fromStr(curStorageType);
+		daPath = Path.addTrailingSlash(daPath);
+		#elseif ios
+		daPath = LimeSystem.documentsDirectory;
+		#else
+		daPath = Sys.getCwd();
+		#end
+
+		return daPath;
+	}
 
 	public static function getSMDirectory():String
-		return #if android '/sdcard/.PlusEngine/sm/' #else './sm/' #end;
+	{
+		var smPath:String = '';
+		#if android
+		var storageDir = getStorageDirectory();
+		if (StringTools.startsWith(storageDir, '/storage/')) {
+			var parts = storageDir.split('/');
+			if (parts.length > 3) {
+				smPath = '/storage/' + parts[2] + '/.PlusEngine/sm/';
+			} else {
+				smPath = '/sdcard/.PlusEngine/sm/';
+			}
+		} else {
+			smPath = storageDir + '.PlusEngine/sm/';
+		}
+		#else
+		smPath = './sm/';
+		#end
+		
+		return smPath;
+	}
 
 	public static function saveContent(fileName:String, fileData:String, ?alert:Bool = true):Void
 	{
-		final folder:String = #if android StorageUtil.getExternalStorageDirectory() + #else Sys.getCwd() + #end 'saves/';
+		final folder:String = getStorageDirectory() + 'saves/';
 		try
 		{
 			if (!FileSystem.exists(folder))
@@ -47,7 +88,7 @@ class StorageUtil
 			if (alert)
 				CoolUtil.showPopUp(Language.getPhrase('file_save_success', '{1} has been saved.', [fileName]), Language.getPhrase('mobile_success', "Success!"));
 		}
-		catch (e:Dynamic)
+		catch (e:Exception)
 			if (alert)
 				CoolUtil.showPopUp(Language.getPhrase('file_save_fail', '{1} couldn\'t be saved.\n({2})', [fileName, e.message]), Language.getPhrase('mobile_error', "Error!"));
 			else
@@ -55,9 +96,17 @@ class StorageUtil
 	}
 
 	#if android
-	// always force path due to haxe
 	public static function getExternalStorageDirectory():String
+	{
+		var storageDir = getStorageDirectory();
+		if (StringTools.startsWith(storageDir, '/storage/')) {
+			var parts = storageDir.split('/');
+			if (parts.length > 3) {
+				return '/storage/' + parts[2] + '/.PlusEngine/';
+			}
+		}
 		return '/sdcard/.PlusEngine/';
+	}
 
 	public static function requestPermissions():Void
 	{
@@ -84,7 +133,7 @@ class StorageUtil
 		catch (e:Dynamic)
 		{
 			CoolUtil.showPopUp(Language.getPhrase('create_directory_error', 'Please create directory to\n{1}\nPress OK to close the game', [StorageUtil.getStorageDirectory()]), Language.getPhrase('mobile_error', "Error!"));
-			lime.system.System.exit(1);
+			LimeSystem.exit(1);
 		}
 
 		try
@@ -95,7 +144,7 @@ class StorageUtil
 		catch (e:Dynamic)
 		{
 			CoolUtil.showPopUp(Language.getPhrase('create_directory_error', 'Please create directory to\n{1}\nPress OK to close the game', [StorageUtil.getExternalStorageDirectory()]), Language.getPhrase('mobile_error', "Error!"));
-			lime.system.System.exit(1);
+			LimeSystem.exit(1);
 		}
 
 		try
@@ -106,9 +155,53 @@ class StorageUtil
 		catch (e:Dynamic)
 		{
 			CoolUtil.showPopUp(Language.getPhrase('create_directory_error', 'Please create directory to\n{1}\nPress OK to close the game', [StorageUtil.getSMDirectory()]), Language.getPhrase('mobile_error', "Error!"));
-			lime.system.System.exit(1);
+			LimeSystem.exit(1);
 		}
+	}
+
+	public static function checkExternalPaths(?splitStorage = false):Array<String>
+	{
+		var process = new Process('grep -o "/storage/....-...." /proc/mounts | paste -sd \',\'');
+		var paths:String = process.stdout.readAll().toString();
+		if (splitStorage)
+			paths = paths.replace('/storage/', '');
+		return paths.split(',');
+	}
+
+	public static function getExternalDirectory(externalDir:String):String
+	{
+		var daPath:String = '';
+		for (path in checkExternalPaths())
+			if (path.contains(externalDir))
+				daPath = path;
+
+		daPath = Path.addTrailingSlash(daPath.endsWith("\n") ? daPath.substr(0, daPath.length - 1) : daPath);
+		return daPath;
 	}
 	#end
 	#end
 }
+
+#if android
+@:runtimeValue
+enum abstract StorageType(String) from String to String
+{
+	final fileLocal = 'PlusEngine';
+
+	var EXTERNAL_DATA = "EXTERNAL_DATA";
+	var EXTERNAL = "EXTERNAL";
+
+	public static function fromStr(str:String):StorageType
+	{
+		final EXTERNAL_DATA = AndroidContext.getExternalFilesDir();
+		final EXTERNAL = AndroidEnvironment.getExternalStorageDirectory() + '/.' + lime.app.Application.current.meta.get('file');
+
+		return switch (str)
+		{
+			case "EXTERNAL_DATA": EXTERNAL_DATA;
+			case "EXTERNAL": EXTERNAL;
+			default: StorageUtil.getExternalDirectory(str) + '.' + fileLocal;
+		}
+	}
+}
+#end

@@ -406,7 +406,7 @@ class EnUS
         "images/combo" => "images/combo",
         "images/go" => "images/go",
         "images/good" => "images/good",
-        "images/flawless" => "images/Flawless",
+        "images/flawless" => "images/flawless",
         "images/menu_tracks" => "images/Menu_Tracks",
         "images/miss" => "images/miss",
         "images/ready" => "images/ready",

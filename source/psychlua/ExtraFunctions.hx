@@ -258,10 +258,26 @@ class ExtraFunctions
 		Lua_helper.add_callback(lua, "directoryFileList", function(folder:String) {
 			var list:Array<String> = [];
 			#if sys
-			if(FileSystem.exists(folder)) {
-				for (folder in Paths.readDirectory(folder)) {
-					if (!list.contains(folder)) {
-						list.push(folder);
+			// For 0.7.3 mods compatibility: convert relative 'mods/' paths to absolute paths
+			var resolvedFolder:String = folder;
+			#if android
+			if(!folder.startsWith('/')) { // It's a relative path
+				if(folder.startsWith('mods/') || folder.startsWith('mods\\')) {
+					resolvedFolder = Paths.mods(folder.substr(5)); // Remove 'mods/' prefix and use Paths.mods()
+				} else {
+					// Check if it could be a mod folder path without the 'mods/' prefix
+					var testPath:String = Paths.mods(folder);
+					if(FileSystem.exists(testPath)) {
+						resolvedFolder = testPath;
+					}
+				}
+			}
+			#end
+			
+			if(FileSystem.exists(resolvedFolder)) {
+				for (file in Paths.readDirectory(resolvedFolder)) {
+					if (!list.contains(file)) {
+						list.push(file);
 					}
 				}
 			}

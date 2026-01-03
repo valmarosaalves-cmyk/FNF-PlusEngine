@@ -145,6 +145,9 @@ import states.TitleState;
 	public var abbreviateScore:Bool = true;
 	public var heavyCharts:Bool = false; // Heavy Charts Mode para charts pesados
 	public var vanillaTransition:Bool = false; // Use vanilla Psych Engine transition instead of custom
+	
+	// Compatibility Settings
+	public var useSScriptCompat:Bool = false; // Use SScript instead of hscript-iris for Psych 0.7.3 mods compatibility
 }
 
 class ClientPrefs {

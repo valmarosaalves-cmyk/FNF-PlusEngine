@@ -12,8 +12,9 @@ class OptionsState extends MusicBeatState
 		'Graphics',
 		'Visuals',
 		'Gameplay',
-		#if MODCHARTS_NOTITG_ALLOWED 'Modchart' #end
-		#if TRANSLATIONS_ALLOWED , 'Language' #end,
+		'Compatibility',
+		#if MODCHARTS_NOTITG_ALLOWED 'Modchart' #end,
+		#if TRANSLATIONS_ALLOWED 'Language' #end,
 		#if mobile 'Mobile Options' #end
 	];
 	private var grpOptions:FlxTypedGroup<Alphabet>;
@@ -39,8 +40,10 @@ class OptionsState extends MusicBeatState
 				openSubState(new options.VisualsSettingsSubState());
 			case 'Gameplay':
 				openSubState(new options.GameplaySettingsSubState());
+			case 'Compatibility':
+				openSubState(new options.CompatibilitySettingsSubState());
 			case 'Modchart':
-				openSubState(new options.ModchartOptionsSubState());
+				openSubState(new options.ModchartSettingsSubState());
 			case 'Adjust Delay and Combo':
 				MusicBeatState.switchState(new options.NoteOffsetState());
 			case 'Mobile Options':

@@ -69,6 +69,10 @@ import mobile.backend.StorageUtil;
 import modchart.Manager;
 #end
 
+#if SSCRIPT_ALLOWED
+import psychlua.SScript.SScriptCompat;
+#end
+
 #if HSCRIPT_ALLOWED
 import psychlua.HScript.HScriptInfos;
 import crowplexus.iris.Iris;
@@ -5350,6 +5354,30 @@ class PlayState extends MusicBeatState
 
 	public function initHScript(file:String)
 	{
+		// Check if user wants SScript compatibility mode for .hx files
+		#if SSCRIPT_ALLOWED
+		if (ClientPrefs.data.useSScriptCompat) {
+			trace('SScript (Psych 0.7.x) file load succesfully: $file');
+			var newScript:SScriptCompat = null;
+			try {
+				newScript = new SScriptCompat(null, file);
+				if (newScript != null) {
+					if (newScript.exists('onCreate'))
+						newScript.executeCode('onCreate');
+					trace('SScript loaded successfully: $file');
+				}
+			}
+			catch(e:Dynamic) {
+				trace('ERROR loading SScript file ($file): $e');
+				addTextToDebug('ERROR loading SScript: $file', FlxColor.RED);
+				if(newScript != null)
+					newScript.destroy();
+			}
+			return;
+		}
+		#end
+		
+		// Use hscript-iris (default)
 		var newScript:HScript = null;
 		try
 		{

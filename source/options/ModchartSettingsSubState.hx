@@ -5,7 +5,7 @@ package options;
  * Allows users to configure settings that affect modchart performance and quality.
  * Note: Modchart Manager is now automatically enabled when onInitModchart() function is detected.
  */
-class ModchartOptionsSubState extends BaseOptionsMenu
+class ModchartSettingsSubState extends BaseOptionsMenu
 {
 	public function new()
 	{

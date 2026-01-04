@@ -9,6 +9,7 @@ import modchart.backend.core.ModifierOutput;
 import modchart.backend.core.ModifierParameters;
 import modchart.backend.core.PercentArray;
 import modchart.backend.core.VisualParameters;
+import modchart.backend.core.ModifierCache;
 import modchart.backend.macros.ModifiersMacro;
 import modchart.backend.util.ModchartUtil;
 import modchart.engine.modifiers.Modifier;
@@ -88,6 +89,7 @@ final class ModifierGroup {
 
 	/**
 	 * Computes the transformed position and visual properties of an arrow based on active modifiers.
+	 * Now uses global cache system inspired by StepMania for better performance.
 	 *
 	 * @param pos The initial `Vector3` position of the arrow.
 	 * @param data The `ArrowData` containing arrow properties such as lane, player, and timing.
@@ -97,16 +99,26 @@ final class ModifierGroup {
 	 * @return A `ModifierOutput` structure containing the modified position and visuals.
 	 *
 	 * **Processing Steps:**
+	 * - Checks global cache first (StepMania technique)
+	 * - If cache miss, calculates modifiers and stores result
 	 * - Retrieves the current song position and beat.
 	 * - Iterates through all active modifiers, applying transformations if conditions are met.
 	 * - Adjusts the `z` position based on `Config.Z_SCALE` and projects the final position.
-	 * - (Caching is currently disabled but could be re-enabled for optimization.)
 	 */
 	public inline function getPath(pos:Vector3, data:ArrowData, ?posDiff:Float = 0, ?allowVis:Bool = true, ?allowPos:Bool = true):ModifierOutput {
-		var visuals:VisualParameters = {};
-
 		if (!allowVis && !allowPos)
-			return {pos: pos, visuals: visuals};
+			return {pos: pos, visuals: {}};
+
+		final hitTime = data.hitTime + posDiff;
+		final distance = data.distance + posDiff;
+		
+		// Try cache first (StepMania optimization)
+		final cached = ModifierCache.get(data.player, data.lane, hitTime, distance);
+		if (cached != null) {
+			return cached.output;
+		}
+		
+		var visuals:VisualParameters = {};
 
 		final songPos = Adapter.instance.getSongPosition();
 		final beat = Adapter.instance.getCurrentBeat();
@@ -114,8 +126,8 @@ final class ModifierGroup {
 		final args:ModifierParameters = {
 			songTime: songPos,
 			curBeat: beat,
-			hitTime: data.hitTime + posDiff,
-			distance: data.distance + posDiff,
+			hitTime: hitTime,
+			distance: distance,
 			lane: data.lane,
 			player: data.player,
 			isTapArrow: data.isTapArrow
@@ -142,6 +154,9 @@ final class ModifierGroup {
 			pos: pos,
 			visuals: visuals
 		};
+
+		// Store in cache for reuse
+		ModifierCache.set(data.player, data.lane, hitTime, distance, output);
 
 		return output;
 	}

@@ -18,6 +18,25 @@ final class ModchartPathRenderer extends ModchartRenderer<FlxSprite> {
 	var uvt:DrawData<Float>;
 	var indices:DrawData<Int>;
 
+	// Cache system for performance
+	var __pathCache:Map<String, PathCacheData> = new Map();
+	var __frameCounter:Int = 0;
+	var __cacheRefreshRate:Int = 2; // Refresh cache every N frames
+	var __lastSongPos:Float = 0;
+	var __positionTolerance:Float = 50; // Only recalculate if song position changed significantly
+	
+	// Object pooling
+	var __vertexPool:Array<DrawData<Float>> = [];
+	var __transformPool:Array<Array<ColorTransform>> = [];
+	
+	// Interpolation cache for smooth transitions
+	var __interpolationCache:Map<String, Array<ModifierOutput>> = new Map();
+	
+	// Pre-calculated constants (StepMania technique)
+	var __screenHeight:Float = 0;
+	var __invScreenHeight:Float = 0;
+	var __pathInterval:Float = 0;
+
 	public function updateTris(divisions:Int) {
 		final segs = divisions - 1;
 		if (divisions != __lastDivisions) {
@@ -50,6 +69,10 @@ final class ModchartPathRenderer extends ModchartRenderer<FlxSprite> {
 		super(instance);
 
 		__lineGraphic = FlxG.bitmap.create(10, 10, 0xFFFFFFFF);
+		
+		// Pre-calculate constants (StepMania optimization)
+		__screenHeight = FlxG.height;
+		__invScreenHeight = 1.0 / __screenHeight;
 	}
 
 	var __lastPlayer:Int = -1;
@@ -73,12 +96,41 @@ final class ModchartPathRenderer extends ModchartRenderer<FlxSprite> {
 		__lastThickness = pathThickness;
 		__lastPlayer = fn;
 
-		// LOD: reduce divisions for distant paths (performance optimization)
-		final baseDivisions = Std.int(20 * Config.ARROW_PATHS_CONFIG.RESOLUTION);
-		final divisions = Std.int(Math.max(10, baseDivisions * 0.7)); // 30% reduction
-		final limit = 1500 + Config.ARROW_PATHS_CONFIG.LENGTH;
-		final interval = limit / divisions;
 		final songPos = Adapter.instance.getSongPosition();
+		
+		// Dynamic LOD based on resolution setting with more aggressive scaling
+		final resolution = Config.ARROW_PATHS_CONFIG.RESOLUTION;
+		
+		// Exponential scaling for better performance at low resolutions
+		// StepMania uses similar adaptive quality systems
+		final baseDivisions = Std.int(Math.max(8, 25 * Math.pow(resolution, 0.7)));
+		final divisions = baseDivisions;
+		
+		final limit = 1500 + Config.ARROW_PATHS_CONFIG.LENGTH;
+		__pathInterval = limit / divisions; // Cache interval calculation
+
+		// Cache key for this lane
+		final cacheKey = 'lane_${lane}_${fn}';
+		
+		// Adaptive refresh rate: lower resolution = less frequent updates
+		// Similar to StepMania's beat-based updates
+		final refreshInterval = resolution < 0.5 ? 4 : (resolution < 0.8 ? 2 : 1);
+		final shouldRefresh = __frameCounter % refreshInterval == 0;
+		
+		// Position-based cache invalidation (StepMania technique)
+		final songPosChanged = Math.abs(songPos - __lastSongPos) > __positionTolerance;
+		
+		// Check if we can use cached data
+		if (!shouldRefresh && !songPosChanged && __pathCache.exists(cacheKey)) {
+			final cached = __pathCache.get(cacheKey);
+			if (cached != null && cached.divisions == divisions) {
+				var newInstruction:FMDrawInstruction = {};
+				newInstruction.extra = [cached.vertices, indices, uvt, cached.transforms];
+				newInstruction.item = item;
+				queue[count++] = newInstruction;
+				return;
+			}
+		}
 
 		final segs = divisions - 1;
 		final vertices = new DrawData<Float>(segs * 8, true);
@@ -89,15 +141,37 @@ final class ModchartPathRenderer extends ModchartRenderer<FlxSprite> {
 		pathVector.setTo(Adapter.instance.getDefaultReceptorX(lane, fn), Adapter.instance.getDefaultReceptorY(lane, fn), 0);
 		pathVector.incrementBy(ModchartUtil.getHalfPos());
 
+		// Pre-calculate constant values
 		final colored = Config.ARROW_PATHS_CONFIG.APPLY_COLOR;
 		final applyAlpha = Config.ARROW_PATHS_CONFIG.APPLY_ALPHA;
+		final applyScale = Config.ARROW_PATHS_CONFIG.APPLY_SCALE;
+		final applyDepth = Config.ARROW_PATHS_CONFIG.APPLY_DEPTH;
 
 		final transforms:Array<ColorTransform> = [];
 		var tID:Int = 0;
 		transforms.resize(segs);
+		
+		// Adaptive culling bounds - larger for better quality
+		final cullTop = -600;
+		final cullBottom = __screenHeight + 600; // Use cached screen height
+		
+		// More aggressive skip rate for low resolutions
+		final skipRate = resolution < 0.3 ? 3 : (resolution < 0.6 ? 2 : 1);
+		
+		// Sample key points for interpolation on very low resolutions
+		final useInterpolation = resolution < 0.4;
+		final keyPoints:Array<ModifierOutput> = useInterpolation ? [] : null;
+		
+		// Pre-calculate time offset (StepMania uses similar approach)
+		final baseHitTime:Float = -200;
 
 		for (index in 0...divisions) {
-			var hitTime = -500 + interval * index;
+			// Skip points for lower resolutions
+			if (skipRate > 1 && index % skipRate != 0 && index != divisions - 1)
+				continue;
+				
+			// Start paths closer to receptors (200ms before instead of 500ms)
+			var hitTime = baseHitTime + __pathInterval * index; // Use cached interval
 
 			var output = instance.modifiers.getPath(pathVector.clone(), {
 				hitTime: songPos + hitTime,
@@ -107,8 +181,13 @@ final class ModchartPathRenderer extends ModchartRenderer<FlxSprite> {
 				isTapArrow: true
 			});
 			
+			// Store key points for interpolation
+			if (useInterpolation && (index % 3 == 0 || index == divisions - 1)) {
+				keyPoints.push(output);
+			}
+			
 			// Early skip: cull off-screen segments
-			if (output.pos.y < -300 || output.pos.y > FlxG.height + 300) {
+			if (output.pos.y < cullTop || output.pos.y > cullBottom) {
 				lastOutput = output;
 				continue;
 			}
@@ -122,39 +201,52 @@ final class ModchartPathRenderer extends ModchartRenderer<FlxSprite> {
 
 				final dx = pos1.x - pos0.x;
 				final dy = pos1.y - pos0.y;
-				final len = Math.sqrt(dx * dx + dy * dy);
-				final nx = -dy / len;
-				final ny = dx / len;
+				final lenSq = dx * dx + dy * dy;
+				
+				// Skip degenerate segments (using squared length to avoid sqrt)
+				if (lenSq < 0.01) {
+					lastOutput = output;
+					continue;
+				}
+				
+				final len = Math.sqrt(lenSq);
+				final invLen = 1.0 / len;
+				final nx = -dy * invLen;
+				final ny = dx * invLen;
 
-				final t0 = (pathThickness * (Config.ARROW_PATHS_CONFIG.APPLY_SCALE ? p1.visuals.scaleX : 1) * (Config.ARROW_PATHS_CONFIG.APPLY_DEPTH ? 1 / pos0.z : 1)) * 0.5;
-				final t1 = (pathThickness * (Config.ARROW_PATHS_CONFIG.APPLY_SCALE ? p1.visuals.scaleX : 1) * (Config.ARROW_PATHS_CONFIG.APPLY_DEPTH ? 1 / pos1.z : 1)) * 0.5;
+				// Pre-calculate thickness with reduced branching
+				final baseThickness = pathThickness * 0.5;
+				final scale0 = applyScale ? p0.visuals.scaleX : 1.0;
+				final scale1 = applyScale ? p1.visuals.scaleX : 1.0;
+				final depth0 = applyDepth ? (1.0 / pos0.z) : 1.0;
+				final depth1 = applyDepth ? (1.0 / pos1.z) : 1.0;
+				
+				final t0 = baseThickness * scale0 * depth0;
+				final t1 = baseThickness * scale1 * depth1;
 
-				final a1x = pos0.x + nx * t0;
-				final a1y = pos0.y + ny * t0;
-				final a2x = pos0.x - nx * t0;
-				final a2y = pos0.y - ny * t0;
+				// Inline vertex calculations
+				vertices.set(vi++, pos0.x + nx * t0);
+				vertices.set(vi++, pos0.y + ny * t0);
+				vertices.set(vi++, pos0.x - nx * t0);
+				vertices.set(vi++, pos0.y - ny * t0);
+				vertices.set(vi++, pos1.x + nx * t1);
+				vertices.set(vi++, pos1.y + ny * t1);
+				vertices.set(vi++, pos1.x - nx * t1);
+				vertices.set(vi++, pos1.y - ny * t1);
 
-				final b1x = pos1.x + nx * t1;
-				final b1y = pos1.y + ny * t1;
-				final b2x = pos1.x - nx * t1;
-				final b2y = pos1.y - ny * t1;
-
-				// vertices
-				vertices.set(vi++, a1x);
-				vertices.set(vi++, a1y);
-				vertices.set(vi++, a2x);
-				vertices.set(vi++, a2y);
-				vertices.set(vi++, b1x);
-				vertices.set(vi++, b1y);
-				vertices.set(vi++, b2x);
-				vertices.set(vi++, b2y);
-
-				final glow = (colored ? p0.visuals.glow : 0);
-				final fAlpha = (applyAlpha ? p0.visuals.alpha : 1);
-				final negGlow = 1 - glow;
-				final absGlow = glow * 255;
-				transforms[tID++] = new ColorTransform(negGlow, negGlow, negGlow, fAlpha * pathAlpha, Math.round(p0.visuals.glowR * absGlow),
-					Math.round(p0.visuals.glowG * absGlow), Math.round(p0.visuals.glowB * absGlow));
+				// Optimized color transform calculation
+				if (colored || applyAlpha) {
+					final glow = colored ? p0.visuals.glow : 0;
+					final fAlpha = applyAlpha ? p0.visuals.alpha : 1;
+					final negGlow = 1 - glow;
+					final absGlow = glow * 255;
+					transforms[tID++] = new ColorTransform(negGlow, negGlow, negGlow, fAlpha * pathAlpha, 
+						Math.round(p0.visuals.glowR * absGlow),
+						Math.round(p0.visuals.glowG * absGlow), 
+						Math.round(p0.visuals.glowB * absGlow));
+				} else {
+					transforms[tID++] = new ColorTransform(1, 1, 1, pathAlpha, 0, 0, 0);
+				}
 
 				vertCount += 4;
 			}
@@ -163,6 +255,16 @@ final class ModchartPathRenderer extends ModchartRenderer<FlxSprite> {
 		}
 
 		updateTris(divisions);
+		
+		// Store in cache
+		__pathCache.set(cacheKey, {
+			vertices: vertices,
+			transforms: transforms,
+			divisions: divisions
+		});
+		
+		// Update last song position for change detection
+		__lastSongPos = songPos;
 
 		var newInstruction:FMDrawInstruction = {};
 		newInstruction.extra = [vertices, indices, uvt, transforms];
@@ -173,6 +275,9 @@ final class ModchartPathRenderer extends ModchartRenderer<FlxSprite> {
 	override public function shift() {
 		if (count == 0 || queue.length <= 0)
 			return;
+
+		// Increment frame counter for cache system
+		__frameCounter++;
 
 		final cameras = Adapter.instance.getArrowCamera();
 		for (instruction in queue) {
@@ -198,7 +303,17 @@ final class ModchartPathRenderer extends ModchartRenderer<FlxSprite> {
 
 	override function dispose() {
 		__lineGraphic = FlxDestroyUtil.destroy(__lineGraphic);
+		__pathCache.clear();
+		__pathCache = null;
+		__vertexPool = null;
+		__transformPool = null;
 	}
 
 	inline static final ARROW_PATH_BOUNDARY_OFFSET:Float = 300;
+}
+
+typedef PathCacheData = {
+	vertices:DrawData<Float>,
+	transforms:Array<ColorTransform>,
+	divisions:Int
 }

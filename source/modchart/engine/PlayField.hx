@@ -3,6 +3,7 @@ package modchart.engine;
 import flixel.FlxSprite;
 import flixel.tweens.FlxEase.EaseFunction;
 import modchart.backend.core.Node.NodeFunction;
+import modchart.backend.core.ModifierCache;
 import modchart.backend.graphics.*;
 import modchart.backend.graphics.renderers.*;
 import modchart.engine.events.types.*;
@@ -220,6 +221,12 @@ final class PlayField extends FlxSprite {
 	}
 
 	private function __drawPlayField() {
+		// Update global cache system (StepMania technique)
+		final songPos = Adapter.instance.getSongPosition();
+		final beat = Adapter.instance.getCurrentBeat();
+		ModifierCache.beginFrame(songPos, beat);
+		ModifierCache.cleanup(); // Periodic cleanup
+		
 		drawCB = [];
 
 		// TODO: prepare arrow paths shit

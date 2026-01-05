@@ -403,6 +403,8 @@ class PlayState extends MusicBeatState
 	public static var campaignSongsCount:Int = 0; // Cantidad de canciones jugadas
 
 	public var defaultCamZoom:Float = 1.05;
+	// Base stage zoom (immutable per stage) for P-Slice compatible scaling
+	public var defaultStageZoom:Float = 1.05;
 
 	// how big to stretch the pixel art assets
 	public static var daPixelZoom:Float = 6;
@@ -628,6 +630,7 @@ class PlayState extends MusicBeatState
 
 		var stageData:StageFile = StageData.getStageFile(curStage);
 		defaultCamZoom = stageData.defaultZoom;
+		defaultStageZoom = stageData.defaultZoom;
 
 		stageUI = "normal";
 		if (stageData.stageUI != null && stageData.stageUI.trim().length > 0)
@@ -3489,46 +3492,63 @@ class PlayState extends MusicBeatState
 				}
 
 			case 'Target Camera':
-				// Value1: target (0=dad, 1=bf, 2=custom), Value2: "x,y,duration,ease"
-				var target:Int = 0;
-				if(flValue1 != null) target = Std.int(flValue1);
-				
+				// P-Slice compatible: Value1: 'bf'|'dad'|'gf' (or 0/1/2), Value2: "x,y,durationSteps,ease"
 				var params:Array<String> = value2.split(',');
 				var offsetX:Float = 0;
 				var offsetY:Float = 0;
-				var duration:Float = 1;
+				var durationSteps:Float = 0;
 				var easeName:String = 'linear';
-				
 				if(params.length > 0 && params[0] != '') offsetX = Std.parseFloat(params[0]);
 				if(params.length > 1 && params[1] != '') offsetY = Std.parseFloat(params[1]);
-				if(params.length > 2 && params[2] != '') duration = Std.parseFloat(params[2]) / Conductor.bpm * 60; // Convert beats to seconds
+				if(params.length > 2 && params[2] != '') durationSteps = Std.parseFloat(params[2]);
 				if(params.length > 3) easeName = params[3].trim();
-				
+
+				// Determine target character using P-Slice semantics
 				var targetChar:Character = null;
-				switch(target) {
-					case 0: targetChar = dad;
-					case 1: targetChar = boyfriend;
-					case 2: targetChar = gf;
+				var v1:String = value1 != null ? value1.toLowerCase().trim() : '';
+				if(v1 == 'bf' || v1 == 'boyfriend' || v1 == '0') targetChar = boyfriend;
+				else if(v1 == 'dad' || v1 == 'opponent' || v1 == '1') targetChar = dad;
+				else if(v1 == 'gf' || v1 == 'girlfriend' || v1 == '2') targetChar = gf;
+				else if(flValue1 != null) {
+					var target:Int = Std.int(flValue1);
+					switch(target) {
+						case 0: targetChar = dad;
+						case 1: targetChar = boyfriend;
+						case 2: targetChar = gf;
+					}
 				}
-				
+
 				if(targetChar != null && camFollow != null) {
-					var targetX:Float = targetChar.getMidpoint().x + 150 + targetChar.cameraPosition[0] + offsetX;
-					var targetY:Float = targetChar.getMidpoint().y - 100 + targetChar.cameraPosition[1] + offsetY;
-					
+					isCameraOnForcedPos = true;
+					var targetX:Float = 0;
+					var targetY:Float = 0;
+					switch(targetChar) {
+						case boyfriend:
+							targetX = boyfriend.getMidpoint().x + 150 - boyfriend.cameraPosition[0] + boyfriendCameraOffset[0] + offsetX;
+							targetY = boyfriend.getMidpoint().y - 100 + boyfriend.cameraPosition[1] + boyfriendCameraOffset[1] + offsetY;
+						case dad:
+							targetX = dad.getMidpoint().x + 150 + dad.cameraPosition[0] + opponentCameraOffset[0] + offsetX;
+							targetY = dad.getMidpoint().y - 100 + dad.cameraPosition[1] + opponentCameraOffset[1] + offsetY;
+						case gf:
+							targetX = gf.getMidpoint().x + gf.cameraPosition[0] - girlfriendCameraOffset[0] + offsetX;
+							targetY = gf.getMidpoint().y + gf.cameraPosition[1] - girlfriendCameraOffset[1] + offsetY;
+					}
+
 					if(camFollowTween != null) camFollowTween.cancel();
-					
-					if(duration <= 0) {
+					var duration:Float = durationSteps * (Conductor.stepCrochet / 1000);
+					var easeLower = easeName.toLowerCase();
+					if(duration <= 0 || easeLower == 'classic' || easeLower == 'instant') {
 						camFollow.setPosition(targetX, targetY);
 					} else {
 						var ease:EaseFunction = FlxEase.linear;
-						switch(easeName.toLowerCase()) {
+						switch(easeLower) {
 							case 'linear': ease = FlxEase.linear;
-							case 'classic' | 'cubeout': ease = FlxEase.cubeOut;
+							case 'cubeout' | 'classic': ease = FlxEase.cubeOut;
 							case 'cubein': ease = FlxEase.cubeIn;
 							case 'cubeinout': ease = FlxEase.cubeInOut;
-							case 'expout': ease = FlxEase.expoOut;
+							case 'expout' | 'expoout': ease = FlxEase.expoOut;
 							case 'expin': ease = FlxEase.expoIn;
-							case 'expoinout': ease = FlxEase.expoInOut;
+							case 'expoinout' | 'expinout': ease = FlxEase.expoInOut;
 							case 'quadout': ease = FlxEase.quadOut;
 							case 'quadin': ease = FlxEase.quadIn;
 							case 'quadinout': ease = FlxEase.quadInOut;
@@ -3539,17 +3559,15 @@ class PlayState extends MusicBeatState
 				}
 
 			case 'Zoom Camera':
-				// Value1: "duration,zoom", Value2: ease
+				// P-Slice compatible: Value1: "lengthInSteps,scale", Value2: ease
 				var params:Array<String> = value1.split(',');
-				var duration:Float = 1;
-				var zoom:Float = defaultCamZoom;
-				
-				if(params.length > 0 && params[0] != '') duration = Std.parseFloat(params[0]) / Conductor.bpm * 60; // Convert beats to seconds
-				if(params.length > 1 && params[1] != '') zoom = Std.parseFloat(params[1]);
-				
-				var easeName:String = value2.trim();
+				var lengthSteps:Float = 0;
+				var scale:Float = 1;
+				if(params.length > 0 && params[0] != '') lengthSteps = Std.parseFloat(params[0]);
+				if(params.length > 1 && params[1] != '') scale = Std.parseFloat(params[1]);
+
+				var easeName:String = value2 != null ? value2.trim() : 'linear';
 				var ease:EaseFunction = FlxEase.linear;
-				
 				switch(easeName.toLowerCase()) {
 					case 'linear': ease = FlxEase.linear;
 					case 'classic' | 'cubeout': ease = FlxEase.cubeOut;
@@ -3563,18 +3581,19 @@ class PlayState extends MusicBeatState
 					case 'quadinout': ease = FlxEase.quadInOut;
 					case 'smoothstepout': ease = FlxEase.smoothStepOut;
 				}
-				
+
+				var duration:Float = lengthSteps * (Conductor.stepCrochet / 1000);
+				var targetZoom:Float = scale * defaultStageZoom;
 				if(camZoomTween != null) camZoomTween.cancel();
-				
 				if(duration <= 0) {
-					defaultCamZoom = zoom;
-					FlxG.camera.zoom = zoom;
+					defaultCamZoom = targetZoom;
+					FlxG.camera.zoom = targetZoom;
 				} else {
-					targetCamZoom = zoom;
-					camZoomTween = FlxTween.tween(this, {defaultCamZoom: zoom}, duration, {
+					camZoomingDecay = 7;
+					camZoomTween = FlxTween.tween(this, {defaultCamZoom: targetZoom}, duration, {
 						ease: ease,
 						onComplete: function(twn:FlxTween) {
-							targetCamZoom = null;
+							camZoomingDecay = 1;
 							camZoomTween = null;
 						}
 					});

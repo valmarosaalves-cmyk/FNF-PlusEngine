@@ -111,7 +111,7 @@ class LimoRideErect extends BaseStage
 		addBehindGF(fastCar);
 
 		var limo:BGSprite = new BGSprite('limo/erect/limoDrive', -120, 550, 1, 1, ['Limo stage'], true);
-		addBehindDad(limo);
+		addBehindGF(limo);
 
 		if(ClientPrefs.data.shaders && colorShader != null && !ClientPrefs.data.lowQuality)
 		{
@@ -142,7 +142,7 @@ class LimoRideErect extends BaseStage
 		{
 			grpLimoParticles.forEach(function(spr:BGSprite)
 			{
-				if(spr.animation.curAnim.finished)
+				if(spr.animation != null && spr.animation.curAnim != null && spr.animation.curAnim.finished)
 				{
 					spr.kill();
 					grpLimoParticles.remove(spr, true);
@@ -169,13 +169,23 @@ class LimoRideErect extends BaseStage
 									if(i == 0) FlxG.sound.play(Paths.sound('dancerdeath'), 0.5);
 
 									var diffStr:String = i == 3 ? ' 2 ' : ' ';
-									var particle:BGSprite = new BGSprite('gore/noooooo', dancers[i].x + 200, dancers[i].y, 0.4, 0.4, ['henchmen dying' + diffStr], true);
+									var particle:BGSprite = new BGSprite('gore/noooooo', dancers[i].x + 200, dancers[i].y, 0.4, 0.4, ['hench leg spin' + diffStr + 'PINK'], false);
 									grpLimoParticles.add(particle);
-									var particle:BGSprite = new BGSprite('gore/stupidBlood', dancers[i].x + 160, dancers[i].y + 200, 0.4, 0.4, ['blood'], false);
-									particle.flipX = FlxG.random.bool(50);
+									var particle:BGSprite = new BGSprite('gore/noooooo', dancers[i].x + 160, dancers[i].y + 200, 0.4, 0.4, ['hench arm spin' + diffStr + 'PINK'], false);
 									grpLimoParticles.add(particle);
-									dancers[i].x += FlxG.width * 2;
+									var particle:BGSprite = new BGSprite('gore/noooooo', dancers[i].x, dancers[i].y + 50, 0.4, 0.4, ['hench head spin' + diffStr + 'PINK'], false);
+									grpLimoParticles.add(particle);
+
+									var particle:BGSprite = new BGSprite('gore/stupidBlood', dancers[i].x - 110, dancers[i].y + 20, 0.4, 0.4, ['blood'], false);
+									particle.flipX = true;
+									particle.angle = -57.5;
+									grpLimoParticles.add(particle);
+								case 1:
+									limoCorpse.visible = true;
+								case 2:
+									limoCorpseTwo.visible = true;
 							}
+							dancers[i].x += FlxG.width * 2;
 						}
 					}
 
@@ -244,6 +254,23 @@ class LimoRideErect extends BaseStage
 			fastCarDrive();
 	}
 
+	// Substates for pausing/resuming timers
+	override function closeSubState()
+	{
+		if(paused)
+		{
+			if(carTimer != null) carTimer.active = true;
+		}
+	}
+
+	override function openSubState(SubState:flixel.FlxSubState)
+	{
+		if(paused)
+		{
+			if(carTimer != null) carTimer.active = false;
+		}
+	}
+
 	override function eventCalled(eventName:String, value1:String, value2:String, flValue1:Null<Float>, flValue2:Null<Float>, strumTime:Float)
 	{
 		switch(eventName)
@@ -277,15 +304,17 @@ class LimoRideErect extends BaseStage
 		fastCarCanDrive = true;
 	}
 
+	var carTimer:FlxTimer;
 	function fastCarDrive()
 	{
 		FlxG.sound.play(Paths.soundRandom('carPass', 0, 1), 0.7);
 
 		fastCar.velocity.x = (FlxG.random.int(170, 220) / FlxG.elapsed) * 3;
 		fastCarCanDrive = false;
-		new FlxTimer().start(2, function(tmr:FlxTimer)
+		carTimer = new FlxTimer().start(2, function(tmr:FlxTimer)
 		{
 			resetFastCar();
+			carTimer = null;
 		});
 	}
 

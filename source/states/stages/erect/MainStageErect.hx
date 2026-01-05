@@ -68,6 +68,45 @@ class MainStageErect extends BaseStage
 		}
 	}
 
+	override function beatHit()
+	{
+		super.beatHit();
+		if(!ClientPrefs.data.lowQuality && peeps != null)
+		{
+			peeps.dance(true);
+		}
+	}
+
+	// Generic event handler for playing animations on stage or characters
+	override function eventCalled(eventName:String, value1:String, value2:String, flValue1:Null<Float>, flValue2:Null<Float>, strumTime:Float)
+	{
+		switch(eventName)
+		{
+			case 'Play Animation':
+				var target:String = value2.toLowerCase().trim();
+				switch(target)
+				{
+					case 'peeps' | 'crowd':
+						if(peeps != null)
+						{
+							peeps.animation.play(value1, true);
+						}
+					case 'bf' | 'boyfriend' | '0':
+						boyfriend.playAnim(value1, true);
+						boyfriend.specialAnim = true;
+					case 'gf' | 'girlfriend' | '2':
+						if(gf != null)
+						{
+							gf.playAnim(value1, true);
+							gf.specialAnim = true;
+						}
+					default: // dad/opponent or unspecified
+						dad.playAnim(value1, true);
+						dad.specialAnim = true;
+				}
+		}
+	}
+
 	function makeCoolShader(hue:Float, sat:Float, bright:Float, contrast:Float):AdjustColorShader
 	{
 		var coolShader:AdjustColorShader = new AdjustColorShader();

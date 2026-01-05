@@ -55,6 +55,7 @@ import states.TitleState;
 	public var hideSustainSplash:Bool = false;
 	public var showKeyViewer:Bool = false;
 	public var judgementCounter:Bool = true;
+	public var showCombo:Bool = true;
 	public var comboInGame:Bool = false;
 	public var useFreakyFont:Bool = false;
 	public var showStateInFPS:Bool = true;

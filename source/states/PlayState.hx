@@ -3522,16 +3522,18 @@ class PlayState extends MusicBeatState
 					isCameraOnForcedPos = true;
 					var targetX:Float = 0;
 					var targetY:Float = 0;
-					switch(targetChar) {
-						case boyfriend:
-							targetX = boyfriend.getMidpoint().x + 150 - boyfriend.cameraPosition[0] + boyfriendCameraOffset[0] + offsetX;
-							targetY = boyfriend.getMidpoint().y - 100 + boyfriend.cameraPosition[1] + boyfriendCameraOffset[1] + offsetY;
-						case dad:
-							targetX = dad.getMidpoint().x + 150 + dad.cameraPosition[0] + opponentCameraOffset[0] + offsetX;
-							targetY = dad.getMidpoint().y - 100 + dad.cameraPosition[1] + opponentCameraOffset[1] + offsetY;
-						case gf:
-							targetX = gf.getMidpoint().x + gf.cameraPosition[0] - girlfriendCameraOffset[0] + offsetX;
-							targetY = gf.getMidpoint().y + gf.cameraPosition[1] - girlfriendCameraOffset[1] + offsetY;
+					
+					if(targetChar == boyfriend) {
+						targetX = boyfriend.getMidpoint().x + 150 - boyfriend.cameraPosition[0] + boyfriendCameraOffset[0] + offsetX;
+						targetY = boyfriend.getMidpoint().y - 100 + boyfriend.cameraPosition[1] + boyfriendCameraOffset[1] + offsetY;
+					}
+					else if(targetChar == dad) {
+						targetX = dad.getMidpoint().x + 150 + dad.cameraPosition[0] + opponentCameraOffset[0] + offsetX;
+						targetY = dad.getMidpoint().y - 100 + dad.cameraPosition[1] + opponentCameraOffset[1] + offsetY;
+					}
+					else if(targetChar == gf) {
+						targetX = gf.getMidpoint().x + gf.cameraPosition[0] - girlfriendCameraOffset[0] + offsetX;
+						targetY = gf.getMidpoint().y + gf.cameraPosition[1] - girlfriendCameraOffset[1] + offsetY;
 					}
 
 					if(camFollowTween != null) camFollowTween.cancel();
@@ -4026,9 +4028,7 @@ class PlayState extends MusicBeatState
 	public var itg_Decent:Int = 0;
 	public var itg_WayOff:Int = 0; 
 	public var itg_Miss:Int = 0;
-	public var itg_DP:Float = 0.0; 
-
-	public var showCombo:Bool = false;
+	public var itg_DP:Float = 0.0;
 	public var showComboNum:Bool = true;
 	public var showRating:Bool = true;	// Stores Ratings and Combo Sprites in a group
 	public var comboGroup:FlxSpriteGroup;
@@ -4302,33 +4302,32 @@ class PlayState extends MusicBeatState
 
 			var comboSpr:FlxSprite = new FlxSprite().loadGraphic(Paths.image(uiFolder + 'combo' + uiPostfix));
 			comboSpr.screenCenter();
-			comboSpr.x = placement;
 			comboSpr.acceleration.y = FlxG.random.int(200, 300) * playbackRate * playbackRate;
 			comboSpr.velocity.y -= FlxG.random.int(140, 160) * playbackRate;
 			
-			// Configurar tamaño del combo
+			// Configure combo size
 			if (!isPixelStage)
 			{
-				comboSpr.setGraphicSize(Std.int(comboSpr.width * 0.7));
+				comboSpr.setGraphicSize(Std.int(comboSpr.width * 0.5));
 				comboSpr.antialiasing = antialias;
 			}
 			else
 			{
-				comboSpr.setGraphicSize(Std.int(comboSpr.width * daPixelZoom * 0.85));
+				comboSpr.setGraphicSize(Std.int(comboSpr.width * daPixelZoom * 0.7));
 				comboSpr.antialiasing = false;
 			}
 			comboSpr.updateHitbox();
 			
-			comboSpr.visible = (!ClientPrefs.data.hideHud && showCombo);
-			comboSpr.x += ClientPrefs.data.comboOffset[0];
-			comboSpr.y -= ClientPrefs.data.comboOffset[1];
-			comboSpr.y += 60;
+			// Position aligned with numbers
+			comboSpr.x = placement + (43 * 1.5) - 90 + ClientPrefs.data.comboOffset[2];
+			comboSpr.y = FlxG.height * 0.5 + 80 - ClientPrefs.data.comboOffset[3] - 60;
+			comboSpr.visible = (!ClientPrefs.data.hideHud && ClientPrefs.data.showCombo && combo > 10);
 			comboSpr.velocity.x += FlxG.random.int(1, 10) * playbackRate;
 			comboGroup.add(rating);
 
 			var daLoop:Int = 0;
 			var xThing:Float = 0;
-			if (showCombo)
+			if (ClientPrefs.data.showCombo && combo > 10)
 				comboGroup.add(comboSpr);
 
 			var separatedScore:String = Std.string(combo).lpad('0', 3);
@@ -5273,16 +5272,11 @@ class PlayState extends MusicBeatState
 		if (generatedMusic)
 			notes.sort(FlxSort.byY, ClientPrefs.data.downScroll ? FlxSort.ASCENDING : FlxSort.DESCENDING);
 
-		// Animación normal de íconos (escalado)
-		if (!iconAnimationEnabled) {
-			iconP1.scale.set(1.2, 1.2);
-			iconP2.scale.set(1.2, 1.2);
-			iconP1.updateHitbox();
-			iconP2.updateHitbox();
-		} else {
-			// Usar animación DNB style
-			animateIcons();
-		}
+		iconP1.scale.set(1.2, 1.2);
+		iconP2.scale.set(1.2, 1.2);
+		
+		iconP1.updateHitbox();
+		iconP2.updateHitbox();
 
 		characterBopper(curBeat);
 
@@ -5326,60 +5320,6 @@ class PlayState extends MusicBeatState
 				strum.playAnim('static', true);
 			}
 		});
-	}
-
-	public function animateIcons():Void
-	{
-		if (!iconAnimationEnabled) return;
-		
-		// Alternar dirección
-		iconTurnValue = -iconTurnValue;
-		
-		// Animar ícono del jugador (iconP1)
-		if (iconP1 != null) {
-			// Cancelar tweens anteriores usando tags únicos
-			FlxTween.cancelTweensOf(iconP1);
-			FlxTween.cancelTweensOf(iconP1.scale);
-			
-			iconP1.angle = iconTurnValue;
-			iconP1.scale.set(1.2, 0.3); // Mantener el bump horizontal, reducir vertical
-			iconP1.updateHitbox();
-			
-			FlxTween.tween(iconP1, {angle: 0}, Conductor.crochet / 1000, {
-				ease: FlxEase.circOut,
-				type: ONESHOT
-			});
-			FlxTween.tween(iconP1.scale, {x: 1, y: 1}, Conductor.crochet / 1000, {
-				ease: FlxEase.circOut,
-				type: ONESHOT,
-				onComplete: function(twn:FlxTween) {
-					iconP1.updateHitbox();
-				}
-			});
-		}
-		
-		// Animar ícono del oponente (iconP2)
-		if (iconP2 != null) {
-			// Cancelar tweens anteriores usando tags únicos
-			FlxTween.cancelTweensOf(iconP2);
-			FlxTween.cancelTweensOf(iconP2.scale);
-			
-			iconP2.angle = iconTurnValue;
-			iconP2.scale.set(1.2, 0.3); // Mantener el bump horizontal, reducir vertical
-			iconP2.updateHitbox();
-			
-			FlxTween.tween(iconP2, {angle: 0}, Conductor.crochet / 1000, {
-				ease: FlxEase.circOut,
-				type: ONESHOT
-			});
-			FlxTween.tween(iconP2.scale, {x: 1, y: 1}, Conductor.crochet / 1000, {
-				ease: FlxEase.circOut,
-				type: ONESHOT,
-				onComplete: function(twn:FlxTween) {
-					iconP2.updateHitbox();
-				}
-			});
-		}
 	}
 
 	public function playerDance():Void

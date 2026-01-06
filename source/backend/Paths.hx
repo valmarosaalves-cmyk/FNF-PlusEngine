@@ -317,6 +317,10 @@ class Paths
 
 	inline static public function font(key:String)
 	{
+		// Check if we should use legacy font (VCR instead of Phantom)
+		if(ClientPrefs.data.useLegacyFont && key == 'phantom.ttf')
+			key = 'vcr.ttf';
+		
 		var folderKey:String = Language.getFileTranslation('fonts/$key');
 		#if MODS_ALLOWED
 		var file:String = modFolders(folderKey);

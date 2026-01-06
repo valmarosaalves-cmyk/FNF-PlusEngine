@@ -27,11 +27,6 @@ import options.Option;
 
 class MobileOptionsSubState extends BaseOptionsMenu
 {
-	#if android
-	var storageTypes:Array<String> = ["EXTERNAL_DATA", "EXTERNAL"];
-	var externalPaths:Array<String> = StorageUtil.checkExternalPaths(true);
-	final lastStorageType:String = ClientPrefs.data.storageType;
-	#end
 	final exControlTypes:Array<String> = ["NONE", "SINGLE", "DOUBLE"];
 	final hintOptions:Array<String> = ["No Gradient", "No Gradient (Old)", "Gradient", "Hidden"];
 	var option:Option;
@@ -87,42 +82,6 @@ class MobileOptionsSubState extends BaseOptionsMenu
 			BOOL);
 		addOption(option);
 
-		#if android
-		option = new Option('Storage Type', 'Which folder Psych Engine should use?\n(CHANGING THIS MAKES DELETE YOUR OLD FOLDER!!)', 'storageType', STRING,
-			storageTypes);
-		addOption(option);
-		#end
-
 		super();
-	}
-
-	#if android
-	function onStorageChange():Void
-	{
-		File.saveContent(lime.system.System.applicationStorageDirectory + 'storagetype.txt', ClientPrefs.data.storageType);
-
-		var lastStoragePath:String = StorageType.fromStrForce(lastStorageType) + '/';
-
-		try
-		{
-			if (ClientPrefs.data.storageType != "EXTERNAL")
-				Sys.command('rm', ['-rf', lastStoragePath]);
-		}
-		catch (e:haxe.Exception)
-			trace('Failed to remove last directory. (${e.message})');
-	}
-	#end
-
-	override public function destroy()
-	{
-		super.destroy();
-		#if android
-		if (ClientPrefs.data.storageType != lastStorageType)
-		{
-			onStorageChange();
-			CoolUtil.showPopUp(Language.getPhrase('changed_storage_type', 'Storage Type has been changed and you needed restart the game!!\nPress OK to close the game.'), Language.getPhrase('mobile_notice', "Notice!"));
-			lime.system.System.exit(0);
-		}
-		#end
 	}
 }

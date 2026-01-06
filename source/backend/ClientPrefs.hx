@@ -149,6 +149,7 @@ import states.TitleState;
 	public var useSScriptCompat:Bool = false; // Use SScript instead of hscript-iris for Psych 0.7.3 mods compatibility
 	public var legacyMemoryManagement:Bool = false; // Use Psych 0.7.3 memory management style (no GPU disposal)
 	public var legacyFileSystemAccess:Bool = false; // Allow direct FileSystem.readDirectory access like in Psych 0.7.3
+	public var useLegacyFont:Bool = false; // Use legacy VCR font instead of Phantom font
 }
 
 class ClientPrefs {

@@ -1,11 +1,11 @@
 package options;
 
-class CompatibilitySettingsSubState extends BaseOptionsMenu
+class LegacySettingsSubState extends BaseOptionsMenu
 {
 	public function new()
 	{
-		title = Language.getPhrase('compatibility_menu', 'Compatibility Settings');
-		rpcTitle = 'Compatibility Settings Menu';
+		title = Language.getPhrase('legacy_menu', 'Legacy Settings');
+		rpcTitle = 'Legacy Settings Menu';
 
 		// SScript Compatibility Option
 		var option:Option = new Option('Use SScript for Psych 0.7.3 Mods',
@@ -25,6 +25,19 @@ class CompatibilitySettingsSubState extends BaseOptionsMenu
 		option = new Option('Legacy FileSystem Access',
 			"If checked, allows direct FileSystem.readDirectory access.\nEnable if old mods expect Psych 0.7.3 filesystem behavior.\nMay be needed for some custom mod loaders.",
 			'legacyFileSystemAccess',
+			BOOL);
+		addOption(option);
+		
+		var option:Option = new Option('Vanilla Transition',
+		    'If checked, uses the vanilla Psych Engine transition instead of the custom one.',
+			'vanillaTransition',
+			BOOL);
+		addOption(option);
+
+		// Legacy Font Option
+		option = new Option('Use Legacy Font',
+			"If checked, uses the legacy VCR TTF font from Psych Engine 0.7.3 instead of Phantom.",
+			'useLegacyFont',
 			BOOL);
 		addOption(option);
 

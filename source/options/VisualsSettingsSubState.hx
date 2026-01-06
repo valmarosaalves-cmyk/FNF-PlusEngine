@@ -184,12 +184,6 @@ class VisualsSettingsSubState extends BaseOptionsMenu
 		addOption(option);
 		option.onChange = onChangePauseMusic;
 		
-		var option:Option = new Option('Vanilla Transition',
-		    'If checked, uses the vanilla Psych Engine transition instead of the custom one.',
-			'vanillaTransition',
-			BOOL);
-		addOption(option);
-		
 		#if CHECK_FOR_UPDATES
 		var option:Option = new Option('Check for Updates',
 			'On Release builds, turn this on to check for updates when you start the game.',

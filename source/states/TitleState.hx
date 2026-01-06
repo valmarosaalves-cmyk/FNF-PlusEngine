@@ -54,6 +54,7 @@ class TitleState extends MusicBeatState
 	var blackScreen:FlxSprite;
 	var credTextShit:Alphabet;
 	var ngSpr:FlxSprite;
+	var updateNotificationText:FlxText;
 	
 	var titleTextColors:Array<FlxColor> = [0xFF33FFFF, 0xFF3333CC];
 	var titleTextAlphas:Array<Float> = [1, .64];
@@ -90,17 +91,6 @@ class TitleState extends MusicBeatState
 		}
 
 		if(FlxG.save.data.introFinished == null) FlxG.save.data.introFinished = false;
-
-		#if CHECK_FOR_UPDATES
-		if (ClientPrefs.data.checkForUpdates) {
-			// Verificación de actualizaciones en TitleState
-			try {
-				var updateVersion = CoolUtil.checkForUpdates();
-			} catch (e:Dynamic) {
-				trace('Error checking for updates: ' + e);
-			}
-		}
-		#end
 
 		curWacky = FlxG.random.getObject(getIntroTextShit());
 
@@ -325,6 +315,58 @@ class TitleState extends MusicBeatState
 		add(credGroup);
 		add(ngSpr);
 
+		// Create update notification text
+		updateNotificationText = new FlxText(0, 10, 0, "Checking Updates...", 20);
+		updateNotificationText.setFormat("VCR OSD Mono", 20, FlxColor.WHITE, RIGHT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		updateNotificationText.borderSize = 2;
+		updateNotificationText.scrollFactor.set();
+		updateNotificationText.x = FlxG.width + 50; // Start off-screen to the right
+		updateNotificationText.cameras = [FlxG.camera];
+		add(updateNotificationText);
+
+		#if CHECK_FOR_UPDATES
+		if (ClientPrefs.data.checkForUpdates) {
+			// Show the text immediately with animation (from right to left)
+			FlxTween.tween(updateNotificationText, {x: FlxG.width - updateNotificationText.width - 10}, 0.5, {ease: FlxEase.backOut});
+			
+			// Start checking for updates in background (non-blocking)
+			try {
+				CoolUtil.checkForUpdates(null, function() {
+					// When done, change text to "Done!" (this callback runs on main thread)
+					if(updateNotificationText != null) {
+						updateNotificationText.text = "Done!";
+						// Wait a bit and then hide (slide back to the right)
+						new FlxTimer().start(1.0, function(tmr:FlxTimer) {
+							if(updateNotificationText != null) {
+								FlxTween.tween(updateNotificationText, {x: FlxG.width + 50}, 0.5, {ease: FlxEase.backIn, onComplete: function(twn:FlxTween) {
+									if(updateNotificationText != null)
+										updateNotificationText.visible = false;
+								}});
+							}
+						});
+					}
+				});
+			} catch (e:Dynamic) {
+				trace('Error checking for updates: ' + e);
+				if(updateNotificationText != null) {
+					updateNotificationText.text = "Error!";
+					new FlxTimer().start(1.0, function(tmr:FlxTimer) {
+						if(updateNotificationText != null) {
+							FlxTween.tween(updateNotificationText, {x: FlxG.width + 50}, 0.5, {ease: FlxEase.backIn, onComplete: function(twn:FlxTween) {
+								if(updateNotificationText != null)
+									updateNotificationText.visible = false;
+							}});
+						}
+					});
+				}
+			}
+		} else {
+			updateNotificationText.visible = false;
+		}
+		#else
+		updateNotificationText.visible = false;
+		#end
+
 		if (initialized && !forceShowIntro)
 			skipIntro();
 		else
@@ -457,6 +499,8 @@ class TitleState extends MusicBeatState
 
 	override function update(elapsed:Float)
 	{
+		// Execute any pending update check callbacks on the main thread
+		CoolUtil.executeUpdateCallback();
 
 		if (showingIntro && canSkip)
 		{

@@ -401,6 +401,9 @@ class PlayState extends MusicBeatState
 	public static var campaignSongsPlayed:Array<String> = [];
 	public static var campaignAccuracySum:Float = 0; // Suma de accuracy de cada canción
 	public static var campaignSongsCount:Int = 0; // Cantidad de canciones jugadas
+	
+	// Hit timing data for results graph
+	public static var hitDataArray:Array<{ms:Float, judgement:String, time:Float}> = [];
 
 	public var defaultCamZoom:Float = 1.05;
 	// Base stage zoom (immutable per stage) for P-Slice compatible scaling
@@ -544,6 +547,9 @@ class PlayState extends MusicBeatState
 		nps = 0;
 		maxNPS = 0;
 		npsCheck = 0;
+		
+		// Clear hit data for results graph
+		hitDataArray = [];
 
 		if(FlxG.sound.music != null)
 			FlxG.sound.music.stop();
@@ -3820,7 +3826,8 @@ class PlayState extends MusicBeatState
 					modFolder: Mods.currentModDirectory,
 					isPractice: practiceMode,
 					ratingName: ratingName,
-					ratingFC: ratingFC
+					ratingFC: ratingFC,
+					hitData: hitDataArray
 				}));
 			transitioning = true;
 			return true;
@@ -4085,6 +4092,12 @@ class PlayState extends MusicBeatState
 		var daRating:Rating = Conductor.judgeNote(ratingsData, noteDiff / playbackRate);
 		lastJudName = daRating.name;
 
+		// Record hit data for results graph
+		hitDataArray.push({
+			ms: noteDiff / playbackRate,
+			judgement: daRating.name,
+			time: Conductor.songPosition
+		});
 
 		// totalNotesHit += daRating.ratingMod;
 		

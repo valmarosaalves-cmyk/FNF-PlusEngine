@@ -32,6 +32,7 @@ class LoadingState extends MusicBeatState
 {
 	public static var loaded:Int = 0;
 	public static var loadMax:Int = 0;
+	public static var currentFile:String = "";
 
 	static var originalBitmapKeys:Map<String, String> = [];
 	static var requestedBitmaps:Map<String, BitmapData> = [];
@@ -292,7 +293,8 @@ class LoadingState extends MusicBeatState
 			case 2:
 				dots = '...';
 		}
-		loadingText.text = Language.getPhrase('now_loading', 'Now Loading{1}', [dots]);
+		var fileText:String = currentFile.length > 0 ? ': "$currentFile" ' : '';
+		loadingText.text = Language.getPhrase('now_loading', 'Now Loading', ['']) + fileText + dots;
 
 		if(!spawnedPessy)
 		{
@@ -382,6 +384,7 @@ class LoadingState extends MusicBeatState
 	{
 		loaded = 0;
 		loadMax = 0;
+		currentFile = "";
 		initialThreadCompleted = true;
 		isIntrusive = false;
 
@@ -720,12 +723,12 @@ class LoadingState extends MusicBeatState
 	static function _threadFunc()
 	{
 		_startPool();
-		for (sound in soundsToPrepare) initThread(() -> preloadSound('sounds/$sound'), 'sound $sound');
-		for (music in musicToPrepare) initThread(() -> preloadSound('music/$music'), 'music $music');
-		for (song in songsToPrepare) initThread(() -> preloadSound(song, 'songs', true, false), 'song $song');
+		for (sound in soundsToPrepare) initThread(() -> preloadSound('sounds/$sound'), sound);
+		for (music in musicToPrepare) initThread(() -> preloadSound('music/$music'), music);
+		for (song in songsToPrepare) initThread(() -> preloadSound(song, 'songs', true, false), song);
 
 		// for images, they get to have their own thread
-		for (image in imagesToPrepare) initThread(() -> preloadGraphic(image), 'image $image');
+		for (image in imagesToPrepare) initThread(() -> preloadGraphic(image), image);
 	}
 
 	static function initThread(func:Void->Dynamic, traceData:String)
@@ -740,6 +743,11 @@ class LoadingState extends MusicBeatState
 			trace('$traceData took ${threadStart - threadSchedule}s to start preloading');
 			#end
 
+			// Update current file being loaded
+			mutex.acquire();
+			currentFile = traceData;
+			mutex.release();
+
 			try {
 				if (func() != null) {
 					#if debug
@@ -751,9 +759,9 @@ class LoadingState extends MusicBeatState
 			catch(e:Dynamic) {
 				trace('ERROR! fail on preloading $traceData: $e');
 			}
-			// mutex.acquire();
+			mutex.acquire();
 			loaded++;
-			// mutex.release();
+			mutex.release();
 		});
 	}
 

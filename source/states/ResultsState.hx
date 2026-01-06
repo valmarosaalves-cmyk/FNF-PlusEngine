@@ -17,6 +17,8 @@ import states.StoryMenuState;
 import states.MainMenuState;
 import sys.io.File;
 import sys.FileSystem;
+import objects.HitGraph;
+import objects.OFLSprite;
 
 #if mobile
 import mobile.backend.TouchUtil;
@@ -54,6 +56,10 @@ class ResultsState extends MusicBeatState
     var misses:FlxText;
     var comboText:FlxText;
     var accText:FlxText;
+
+    var graph:HitGraph;
+    var graphSprite:OFLSprite;
+    var graphBackground:FlxSprite;
 
     static var use24HourFormat:Null<Bool> = true;
     static var dateFormat:String = "MM/DD/YYYY";
@@ -172,18 +178,40 @@ class ResultsState extends MusicBeatState
         accText.setFormat(Paths.font("aller.ttf"), 32, FlxColor.WHITE, "left");
         add(accText);
 
-        var ratingLetter = params.ratingName != null ? params.ratingName : "";
-        var ratingFC = params.ratingFC != null ? params.ratingFC : "";
-        var ratingW = 400;
-        var ratingX = FlxG.width - 525; 
-        var ratingY = judgY + 25;
-        var ratingText = new FlxText(ratingX, ratingY, ratingW, ratingLetter, 70);
-        ratingText.setFormat(Paths.font("aller.ttf"), 70, FlxColor.YELLOW, "center");
-        add(ratingText);
+        // Create hit precision graph - positioned higher on screen
+        var graphX = FlxG.width - 510;
+        var graphY = FlxG.height * 0.35; // Middle of screen, slightly higher
+        
+        graphBackground = new FlxSprite(graphX, graphY).makeGraphic(460, 250, FlxColor.BLACK);
+        graphBackground.alpha = 0.6;
+        add(graphBackground);
 
-        var fcText = new FlxText(ratingX, ratingY + 90, ratingW, ratingFC, 54); 
-        fcText.setFormat(Paths.font("aller.ttf"), 54, FlxColor.CYAN, "center");
-        add(fcText);
+        graph = new HitGraph(FlxG.width - 500, Std.int(graphY + 10), 450, 240);
+
+        // Add hit data to graph if available
+        if (params.hitData != null)
+        {
+            var hitDataArray:Array<Dynamic> = cast params.hitData;
+            if (hitDataArray != null && hitDataArray.length > 0)
+            {
+                for (i in 0...hitDataArray.length)
+                {
+                    var hit = hitDataArray[i];
+                    // hit = {ms, judgement, time}
+                    graph.addToHistory(hit.ms, hit.judgement, hit.time);
+                }
+                graph.update();
+            }
+        }
+
+        graphSprite = new OFLSprite(FlxG.width - 500, Std.int(graphY + 10), 450, 240, graph);
+        graphSprite.alpha = 1;
+        add(graphSprite);
+        
+        // Add graph label below the graph
+        var graphLabel = new FlxText(graphX, graphY + 260, 460, Language.getPhrase('results_graph_label', 'Hit Timing Graph'), 18);
+        graphLabel.setFormat(Paths.font("aller.ttf"), 18, FlxColor.WHITE, "center");
+        add(graphLabel);
 
         var yBottom = FlxG.height - 110;
         if (params.isPractice != null && params.isPractice) {

@@ -1,3 +1,5 @@
+They don't translate it, maybe I'll delete it lol
+
 # Codename Engine - Sistema de States
 
 ## Cómo Codename Engine parsea los States

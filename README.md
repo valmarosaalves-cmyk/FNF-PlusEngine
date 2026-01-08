@@ -71,7 +71,7 @@ Contributions are welcome! If you have ideas, improvements, or fixes, feel free 
 > This project is subject to bugs, fixes, improvements and changes.
 
 ## Developer Credits:
-* Lenin Asto - Main Programmer for Plus Engine
+* Lenin Asto - Main Programmer for Plus Engine Fork
 
 ## Original Credits:
 * Shadow Mario - Main Programmer and Head of Psych Engine.

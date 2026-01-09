@@ -216,6 +216,7 @@ class Main extends Sprite
 		traceDisplay = new TraceDisplay(10, 100, 0xFFFFFF);
 		addChild(traceDisplay);
 		
+		// Load preferences BEFORE MobileData to ensure framerate is set correctly
 		ClientPrefs.loadPrefs();
 		MobileData.init();
 

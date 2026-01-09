@@ -297,20 +297,18 @@ class ClientPrefs {
             judgementCounter = !!Reflect.field(FlxG.save.data, "judgementCounter");
 		    judgementCounter = data.judgementCounter;
 
+		// Apply framerate settings consistently
 		if (data.fpsRework)
+		{
+			// FPS Rework mode: Set window framerate directly
 			FlxG.stage.window.frameRate = data.framerate;
+		}
 		else
 		{
-			if (data.framerate > FlxG.drawFramerate)
-			{
-				FlxG.updateFramerate = data.framerate;
-				FlxG.drawFramerate = data.framerate;
-			}
-			else
-			{
-				FlxG.drawFramerate = data.framerate;
-				FlxG.updateFramerate = data.framerate;
-			}
+			// Standard mode: Set both update and draw framerates equally
+			// This ensures consistent timing on all devices
+			FlxG.updateFramerate = data.framerate;
+			FlxG.drawFramerate = data.framerate;
 		}
 
 		if (FlxG.save.data.showIntroVideo != null) {

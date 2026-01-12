@@ -26,7 +26,6 @@
 	<define name="HSCRIPT_ALLOWED" if="desktop || mobile" />
 	<define name="SSCRIPT_ALLOWED" if="desktop || mobile" />
 	<define name="LUA_ALLOWED" if="cpp" />
-	<define name="PY_ALLOWED" if="desktop || mobile" />
 	<define name="ACHIEVEMENTS_ALLOWED" />
 	<define name="DISCORD_ALLOWED" if="desktop" />
 	<define name="TRANSLATIONS_ALLOWED" />
@@ -125,7 +124,6 @@
 
 	<!--Psych stuff needed-->
 	<haxelib name="linc_luajit" if="LUA_ALLOWED"/>
-	<haxelib name="hython" if="PY_ALLOWED"/>
 	<haxelib name="hscript-iris" if="HSCRIPT_ALLOWED"/>
 	<!--Compatibility with older mods-->
 	<haxelib name="sscript-parch" version="git" if="SSCRIPT_ALLOWED"/>

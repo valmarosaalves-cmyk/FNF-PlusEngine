@@ -312,11 +312,16 @@ class PlayState extends MusicBeatState
 
 	public var iconP1:HealthIcon;
 	public var iconP2:HealthIcon;
+	public var iconGF:HealthIcon; // Secondary icon for GF
 	public var camHUD:FlxCamera;
 	public var camGame:FlxCamera;
 	public var camOther:FlxCamera;
 	public var luaTpadCam:FlxCamera;
 	public var cameraSpeed:Float = 1;
+
+	// Add Secondary Icon event variables
+	public var gfIconSide:String = ''; // Side where GF icon appears (Dad, BF)
+	public var gfIconSwapOnSing:Bool = false; // Whether to swap positions when GF sings
 
 	// 3D Curve Effect Shaders
 	public var curveEffectGame:shaders.CurveEffect;
@@ -760,7 +765,7 @@ class PlayState extends MusicBeatState
 			}
 		}
 		
-		#if (LUA_ALLOWED || HSCRIPT_ALLOWED)
+		#if (LUA_ALLOWED || HSCRIPT_ALLOWED || PY_ALLOWED)
 		// "SCRIPTS FOLDER" SCRIPTS
 		for (folder in Mods.directoriesWithFile(Paths.getSharedPath(), 'scripts/'))
 			#if linux
@@ -777,6 +782,11 @@ class PlayState extends MusicBeatState
 				#if HSCRIPT_ALLOWED
 				if(file.toLowerCase().endsWith('.hx'))
 					initHScript(folder + file);
+				#end
+
+				#if PY_ALLOWED
+				if(file.toLowerCase().endsWith('.py'))
+					initPython(folder + file);
 				#end
 			}
 		#end
@@ -906,6 +916,15 @@ class PlayState extends MusicBeatState
 		iconP2.alpha = ClientPrefs.data.healthBarAlpha;
 		if (!isNotITG) uiGroup.add(iconP2);
 
+		// Initialize GF icon (hidden by default)
+		var gf_animatedIcon:Bool = (gf != null && gf.animatedIcon == true) || (SONG.isAnimated == true);
+		iconGF = new HealthIcon(gf != null ? gf.healthIcon : 'gf', true);
+		if(gf_animatedIcon) iconGF.changeIcon(iconGF.getCharacter(), true, true);
+		iconGF.y = healthBar.y - 75;
+		iconGF.visible = false; // Hidden by default until event is triggered
+		iconGF.alpha = ClientPrefs.data.healthBarAlpha;
+		if (!isNotITG) uiGroup.add(iconGF);
+
 		function reloadHealthBarColors() {
 			healthBar.setColors(FlxColor.fromRGB(dad.healthColorArray[0], dad.healthColorArray[1], dad.healthColorArray[2]),
 				FlxColor.fromRGB(boyfriend.healthColorArray[0], boyfriend.healthColorArray[1], boyfriend.healthColorArray[2]));
@@ -1016,7 +1035,7 @@ class PlayState extends MusicBeatState
 		eventsPushed = null;
 
 		// SONG SPECIFIC SCRIPTS
-		#if (LUA_ALLOWED || HSCRIPT_ALLOWED)
+		#if (LUA_ALLOWED || HSCRIPT_ALLOWED || PY_ALLOWED)
 		// Para canciones de StepMania/NotITG, buscar scripts en la carpeta songs/
 		if (isStepManiaLevel() && customAudioPath != null)
 		{
@@ -1045,6 +1064,14 @@ class PlayState extends MusicBeatState
 						initHScript(smFolder + '/' + file);
 					}
 					#end
+
+					#if PY_ALLOWED
+					if(file.toLowerCase().endsWith('.py'))
+					{
+						trace('Loading SM Python script: $file');
+						initPython(smFolder + '/' + file);
+					}
+					#end
 				}
 			}
 			else
@@ -1070,6 +1097,11 @@ class PlayState extends MusicBeatState
 					#if HSCRIPT_ALLOWED
 					if(file.toLowerCase().endsWith('.hx'))
 						initHScript(folder + file);
+					#end
+
+					#if PY_ALLOWED
+					if(file.toLowerCase().endsWith('.py'))
+						initPython(folder + file);
 					#end
 				}
 		}
@@ -2993,13 +3025,44 @@ class PlayState extends MusicBeatState
 			iconP2.scale.set(mult, mult);
 			iconP2.updateHitbox();
 		}
+
+		if (iconGF != null && iconGF.visible) {
+			var mult:Float = FlxMath.lerp(1, iconGF.scale.x, Math.exp(-elapsed * 9 * playbackRate));
+			iconGF.scale.set(mult, mult);
+			iconGF.updateHitbox();
+		}
 	}
 
 	public dynamic function updateIconsPosition()
 	{
 		var iconOffset:Int = 26;
+		var isGFSinging:Bool = (SONG.notes[curSection] != null && SONG.notes[curSection].gfSection);
+		
+		// Default positions when GF is not singing or swap is disabled
 		if (iconP1 != null) iconP1.x = healthBar.barCenter + (150 * iconP1.scale.x - 150) / 2 - iconOffset;
 		if (iconP2 != null) iconP2.x = healthBar.barCenter - (150 * iconP2.scale.x) / 2 - iconOffset * 2;
+		
+		// Handle GF secondary icon positioning
+		if (iconGF != null && iconGF.visible) {
+			if (gfIconSwapOnSing && isGFSinging) {
+				// Swap: GF takes the position of BF, BF moves to secondary position
+				if (gfIconSide == 'bf') {
+					iconGF.x = healthBar.barCenter + (150 * iconGF.scale.x - 150) / 2 - iconOffset;
+					iconP1.x = healthBar.barCenter + (150 * iconP1.scale.x - 150) / 2 - iconOffset + 75;
+				} else if (gfIconSide == 'dad') {
+					// If GF is on Dad's side, swap Dad and GF positions when GF sings
+					iconGF.x = healthBar.barCenter - (150 * iconGF.scale.x) / 2 - iconOffset * 2;
+					iconP2.x = healthBar.barCenter - (150 * iconP2.scale.x) / 2 - iconOffset * 2 - 75;
+				}
+			} else {
+				// Normal position: GF appears next to the selected icon
+				if (gfIconSide == 'bf') {
+					iconGF.x = healthBar.barCenter + (150 * iconGF.scale.x - 150) / 2 - iconOffset + 75;
+				} else if (gfIconSide == 'dad') {
+					iconGF.x = healthBar.barCenter - (150 * iconGF.scale.x) / 2 - iconOffset * 2 - 75;
+				}
+			}
+		}
 	}
 
 	var iconsAnimations:Bool = true;
@@ -3086,6 +3149,9 @@ class PlayState extends MusicBeatState
 		if(iconP2 != null && iconP2.isAnimated) {
 			iconP2.updateIconState(playOpponent ? 1 - healthPercent : healthPercent);
 		}
+		if(iconGF != null && iconGF.visible && iconGF.isAnimated) {
+			iconGF.updateIconState(0.5); // GF is always neutral
+		}
 		
 		// Sistema de frames para íconos estáticos (comportamiento original)
 		if(iconP1 != null && !iconP1.isAnimated) {
@@ -3097,6 +3163,11 @@ class PlayState extends MusicBeatState
 				iconP1.animation.curAnim.curFrame = (healthBar.percent < 20) ? 1 : 0; //If health is under 20%, change player icon to frame 1 (losing icon), otherwise, frame 0 (normal)
 				if (iconP2 != null) iconP2.animation.curAnim.curFrame = (healthBar.percent > 80) ? 1 : 0; //If health is over 80%, change opponent icon to frame 1 (losing icon), otherwise, frame 0 (normal)
 			}
+		}
+		
+		// GF icon always shows normal state
+		if(iconGF != null && iconGF.visible && !iconGF.isAnimated && iconGF.animation != null && iconGF.animation.curAnim != null) {
+			iconGF.animation.curAnim.curFrame = 0; // Always normal
 		}
 	}
 
@@ -3642,6 +3713,24 @@ class PlayState extends MusicBeatState
 				cameraBopFrequency = freq;
 				cameraBopIntensity = intensity;
 				cameraBopEnabled = (intensity > 0);
+
+			case 'Add Secondary Icon':
+				// Value1: Side of Health Bar (Dad, BF)
+				// Value2: Swap position when GF sings (true, false)
+				gfIconSide = value1.toLowerCase().trim();
+				gfIconSwapOnSing = (value2.toLowerCase().trim() == 'true');
+				
+				if (iconGF != null) {
+					// Show GF icon
+					iconGF.visible = !ClientPrefs.data.hideHud && (gfIconSide == 'dad' || gfIconSide == 'bf');
+					
+					// Update icon flip based on side
+					if (gfIconSide == 'dad') {
+						iconGF.flipX = false; // Face BF side
+					} else if (gfIconSide == 'bf') {
+						iconGF.flipX = true; // Face Dad side
+					}
+				}
 		}
 
 		stagesFunc(function(stage:BaseStage) stage.eventCalled(eventName, value1, value2, flValue1, flValue2, strumTime));
@@ -5495,55 +5584,6 @@ class PlayState extends MusicBeatState
 		}
 	}
 	#end
-
-	#if PY_ALLOWED
-	public function startPythonsNamed(pyFile:String)
-	{
-		#if MODS_ALLOWED
-		var pyToLoad:String = Paths.modFolders(pyFile);
-		if(!FileSystem.exists(pyToLoad))
-			pyToLoad = Paths.getSharedPath(pyFile);
-		#else
-		var pyToLoad:String = Paths.getSharedPath(pyFile);
-		#end
-
-		if(FileSystem.exists(pyToLoad))
-		{
-			for (script in pythonArray)
-				if(script.scriptName == pyToLoad) return false;
-
-			initPython(pyToLoad);
-			return true;
-		}
-		return false;
-	}
-
-	public function initPython(file:String)
-	{
-		var newScript:FunkinPython = null;
-		try
-		{
-			newScript = new FunkinPython(file);
-			if (newScript != null)
-			{
-				// Load and execute the Python file
-				newScript.executeFile(file);
-				
-				// Call onCreate if it exists
-				var result = newScript.call('onCreate', []);
-				
-				trace('Python file loaded successfully: $file');
-			}
-		}
-		catch(e:Dynamic)
-		{
-			trace('ERROR loading Python file ($file): $e');
-			addTextToDebug('ERROR loading Python: $file', FlxColor.RED);
-			if(newScript != null)
-				newScript.stop();
-		}
-	}
-	#end
 	
 	// Método para actualizar estadísticas de scripts en el FPSCounter
 	function updateScriptStats()
@@ -5558,16 +5598,6 @@ class PlayState extends MusicBeatState
 		
 		// Contar scripts Lua fallidos
 		Main.fpsVar.luaScriptsFailed = FunkinLua.lua_Errors;
-		#end
-
-		#if PY_ALLOWED
-		// Contar scripts Python cargados
-		//if (pythonArray != null) {
-		//	Main.fpsVar.pythonScriptsLoaded = pythonArray.length;
-		//}
-		
-		// Contar scripts Python fallidos
-		//Main.fpsVar.pythonScriptsFailed = FunkinPython.py_Errors;
 		#end
 		
 		#if HSCRIPT_ALLOWED

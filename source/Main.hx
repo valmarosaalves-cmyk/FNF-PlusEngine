@@ -246,6 +246,9 @@ class Main extends Sprite
 		#if html5
 		FlxG.autoPause = false;
 		FlxG.mouse.visible = false;
+		#else
+		// Apply autoPause setting from ClientPrefs for non-HTML5 platforms
+		FlxG.autoPause = ClientPrefs.data.autoPause;
 		#end
 
 		FlxG.fixedTimestep = false;

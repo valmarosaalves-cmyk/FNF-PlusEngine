@@ -275,7 +275,7 @@ class TitleState extends MusicBeatState
 
 		var animFrames:Array<FlxFrame> = [];
 		#if mobile
-		titleTextMobile = new FlxSprite(enterPositionMobile.x, enterPositionMobile.y)
+		titleTextMobile = new FlxSprite(enterPositionMobile.x, enterPositionMobile.y);
 		titleTextMobile.frames = Paths.getSparrowAtlas('titleEnterMobile');
 		#else
 		titleText = new FlxSprite(enterPosition.x, enterPosition.y);
@@ -341,7 +341,7 @@ class TitleState extends MusicBeatState
 		add(gfDance);
 		add(logoBl); //FNF Logo
 		#if mobile
-		add(titleTextMobile)
+		add(titleTextMobile);
 		#else
 		add(titleText); //"Press Enter to Begin" text
 		#end
@@ -441,7 +441,7 @@ class TitleState extends MusicBeatState
 					gfPosition.set(titleJSON.gfx, titleJSON.gfy);
 					logoPosition.set(titleJSON.titlex, titleJSON.titley);
 					#if mobile
-					enterPositionMobile.set(titleJSON.startxmobile, titleJSON.startymobile)
+					enterPositionMobile.set(titleJSON.startx, titleJSON.starty);
 					#else
 					enterPosition.set(titleJSON.startx, titleJSON.starty);
 					#end

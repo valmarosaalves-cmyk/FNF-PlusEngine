@@ -13,7 +13,7 @@ haxelib install extension-androidtools 2.2.2 --quiet
 haxelib install openfl 9.5.0 --quiet
 haxelib install flixel 5.6.2 --quiet
 haxelib install flixel-addons 3.3.2 --quiet
-haxelib install moonchart --quiet
+haxelib install moonchart 0.5.0 --quiet
 haxelib install flixel-tools 1.5.1 --quiet
 haxelib install hscript-iris 1.1.3 --quiet
 haxelib git sscript-parch https://github.com/Psych-Plus-Team/SScript-Parch.git --quiet

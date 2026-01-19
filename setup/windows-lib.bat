@@ -1,7 +1,7 @@
 @echo off
 color 0a
 cd ..
-echo Installing dependencies...
+echo Installing libraries...
 echo This might take a few moments depending on your internet speed.
 haxelib git hxcpp https://github.com/kittycathy233/hxcpp --quiet
 haxelib git lime https://github.com/Psych-Plus-Team/lime.git --quiet

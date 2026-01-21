@@ -2,7 +2,6 @@ package states;
 
 import backend.StageData;
 import backend.WeekData;
-import FunkinPreloader;
 import backend.Highscore;
 import backend.Song;
 
@@ -228,7 +227,7 @@ class FreeplayState extends MusicBeatState
 			}
 			
 			var songText:FlxText = new FlxText(90, 320, 400, songs[i].songName, 32);
-			songText.setFormat(Paths.font("vcr.ttf"), 32, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+			songText.setFormat(Paths.font("phantom.ttf"), 32, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 			songText.borderSize = 2;
 			songText.ID = i;
 			grpSongs.add(songText);
@@ -264,7 +263,7 @@ class FreeplayState extends MusicBeatState
 			}
 
 			var modText:FlxText = new FlxText(0, 0, 400, modName, 20);
-			modText.setFormat(Paths.font("vcr.ttf"), 20, FlxColor.WHITE, LEFT);
+			modText.setFormat(Paths.font("phantom.ttf"), 20, FlxColor.WHITE, LEFT);
 			modText.alpha = 0.7;
 			modText.visible = false;
 			modTextArray.push(modText);
@@ -283,7 +282,7 @@ class FreeplayState extends MusicBeatState
 		// scoreText ya no se usa
 
 		freeplayText = new FlxText(0, 0, 0, "FREEPLAY", 40);
-		freeplayText.setFormat(Paths.font("vcr.ttf"), 40, FlxColor.WHITE, CENTER);
+		freeplayText.setFormat(Paths.font("phantom.ttf"), 40, FlxColor.WHITE, CENTER);
 		freeplayText.borderSize = 0;
 		freeplayText.updateHitbox();
 		freeplayText.x = FlxG.width * 0.41;
@@ -292,7 +291,7 @@ class FreeplayState extends MusicBeatState
 		
 		// Opponent Mode indicator
 		opponentModeText = new FlxText(FlxG.width * 0.68, 5, 0, "", 20);
-		opponentModeText.setFormat(Paths.font("vcr.ttf"), 20, FlxColor.YELLOW, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		opponentModeText.setFormat(Paths.font("phantom.ttf"), 20, FlxColor.YELLOW, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 		opponentModeText.borderSize = 1.5;
 		opponentModeText.visible = false;
 		add(opponentModeText);
@@ -303,7 +302,7 @@ class FreeplayState extends MusicBeatState
 		add(missingTextBG);
 		
 		missingText = new FlxText(50, 0, FlxG.width - 100, '', 24);
-		missingText.setFormat(Paths.font("vcr.ttf"), 24, FlxColor.WHITE, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		missingText.setFormat(Paths.font("phantom.ttf"), 24, FlxColor.WHITE, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 		missingText.scrollFactor.set();
 		missingText.visible = false;
 		add(missingText);
@@ -323,7 +322,7 @@ class FreeplayState extends MusicBeatState
 		bottomString = leText;
 		var size:Int = 16;
 		bottomText = new FlxText(0, FlxG.height - 24, FlxG.width, leText, size);
-		bottomText.setFormat(Paths.font("vcr.ttf"), size, FlxColor.WHITE, CENTER);
+		bottomText.setFormat(Paths.font("phantom.ttf"), size, FlxColor.WHITE, CENTER);
 		bottomText.scrollFactor.set();
 		add(bottomText);
 		
@@ -430,13 +429,7 @@ class FreeplayState extends MusicBeatState
 					{
 						curSelected = 0;
 						changeSelection();
-						holdTime = 0;	
-		
-						// If preloader preview is enabled, play the preloaded Inst for this selection
-						if (ClientPrefs.data != null && ClientPrefs.data.enablePreloader && FunkinPreloader.preloadedInsts.exists(songs[curSelected].songName))
-						{
-							FunkinPreloader.startPreview(songs[curSelected].songName, 0.6, 30000);
-						}
+						holdTime = 0;
 					}
 					else if(FlxG.keys.justPressed.END)
 					{
@@ -613,19 +606,9 @@ class FreeplayState extends MusicBeatState
 					}
 				}
 
-				// If preloader is enabled and we have the Inst cached, use it to avoid loading lag
-				if (ClientPrefs.data != null && ClientPrefs.data.enablePreloader && FunkinPreloader.preloadedInsts.exists(PlayState.SONG.song))
-				{
-					var cachedInst = FunkinPreloader.preloadedInsts.get(PlayState.SONG.song);
-					if (cachedInst != null)
-						FlxG.sound.playMusic(cachedInst, 0.8);
-					else
-						FlxG.sound.playMusic(Paths.inst(PlayState.SONG.song), 0.8);
-				}
-				else
-				{
-					FlxG.sound.playMusic(Paths.inst(PlayState.SONG.song), 0.8);
-				}
+				
+				FlxG.sound.playMusic(Paths.inst(PlayState.SONG.song), 0.8);
+
 				FlxG.sound.music.pause();
 				instPlaying = curSelected;
 
@@ -905,16 +888,6 @@ class FreeplayState extends MusicBeatState
 
 		changeDiff();
 		_updateSongLastDifficulty();
-
-		// If preloader preview is enabled, play the preloaded Inst for this selection
-		if (ClientPrefs.data != null && ClientPrefs.data.enablePreloader)
-		{
-			FunkinPreloader.stopPreview();
-			if (FunkinPreloader.preloadedInsts.exists(songs[curSelected].songName))
-			{
-				FunkinPreloader.startPreview(songs[curSelected].songName, 0.6, 30000);
-			}
-		}
 	}
 	
 	public function detectAndLoadAllDifficulties():Void
@@ -1273,7 +1246,7 @@ class DifficultySelector
 		for (i in 0...Difficulty.list.length)
 		{
 			var diffText:FlxText = new FlxText(0, 0, 500, Difficulty.getString(i), 48);
-			diffText.setFormat(Paths.font("vcr.ttf"), 48, FlxColor.WHITE, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+			diffText.setFormat(Paths.font("phantom.ttf"), 48, FlxColor.WHITE, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 			diffText.borderSize = 2;
 			diffText.ID = i;
 			diffText.alpha = 0;
@@ -1288,7 +1261,7 @@ class DifficultySelector
 			
 			// Crear texto de score/accuracy debajo de la dificultad
 			var scoreInfoText:FlxText = new FlxText(0, 0, 450, "", 18);
-			scoreInfoText.setFormat(Paths.font("vcr.ttf"), 18, FlxColor.WHITE, CENTER);
+			scoreInfoText.setFormat(Paths.font("phantom.ttf"), 18, FlxColor.WHITE, CENTER);
 			scoreInfoText.ID = i;
 			scoreInfoText.alpha = 0;
 			scoreTexts.add(scoreInfoText);

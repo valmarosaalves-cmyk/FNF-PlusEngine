@@ -16,6 +16,8 @@
 
 Engine based in Psych 1.0.4 with modcharts like NotITG and compatible with hxcodec videos from Psych mods 0.6.3 and 0.7.3.
 
+[Join the Discord!!](https://discord.gg/FCwACsDDMz)
+
 ## Contributors
 
 <table>
@@ -36,7 +38,7 @@ Engine based in Psych 1.0.4 with modcharts like NotITG and compatible with hxcod
         <sub><b>MTGC</b></sub>
       </a>
       <br />
-      <sub>Translate</sub>
+      <sub>Indonesian translation and other PRs</sub>
     </td>
   </tr>
 </table>
@@ -54,6 +56,15 @@ Engine based in Psych 1.0.4 with modcharts like NotITG and compatible with hxcod
       <br />
       <sub>Creator of several used Slushi Engine codes</sub>
     </td>
+    <td align="center">
+      <a href="https://www.facebook.com/hansuke.hotaroshi">
+        <img src="https://raw.githubusercontent.com/Psych-Plus-Team/FNF-PlusEngine/d98e506ac8d567d1731e4652bc120887aff4376c/assets/shared/images/credits/hansu.png" width="100px;" alt="Hansu"/>
+        <br />
+        <sub><b>Hansuke H</b></sub>
+      </a>
+      <br />
+      <sub>Vietnamese translation and alphabet sprite</sub>
+    </td>
   </tr>
 </table>
 
@@ -62,7 +73,7 @@ Contributions are welcome! If you have ideas, improvements, or fixes, feel free 
 > This project is subject to bugs, fixes, improvements and changes.
 
 ## Developer Credits:
-* Lenin Asto - Main Programmer for Plus Engine
+* Lenin Asto - Main Programmer for Plus Engine Fork
 
 ## Original Credits:
 * Shadow Mario - Main Programmer and Head of Psych Engine.
@@ -103,10 +114,11 @@ You need to have:
 
 - Variables for window and system management in Lua: Many variables were added, whether to hide the taskbar or window borders, etc.
 - Key Viewer
-- Modchart settings.
+- Modchart support and settings.
+![Modchart](docs/img/modchart.gif)
 - New Gameplay Changers (Opponent Mode, No Drop Penalty, Perfect Only).
 - You can choose your default accuracy system. ITG, Psych, DJMax, Wife3, osu!, Simple
-- Added the songs "erect" and "nightmare," BUT without stages and events, only levels
+- Added the songs "erect" and "nightmare"
 * Support for NotITG levels (without modifiers) and Stepmania, includes UI
 ![Stepmania](docs/img/Stepmania.png)
 - Android support

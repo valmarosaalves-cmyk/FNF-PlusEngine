@@ -45,11 +45,9 @@ class IdID
         // Gameplay
         "score_text" => "Skor: {1} | {2}: {3} | Rating: {4} | TPS: {5}/{6}",
         "score_text_instakill" => "Skor: {1} | Rating: {2} | TPS: {3}/{4}",
-        "botplay" => "Botplay",
         "practice_mode" => "Mode Latihan",
         "perfect_mode" => "Mode Sempurna",
         "opponent_mode" => "Mode Lawan",
-        "misses" => "Misses",
         "combo_breaks" => "Kombo Istirahat",
 
         // Ratings
@@ -97,12 +95,12 @@ class IdID
         "storyname_weekend1" => "Utang yang Harus Dibayar",
 
         // Freeplay
-        "personal_best" => "REKOR PRIBADI:\n{1} ({2}%)",
-        "freeplay_tip" => "Tekan SPACE untuk mendengarkan lagu / Tekan CTRL untuk membuka menu Gameplay Changers / Tekan RESET untuk mereset skor dan akurasi anda.",
+        "freeplay_tip" => "Tekan {1} untuk mendengarkan lagu / Tekan {2} untuk membuka menu Gameplay Changers / Tekan {3} untuk mereset skor dan akurasi Anda.",
         "musicplayer_playing" => "MEMAINKAN: {1}",
         "musicplayer_paused" => "MEMAINKAN: {1} (DIJEDA)",
-        "musicplayer_tip" => "Tekan SPACE untuk jeda / Tekan ESCAPE untuk keluar / Tekan R untuk mereset lagu",
-        "no_score" => "Tidak ada skor.",
+        "musicplayer_tip" => "Tekan {1} untuk Menjeda / Tekan {2} untuk Keluar / Tekan {3} untuk Mereset Lagu",
+        "score_accuracy" => "Skor: {1}\nAkurasi: {2}% ({3})",
+        "no_score" => "Tidak ada skor",
 
         // Mods Menu
         "no_mods_installed" => "TIDAK ADA MOD YANG DIINSTAL\nTEKAN TOMBOL KEMBALI UNTUK KELUAR ATAU INSTAL MOD",
@@ -164,6 +162,7 @@ class IdID
         "options_controls" => "Controls",
         "options_adjust_delay_and_combo" => "Sesuaikan Delay dan Kombo",
         "options_gameplay" => "Gameplay",
+        "options_legacy" => "Warisan",
         "options_visuals" => "Visuals",
         "options_graphics" => "Grafik",
         "options_modchart" => "Modchart",
@@ -172,6 +171,7 @@ class IdID
         "graphics_menu" => "Pengaturan Grafik",
         "visuals_menu" => "Pengaturan Visuals",
         "gameplay_menu" => "Pengaturan Gameplay",
+        "legacy_menu" => "Pengaturan Warisan",
         "modchart_menu" => "Pengaturan Modchart",
         "language_menu" => "Pengaturan Bahasa",
         "mobile_options_menu" => "Pengaturan Ponsel",
@@ -277,6 +277,8 @@ class IdID
         "description_note_splashes" => "Pilih variasi Note Splash yang Anda sukai atau matikan saja",
         "setting_note_splash_opacity" => "Note Splash Opacity",
         "description_note_splash_opacity" => "Seberapa transparan seharusnya Note Splashes?",
+        "setting_color_quantization" => "Kuantisasi Warna",
+        "description_color_quantization" => "Jika dicentang, not akan diberi warna sesuai dengan pembagian ritme (4, 8, 12, 16) seperti di StepMania.\nMengganti warna panah bawaan.",
         "setting_hide_hud" => "Sembunyikan HUD",
         "description_hide_hud" => "Jika dicentang, menyembunyikan sebagian besar elemen HUD.",
         "setting_hide_sustain_splash" => "Sembunyikan Sustain Splash",
@@ -318,14 +320,16 @@ class IdID
         "description_show_watermark" => "Jika dicentang, menampilkan watermark engine di pojok kanan bawah.",
         "setting_vsync" => "VSync",
         "description_vsync" => "Jika dicentang, mengaktifkan VSync dengan memperbaiki tearing layar dengan mengorbankan pembatasan FPS sesuai dengan kecepatan refresh monitor Anda.\n(Anda perlu menrestart game agar perubahan berlaku)",
+        "setting_fullscreen_mode" => "Mode Layar Penuh",
+        "setting_fullscreen_mode-borderless" => "Tanpa Batas",
+        "setting_fullscreen_mode-exclusive" => "Eksklusif",
+        "description_fullscreen_mode" => "Pilih mode layar penuh.\nTanpa batas: Layar penuh dalam jendela (disarankan untuk berpindah antar jendela dengan Alt-Tab).\nEksklusif: Layar penuh tradisional (dapat minimized saat berpindah antar jendela dengan Alt-Tab).",
         "setting_pause_music" => "Jeda Lagu Layar:",
         "setting_pause_music-none" => "Tidak ada",
         "setting_pause_music-tea_time" => "Waktu Teh",
         "setting_pause_music-breakfast" => "Sarapan",
         "setting_pause_music-breakfast_(pico)" => "Sarapan (Pico)",
         "description_pause_music" => "Lagu apa yang Anda sukai untuk layar jeda?",
-        "setting_vanilla_ransition" => "Transisi Vanila",
-        "description_vanilla_transition" => "Jika dicentang, akan menggunakan transisi Psych Engine standar daripada yang kustom.",
         "setting_check_for_updates" => "Periksa Pembaruan",
         "description_check_for_updates" => "Pada versi rilis, aktifkan opsi ini untuk memeriksa pembaruan saat Anda memulai game.",
         "setting_change_window_border_color_with_note_hit" => "Ubah Warna Bingkai Jendela dengan Hit Note",
@@ -334,6 +338,8 @@ class IdID
         "description_discord_rich_presence" => "Batalkan centang ini untuk mencegah leaks yang tidak disengaja, hal ini akan menyembunyikan Aplikasi dari kotak \"Playing\" Anda di Discord.",
         "setting_combo_stacking" => "Penumpukan Kombo",
         "description_combo_stacking" => "Jika tidak dicentangkan, Rating dan Kombo tidak akan ditumpuk, menghemat memori sistem dan membuatnya lebih mudah dibaca.",
+        "setting_show_combo_sprite" => "Tampilkan Sprite Kombo",
+        "description_show_combo_sprite" => "Jika dicentang, akan menampilkan sprite \"KOMBO\" saat Anda menekan note.",
         "setting_combo_and_rating_in_camgame" => "Kombo dan Rating di camGame",
         "description_combo_and_rating_in_camgame" => "Jika dicentang, Kombo dan Rating akan ditampilkan di lapisan camGame alih-alih camHUD.",
 
@@ -393,6 +399,18 @@ class IdID
         "setting_heavy_charts_mode" => "Mode Charts Berat",
         "description_heavy_charts_mode" => "Jika dicentang, mengaktifkan sistem Charts Berat untuk kinerja yang lebih baik\ndengan chart yang memiliki banyak note (1000+).",
 
+        // Legacy Settings
+        "setting_use_sscript_for_psych_0.7.3_mods" => "Gunakan SScript untuk Mod Psych 0.7.3",
+        "description_use_sscript_for_psych_0.7.3_mods" => "Jika dicentang, gunakan SScript alih-alih hscript-iris untuk menjalankan kode Haxe\nAktifkan ini jika Anda menggunakan mod dari Psych Engine 0.6.x-0.7.3 yang memiliki masalah kompatibilitas dengan hscript-iris\nSaya tidak dapat menjamin bahwa semua mod Psych 0.7.3 akan berjalan dengan baik, maaf.",
+        "setting_legacy_memory_management" => "Manajemen Memori Lama",
+        "description_legacy_memory_management" => "Jika dicentang, menggunakan manajemen memori gaya Psych 0.7.3.\nMenonaktifkan pembuangan tekstur GPU dan menggunakan pembersihan yang lebih sederhana.\nAktifkan jika mod lama mengalami kerusakan terkait memori.",
+        "setting_legacy_filesystem_access" => "Akses FileSystem Lawas",
+        "description_legacy_filesystem_access" => "Jika dicentang, izinkan langsung FileSystem.readDirectory akses.\nAktifkan jika mod lama mengharapkan perilaku sistem file Psych 0.7.3.\nMungkin diperlukan untuk beberapa pemuat mod khusus.",
+        "setting_vanilla_ransition" => "Transisi Vanila",
+        "description_vanilla_transition" => "Jika dicentang, akan menggunakan transisi Psych Engine standar daripada yang kustom.",
+        "setting_use_legacy_font" => "Gunakan Font Warisan",
+        "description_use_legacy_font" => "Jika dicentang, akan menggunakan font TTF VCR warisan dari Psych Engine 0.7.3 alih-alih Phantom.",
+
         // Modchart Settings
         "setting_hold_subdivisions" => "Tahan Subdivisi",
         "description_hold_subdivisions" => "Membagi ekor hold/menyusut untuk tampilan yang lebih halus.\nNilai yang lebih tinggi meningkatkan kualitas tetapi dapat mengurangi kinerja.",
@@ -406,8 +424,6 @@ class IdID
         "description_render_arrow_paths" => "Menghasilkan garis jalur untuk panah notes.\nPERINGATAN: Ini mempengaruhi kinerja karena perhitungan jalur.",
         "setting_styled_arrow_paths" => "Jalur Panah Bergaya",
         "description_styled_arrow_paths" => "Menerapkan gaya visual pada jalur panah.\nMemerlukan 'Render Jalur Panah' diaktifkan.",
-        "setting_arrow_path_quality" => "Kualitas Jalur Panah",
-        "description_arrow_path_quality" => "Menyesuaikan frekuensi rendering jalur panah.\nRendah = Jalur halus (Kualitas lebih baik, fps rendah)\nTinggi = Jalur bergerigi (Kualitas lebih buruk, fps tinggi)",
         "setting_arrow_path_boundary" => "Batas Jalur Panah",
         "description_arrow_path_boundary" => "Menentukan jarak maksimum jalur panah dirender.\nNilai lebih tinggi meningkatkan jangkauan, tetapi dapat mempengaruhi kinerja.\n(Disarankan: 300)",
         "setting_hold_end_scale" => "Skala Akhir Hold",
@@ -423,13 +439,14 @@ class IdID
         "mobile_notice" => "Pemberitahuan!",
         "mobile_success" => "Sukses!",
         "mobile_error" => "Kesalahan!",
-        "mobile_warning" => "Peringatan!",
         "touchpad_dpadmode_missing" => "touchPad dpadMode \"{1}\" tidak ada.",
         "touchpad_actionmode_missing" => "touchPad actionMode \"{1}\" tidak ada.",
         "file_save_success" => "{1} telah disimpan.",
         "file_save_fail" => "{1} tidak dapat disimpan.\n({2})",
         "permissions_message" => "Izin penyimpanan diperlukan untuk menyimpan data game dan mod.\nSilakan berikan izin yang diminta saat diminta.",
         "create_directory_error" => "Gagal membuat direktori berikut:\n{1}\nSilakan periksa izin penyimpanan atau ruang yang tersedia.\nAplikasi mungkin tidak berfungsi dengan benar tanpa direktori-direktori ini.",
+        "changed_storage_type" => "Jenis Penyimpanan telah diubah dan Anda perlu me-restart permainan!!\nTekan OK untuk menutup permainan.",
+        "files_missing" => "Sepertinya Anda memiliki beberapa file yang hilang yang diperlukan untuk menjalankan game\nTekan OK untuk memulai proses penyalinan",
 
         // Mobile Options
         "setting_extra_controls" => "Kontrol Ekstra",
@@ -453,6 +470,10 @@ class IdID
         "description_hitbox_position" => "Jika dicentang, hitbox akan ditempatkan di bagian bawah layar, jika tidak, akan tetap di bagian atas.",
         "setting_dynamic_controls_color" => "Warna Kontrol Dinamis",
         "description_dynamic_controls_color" => "Jika dicentang, warna kontrol ponsel akan disetel ke warna note di pengaturan Anda.\n(berlaku hanya selama bermain game)",
+        "setting_storage_type" => "Jenis Penyimpanan",
+        "setting_storage_type-external_data" => "EKSTERNAL_DATA",
+        "setting_storage_type-external" => "EKSTERNAL",
+        "description_storage_type" => "Folder mana yang harus digunakan oleh Plus Engine?\n(MENGUBAH INI AKAN MENGHAPUS FOLDER LAMA ANDA!!)",
 
         // Mobile Control Select Menu
         "mobileC_exitandsave" => "Keluar & Simpan",
@@ -572,6 +593,7 @@ class IdID
         "images/bad" => "images/id-ID/bad",
         "images/combo" => "images/id-ID/combo",
         "images/comboBroken" => "images/id-ID/comboBroken",
+        "images/get" => "images/id-ID/get",
         "images/go" => "images/id-ID/go",
         "images/good" => "images/id-ID/good",
         "images/flawless" => "images/id-ID/flawless",
@@ -587,6 +609,7 @@ class IdID
         "images/pixelUI/ready-pixel" => "images/id-ID/pixelUI/ready-pixel", 
         "images/pixelUI/shit-pixel" => "images/id-ID/pixelUI/shit-pixel",
         "images/pixelUI/date-pixel" => "images/id-ID/pixelUI/date-pixel",
+        "images/pixelUI/get-pixel" => "images/id-ID/pixelUI/get-pixel",
         "images/pixelUI/combo" => "images/id-ID/pixelUI/combo",
         "images/pixelUI/conboBroken" => "images/id-ID/pixelUI/comboBroken",
 

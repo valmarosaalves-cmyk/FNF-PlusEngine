@@ -76,7 +76,7 @@ class Config {
 			APPLY_ALPHA: ClientPrefs.data.styledArrowPaths,
 			APPLY_DEPTH: true,
 			APPLY_SCALE: ClientPrefs.data.styledArrowPaths,
-			RESOLUTION: 1.0 / ClientPrefs.data.arrowPathFrameSkip,
+			RESOLUTION: 1.0,
 			LENGTH: ClientPrefs.data.arrowPathBoundary
 		};
 	}

@@ -140,10 +140,27 @@ class Paths
 
 	inline static function destroyGraphic(graphic:FlxGraphic)
 	{
-		// free some gpu memory
-		if (graphic != null && graphic.bitmap != null && graphic.bitmap.__texture != null)
-			graphic.bitmap.__texture.dispose();
-		FlxG.bitmap.remove(graphic);
+		// Check if legacy mode is enabled
+		if (ClientPrefs.data.legacyMemoryManagement)
+		{
+			// Psych 0.7.3 style cleanup (no GPU disposal)
+			@:privateAccess
+			if (graphic != null)
+			{
+				openfl.Assets.cache.removeBitmapData(graphic.key);
+				FlxG.bitmap._cache.remove(graphic.key);
+				graphic.persist = false;
+				graphic.destroyOnNoUse = true;
+				graphic.destroy();
+			}
+		}
+		else
+		{
+			// Modern style with GPU memory cleanup
+			if (graphic != null && graphic.bitmap != null && graphic.bitmap.__texture != null)
+				graphic.bitmap.__texture.dispose();
+			FlxG.bitmap.remove(graphic);
+		}
 	}
 
 	static public var currentLevel:String;
@@ -202,7 +219,10 @@ class Paths
 		return getPath('$key.lua', TEXT, folder, true);
 
 	inline static public function hx(key:String, ?folder:String)
-		return getPath('states/$key.hx', TEXT, folder, true);
+		return getPath('scripts/states/$key/$key.hx', TEXT, folder, true);
+
+	inline static public function globalScript()
+		return getPath('scripts/GlobalScript.hx', TEXT, null, true);
 
 	static public function video(key:String)
 	{
@@ -300,6 +320,10 @@ class Paths
 
 	inline static public function font(key:String)
 	{
+		// Check if we should use legacy font (VCR instead of Phantom)
+		if(ClientPrefs.data.useLegacyFont && key == 'phantom.ttf')
+			key = 'vcr.ttf';
+		
 		var folderKey:String = Language.getFileTranslation('fonts/$key');
 		#if MODS_ALLOWED
 		var file:String = modFolders(folderKey);
@@ -647,6 +671,9 @@ class Paths
 	public static function readDirectory(directory:String):Array<String>
 	{
 		#if MODS_ALLOWED
+		// Legacy mode: direct FileSystem access (Psych 0.7.3 style)
+		if (ClientPrefs.data.legacyFileSystemAccess)
+			return FileSystem.readDirectory(directory);
 		return FileSystem.readDirectory(directory);
 		#else
 		var dirs:Array<String> = [];

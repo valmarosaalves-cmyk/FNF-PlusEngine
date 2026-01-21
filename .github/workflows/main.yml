@@ -16,8 +16,7 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  buildLinux:
+  Linux-x64:
     # The type of runner that the job will run on
     if: contains(github.event.head_commit.message, 'wd')
     runs-on: ubuntu-latest
@@ -34,8 +33,13 @@ jobs:
       # Runs a set of commands using the runners shell
       - name: Install Haxelib
         run: |
+          sudo apt-get update
           sudo apt-get install libvlc-dev
           sudo apt-get install libvlccore-dev
+          sudo apt-get install libasound2-dev
+          sudo apt-get install libpulse-dev
+          sudo apt-get install libx11-dev libxext-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
+          sudo apt-get install libgl1-mesa-dev libglu1-mesa-dev
           haxelib setup ~/haxelib
           haxelib install hxcpp > /dev/null --quiet
           chmod +x ./setup/unish-lib.sh
@@ -47,14 +51,14 @@ jobs:
       - name: Create Version Tag
         run: echo "${{github.run_id}}" > VERSION
       - name: Compile
-        run: haxelib run lime build linux --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
+        run: haxelib run lime build linux -64bits --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
       - name: Publish Artifact
         uses: actions/upload-artifact@v4.3.4
         with:
-          name: linuxBuild
-          path: 'export/release/linux/bin'
+          name: linuxBuild64
+          path: 'export/release/linux/bin'  
           
-  buildWindows:
+  Windows-x32:
     if: contains(github.event.head_commit.message, 'wd')
     runs-on: windows-latest
 
@@ -81,16 +85,50 @@ jobs:
       - name: Create Version Tag
         run: echo "${{github.run_id}}" > VERSION
       - name: Compile
-        run: haxelib run lime build windows --app-version="4.0.0-${{ github.run_id}}"  -D officialBuild
+        run: haxelib run lime build windows -32 -D 32bits --app-version="4.0.0-${{ github.run_id}}"  -D officialBuild
       - name: Publish Artifact
         uses: actions/upload-artifact@v4.3.4
         with:
-          name: windowsBuild
+          name: windowsBuild32
           path: export/release/windows/bin
 
-  buildMac:
+  Windows-x64:
     if: contains(github.event.head_commit.message, 'wd')
-    runs-on: macos-15
+    runs-on: windows-latest
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v4.1.7
+
+      - uses: krdlab/setup-haxe@master
+        with:
+          haxe-version: 4.3.4
+      
+      # Runs a set of commands using the runners shell
+      - name: Install Haxelib
+        run: |
+          haxelib setup C:/haxelib
+          haxelib install hxcpp > /dev/null --quiet
+          .\"setup/windows-lib.bat"
+        shell: cmd
+      - name: Skip SScript setup mode
+        run: |
+          echo oy9:showMacroty8:loopCosti25y10:includeAllfg > %USERPROFILE%\settings.cocoa
+          type %USERPROFILE%\settings.cocoa
+        shell: cmd
+      - name: Create Version Tag
+        run: echo "${{github.run_id}}" > VERSION
+      - name: Compile
+        run: haxelib run lime build windows -64 -D 64bits --app-version="4.0.0-${{ github.run_id}}"  -D officialBuild
+      - name: Publish Artifact
+        uses: actions/upload-artifact@v4.3.4
+        with:
+          name: windowsBuild64
+          path: export/release/windows/bin
+
+  Mac-ARM:
+    if: contains(github.event.head_commit.message, 'wd')
+    runs-on: macos-latest
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -114,14 +152,14 @@ jobs:
       - name: Create Version Tag
         run: echo "${{github.run_id}}" > VERSION
       - name: Compile
-        run: haxelib run lime build mac --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
+        run: haxelib run lime build mac -arm64 --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
       - name: Publish Artifact
         uses: actions/upload-artifact@v4.3.4
         with:
-          name: macBuild
+          name: macBuildARM
           path: export/release/macos/bin
 
-  buildAndroid:
+  Android:
     if: contains(github.event.head_commit.message, 'wd')
     runs-on: ubuntu-latest
 
@@ -151,6 +189,11 @@ jobs:
       # Runs a set of commands using the runners shell
       - name: Install Haxelib
         run: |
+          sudo apt-get update
+          sudo apt-get install libasound2-dev
+          sudo apt-get install libpulse-dev
+          sudo apt-get install libx11-dev libxext-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
+          sudo apt-get install libgl1-mesa-dev libglu1-mesa-dev
           haxelib setup ~/haxelib
           haxelib install hxcpp > /dev/null --quiet
           chmod +x ./setup/unish-lib.sh
@@ -177,6 +220,15 @@ jobs:
           rm -rf build
           rm -rf ~/.gradle
       
+      - name: Configure Gradle memory settings
+        run: |
+          mkdir -p ~/.gradle
+          echo "org.gradle.jvmargs=-Xmx6144m -XX:MaxMetaspaceSize=2048m -XX:+HeapDumpOnOutOfMemoryError" >> ~/.gradle/gradle.properties
+          echo "org.gradle.daemon=true" >> ~/.gradle/gradle.properties
+          echo "org.gradle.parallel=true" >> ~/.gradle/gradle.properties
+          echo "org.gradle.configureondemand=true" >> ~/.gradle/gradle.properties
+          echo "android.enableR8.fullMode=false" >> ~/.gradle/gradle.properties
+      
       - name: Compile
         run: haxelib run lime build android --app-version="4.0.0-${{ github.run_id}}" -D officialBuild -D HXCPP_IGNORE_WARNINGS
       
@@ -186,7 +238,7 @@ jobs:
           name: androidBuild
           path: export/release/android/bin
 
-  buildIOS:
+  iOS:
     if: contains(github.event.head_commit.message, 'wd')
     runs-on: macos-15
 

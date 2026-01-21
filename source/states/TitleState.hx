@@ -45,15 +45,16 @@ class TitleState extends MusicBeatState
 	public static var volumeUpKeys:Array<FlxKey> = [FlxKey.NUMPADPLUS, FlxKey.PLUS];
 
 	public static var initialized:Bool = false;
-	public static var fromSubstate:Bool = false; // Variable para detectar si viene del substate
+	public static var fromSubstate:Bool = false; // Flag to detect if coming from a substate
 	
-	var forceShowIntro:Bool = false; // Si debe forzar mostrar la intro
+	var forceShowIntro:Bool = false; // Whether to force showing the intro
 
 	var credGroup:FlxGroup = new FlxGroup();
 	var textGroup:FlxGroup = new FlxGroup();
 	var blackScreen:FlxSprite;
 	var credTextShit:Alphabet;
 	var ngSpr:FlxSprite;
+	var updateNotificationText:FlxText;
 	
 	var titleTextColors:Array<FlxColor> = [0xFF33FFFF, 0xFF3333CC];
 	var titleTextAlphas:Array<Float> = [1, .64];
@@ -70,7 +71,9 @@ class TitleState extends MusicBeatState
 	var easterEggKeysBuffer:String = '';
 	#end
 
+	#if VIDEOS_ALLOWED
 	var introVideo:FlxVideoSprite;
+	#end
 	var showingIntro:Bool = false;
 	var introFinished:Bool = false;
 	var skipTimer:Float = 0;
@@ -84,23 +87,11 @@ class TitleState extends MusicBeatState
 
 		if(!initialized)
 		{
-			ClientPrefs.loadPrefs();
-			Language.reloadPhrases();
+			// Language phrases are reloaded in InitialState; only update colorblind filter here.
 			shaders.ColorblindFilter.UpdateColors();
 		}
 
 		if(FlxG.save.data.introFinished == null) FlxG.save.data.introFinished = false;
-
-		#if CHECK_FOR_UPDATES
-		if (ClientPrefs.data.checkForUpdates) {
-			// Verificación de actualizaciones en TitleState
-			try {
-				var updateVersion = CoolUtil.checkForUpdates();
-			} catch (e:Dynamic) {
-				trace('Error checking for updates: ' + e);
-			}
-		}
-		#end
 
 		curWacky = FlxG.random.getObject(getIntroTextShit());
 
@@ -113,7 +104,6 @@ class TitleState extends MusicBeatState
 			}
 			persistentUpdate = true;
 			persistentDraw = true;
-			if(!initialized) MobileData.init();
 		}
 
 		if (FlxG.save.data.weekCompleted != null)
@@ -156,6 +146,7 @@ class TitleState extends MusicBeatState
 		var blackBG = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
 		add(blackBG);
 
+		#if VIDEOS_ALLOWED
 		introVideo = new FlxVideoSprite();
 		introVideo.bitmap.onEndReached.add(function() {
 			onIntroFinished();
@@ -173,6 +164,7 @@ class TitleState extends MusicBeatState
 			trace('Intro video not found, skipping to normal intro');
 			onIntroFinished();
 		}
+		#end
 	}
 	
 	function onIntroFinished():Void
@@ -184,11 +176,13 @@ class TitleState extends MusicBeatState
 		FlxG.save.data.introFinished = true;
 		FlxG.save.flush();
 
+		#if VIDEOS_ALLOWED
 		if (introVideo != null)
 		{
 			introVideo.destroy();
 			introVideo = null;
 		}
+		#end
 
 		#if FREEPLAY
 		MusicBeatState.switchState(new FreeplayState());
@@ -213,10 +207,12 @@ class TitleState extends MusicBeatState
 
 		FlxG.sound.play(Paths.sound('cancelMenu'), 0.7);
 
+		#if VIDEOS_ALLOWED
 		if (introVideo != null)
 		{
 			introVideo.stop();
 		}
+		#end
 		
 		onIntroFinished();
 	}
@@ -224,7 +220,11 @@ class TitleState extends MusicBeatState
 	var logoBl:FlxSprite;
 	var gfDance:FlxSprite;
 	var danceLeft:Bool = false;
+	#if mobile
+	var titleTextMobile:FlxSprite;
+	#else
 	var titleText:FlxSprite;
+	#end
 	var swagShader:ColorSwap = null;
 
 	function startIntro()
@@ -282,8 +282,34 @@ class TitleState extends MusicBeatState
 
 
 		var animFrames:Array<FlxFrame> = [];
+		#if mobile
+		titleTextMobile = new FlxSprite(enterPositionMobile.x, enterPositionMobile.y);
+		titleTextMobile.frames = Paths.getSparrowAtlas('titleEnterMobile');
+		#else
 		titleText = new FlxSprite(enterPosition.x, enterPosition.y);
 		titleText.frames = Paths.getSparrowAtlas('titleEnter');
+		#end
+
+		#if mobile
+		@:privateAccess
+		{
+			titleTextMobile.animation.findByPrefix(animFrames, "ENTER IDLE");
+			titleTextMobile.animation.findByPrefix(animFrames, "ENTER FREEZE");
+		}
+		
+		if (newTitle = animFrames.length > 0)
+		{
+			titleTextMobile.animation.addByPrefix('idle', "ENTER IDLE", 24);
+			titleTextMobile.animation.addByPrefix('press', ClientPrefs.data.flashing ? "ENTER PRESSED" : "ENTER FREEZE", 24);
+		}
+		else
+		{
+			titleTextMobile.animation.addByPrefix('idle', "Press Enter to Begin", 24);
+			titleTextMobile.animation.addByPrefix('press', "ENTER PRESSED", 24);
+		}
+		titleTextMobile.animation.play('idle');
+		titleTextMobile.updateHitbox();
+		#else
 		@:privateAccess
 		{
 			titleText.animation.findByPrefix(animFrames, "ENTER IDLE");
@@ -302,6 +328,7 @@ class TitleState extends MusicBeatState
 		}
 		titleText.animation.play('idle');
 		titleText.updateHitbox();
+		#end
 
 		blackScreen = new FlxSprite().makeGraphic(1, 1, FlxColor.BLACK);
 		blackScreen.scale.set(FlxG.width, FlxG.height);
@@ -321,9 +348,65 @@ class TitleState extends MusicBeatState
 
 		add(gfDance);
 		add(logoBl); //FNF Logo
+		#if mobile
+		add(titleTextMobile);
+		#else
 		add(titleText); //"Press Enter to Begin" text
+		#end
 		add(credGroup);
 		add(ngSpr);
+
+		// Create update notification text
+		updateNotificationText = new FlxText(0, 10, 0, "Checking Updates...", 20);
+		updateNotificationText.setFormat("VCR OSD Mono", 20, FlxColor.WHITE, RIGHT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		updateNotificationText.borderSize = 2;
+		updateNotificationText.scrollFactor.set();
+		updateNotificationText.x = FlxG.width + 50; // Start off-screen to the right
+		updateNotificationText.cameras = [FlxG.camera];
+		add(updateNotificationText);
+
+		#if CHECK_FOR_UPDATES
+		if (ClientPrefs.data.checkForUpdates) {
+			// Show the text immediately with animation (from right to left)
+			FlxTween.tween(updateNotificationText, {x: FlxG.width - updateNotificationText.width - 10}, 0.5, {ease: FlxEase.backOut});
+			
+			// Start checking for updates in background (non-blocking)
+			try {
+				CoolUtil.checkForUpdates(null, function() {
+					// When done, change text to "Done!" (this callback runs on main thread)
+					if(updateNotificationText != null) {
+						updateNotificationText.text = "Done!";
+						// Wait a bit and then hide (slide back to the right)
+						new FlxTimer().start(1.0, function(tmr:FlxTimer) {
+							if(updateNotificationText != null) {
+								FlxTween.tween(updateNotificationText, {x: FlxG.width + 50}, 0.5, {ease: FlxEase.backIn, onComplete: function(twn:FlxTween) {
+									if(updateNotificationText != null)
+										updateNotificationText.visible = false;
+								}});
+							}
+						});
+					}
+				});
+			} catch (e:Dynamic) {
+				trace('Error checking for updates: ' + e);
+				if(updateNotificationText != null) {
+					updateNotificationText.text = "Error!";
+					new FlxTimer().start(1.0, function(tmr:FlxTimer) {
+						if(updateNotificationText != null) {
+							FlxTween.tween(updateNotificationText, {x: FlxG.width + 50}, 0.5, {ease: FlxEase.backIn, onComplete: function(twn:FlxTween) {
+								if(updateNotificationText != null)
+									updateNotificationText.visible = false;
+							}});
+						}
+					});
+				}
+			}
+		} else {
+			updateNotificationText.visible = false;
+		}
+		#else
+		updateNotificationText.visible = false;
+		#end
 
 		if (initialized && !forceShowIntro)
 			skipIntro();
@@ -342,7 +425,11 @@ class TitleState extends MusicBeatState
 
 	var gfPosition:FlxPoint = FlxPoint.get(512, 40);
 	var logoPosition:FlxPoint = FlxPoint.get(-150, -100);
+	#if mobile
+	var enterPositionMobile:FlxPoint = FlxPoint.get(50, 590);
+	#else
 	var enterPosition:FlxPoint = FlxPoint.get(100, 576);
+	#end
 	
 	var useIdle:Bool = false;
 	var musicBPM:Float = 102;
@@ -361,7 +448,11 @@ class TitleState extends MusicBeatState
 					var titleJSON:TitleData = tjson.TJSON.parse(titleRaw);
 					gfPosition.set(titleJSON.gfx, titleJSON.gfy);
 					logoPosition.set(titleJSON.titlex, titleJSON.titley);
+					#if mobile
+					enterPositionMobile.set(titleJSON.startx, titleJSON.starty);
+					#else
 					enterPosition.set(titleJSON.startx, titleJSON.starty);
+					#end
 					musicBPM = titleJSON.bpm;
 					
 					if(titleJSON.animation != null && titleJSON.animation.length > 0) animationName = titleJSON.animation;
@@ -457,6 +548,8 @@ class TitleState extends MusicBeatState
 
 	override function update(elapsed:Float)
 	{
+		// Execute any pending update check callbacks on the main thread
+		CoolUtil.executeUpdateCallback();
 
 		if (showingIntro && canSkip)
 		{
@@ -518,17 +611,28 @@ class TitleState extends MusicBeatState
 						timer = (-timer) + 2;
 					
 					timer = FlxEase.quadInOut(timer);
-					
+					#if mobile
+					titleTextMobile.color = FlxColor.interpolate(titleTextColors[0], titleTextColors[1], timer);
+					titleTextMobile.alpha = FlxMath.lerp(titleTextAlphas[0], titleTextAlphas[1], timer);
+					#else
 					titleText.color = FlxColor.interpolate(titleTextColors[0], titleTextColors[1], timer);
 					titleText.alpha = FlxMath.lerp(titleTextAlphas[0], titleTextAlphas[1], timer);
+					#end
 				}
 				
 				if(pressedEnter)
 				{
+					#if mobile
+					titleTextMobile.color = FlxColor.WHITE;
+					titleTextMobile.alpha = 1;
+					
+					if(titleTextMobile != null) titleTextMobile.animation.play('press');
+					#else
 					titleText.color = FlxColor.WHITE;
 					titleText.alpha = 1;
 					
 					if(titleText != null) titleText.animation.play('press');
+					#end
 
 					FlxG.camera.flash(ClientPrefs.data.flashing ? FlxColor.WHITE : 0x4CFFFFFF, 1);
 					FlxG.sound.play(Paths.sound('confirmMenu'), 0.7);

@@ -78,6 +78,13 @@ class VisualsSettingsSubState extends BaseOptionsMenu
 		addOption(option);
 		option.onChange = playNoteSplashes;
 
+		var option:Option = new Option('Color Quantization',
+			'If checked, notes will be colored by their rhythm subdivision (4th, 8th, 12th, 16th) like StepMania.\nOverrides default arrow colors.',
+			'colorQuantization',
+			BOOL);
+		addOption(option);
+		option.onChange = onChangeQuantization;
+
 		var option:Option = new Option('Hide HUD',
 			'If checked, hides most HUD elements.',
 			'hideHud',
@@ -168,11 +175,11 @@ class VisualsSettingsSubState extends BaseOptionsMenu
 		option.onChange = onChangeWatermark;
 
 		#if native
-		var option:Option = new Option('VSync',
-			'If checked, Enables VSync fixing any screen tearing at the cost of capping the FPS to screen refresh rate.\n(Must restart the game to have an effect)',
-			'vsync',
-			BOOL);
-		option.onChange = onChangeVSync;
+		var option:Option = new Option('Fullscreen Mode:',
+			'Choose the fullscreen mode.\nBorderless: Windowed fullscreen (recommended for alt-tabbing).\nExclusive: Traditional fullscreen (may minimize on alt-tab).',
+			'fullscreenMode',
+			STRING,
+			['Borderless', 'Exclusive']);
 		addOption(option);
 		#end
 		
@@ -183,12 +190,6 @@ class VisualsSettingsSubState extends BaseOptionsMenu
 			['None', 'Tea Time', 'Breakfast', 'Breakfast (Pico)']);
 		addOption(option);
 		option.onChange = onChangePauseMusic;
-		
-		var option:Option = new Option('Vanilla Transition',
-		    'If checked, uses the vanilla Psych Engine transition instead of the custom one.',
-			'vanillaTransition',
-			BOOL);
-		addOption(option);
 		
 		#if CHECK_FOR_UPDATES
 		var option:Option = new Option('Check for Updates',
@@ -209,6 +210,13 @@ class VisualsSettingsSubState extends BaseOptionsMenu
 		var option:Option = new Option('Combo Stacking',
 			"If unchecked, Ratings and Combo won't stack, saving on System Memory and making them easier to read",
 			'comboStacking',
+			BOOL);
+		addOption(option);
+
+		var option:Option = new Option(
+			'Show Combo Sprite',
+			'If checked, shows the "COMBO" sprite when you hit notes.',
+			'showCombo',
 			BOOL);
 		addOption(option);
 
@@ -413,8 +421,42 @@ class VisualsSettingsSubState extends BaseOptionsMenu
 		}
 	}
 
-	#if native
-	function onChangeVSync()
-		lime.app.Application.current.window.vsync = ClientPrefs.data.vsync;
-	#end
+	function onChangeQuantization()
+	{
+		// Update displayed notes with quantization colors
+		for (note in notes)
+		{
+			// NotITG uses default colors without shaders, skip quantization for them
+			if(!note.useRGBShader)
+				continue;
+
+			note.rgbShader.enabled = true;
+			if (ClientPrefs.data.colorQuantization)
+			{
+				// Use quantization RGB colors based on note position
+				// Each note represents a different beat subdivision for preview
+				var simulatedBeat:Float = note.ID * 0.25;
+				var quantColors:Array<FlxColor> = Note.getQuantizationRGB(simulatedBeat);
+				
+				if (quantColors != null)
+				{
+					note.rgbShader.r = quantColors[0];
+					note.rgbShader.g = quantColors[1];
+					note.rgbShader.b = quantColors[2];
+				}
+			}
+			else
+			{
+				// Restore default colors
+				var arr:Array<FlxColor> = ClientPrefs.data.arrowRGB[note.ID];
+				
+				if (arr != null && note.ID > -1 && note.ID < arr.length)
+				{
+					note.rgbShader.r = arr[0];
+					note.rgbShader.g = arr[1];
+					note.rgbShader.b = arr[2];
+				}
+			}
+		}
+	}
 }

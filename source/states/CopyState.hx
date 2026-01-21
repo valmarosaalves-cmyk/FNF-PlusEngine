@@ -56,6 +56,7 @@ class CopyState extends MusicBeatState
 	var shouldCopy:Bool = false;
 	var canUpdate:Bool = true;
 	var loopTimes:Int = 0;
+	var currentFile:String = '';
 
 	override function create()
 	{
@@ -81,13 +82,23 @@ class CopyState extends MusicBeatState
 		locatedFiles = [];
 		maxLoopTimes = 0;
 		checkExistingFiles();
+		
 		if (maxLoopTimes <= 0)
 		{
 			MusicBeatState.switchState(new TitleState());
 			return;
 		}
 
-		CoolUtil.showPopUp(Language.getPhrase('files_missing', "Seems like you have some missing files that are necessary to run the game\nPress OK to begin the copy process"), Language.getPhrase('mobile_notice', 'Notice!'));
+		var filesList:String = '';
+		var maxFilesToShow:Int = 10;
+		for (i in 0...Math.floor(Math.min(locatedFiles.length, maxFilesToShow)))
+		{
+			filesList += '\n- ' + locatedFiles[i];
+		}
+		if (locatedFiles.length > maxFilesToShow)
+			filesList += '\n... and ${locatedFiles.length - maxFilesToShow} more files';
+		
+		CoolUtil.showPopUp(Language.getPhrase('files_missing', "Seems like you have some missing files that are necessary to run the game\nPress OK to begin the copy process") + '\n\nMissing files ($maxLoopTimes):' + filesList, Language.getPhrase('mobile_notice', 'Notice!'));
 
 		shouldCopy = true;
 
@@ -104,7 +115,7 @@ class CopyState extends MusicBeatState
 		add(loadingBar);
 
 		loadedText = new FlxText(loadingBar.x, loadingBar.y + 4, FlxG.width, '', 16);
-		loadedText.setFormat(Paths.font("vcr.ttf"), 16, FlxColor.WHITE, CENTER);
+		loadedText.setFormat(Paths.font("phantom.ttf"), 16, FlxColor.BLACK, CENTER);
 		add(loadedText);
 
 		thread = new ThreadPool(0, CoolUtil.getCPUThreadsCount());
@@ -112,6 +123,7 @@ class CopyState extends MusicBeatState
 		{
 			for (file in locatedFiles)
 			{
+				currentFile = file;
 				loopTimes++;
 				copyAsset(file);
 			}
@@ -150,7 +162,12 @@ class CopyState extends MusicBeatState
 			if (loopTimes >= maxLoopTimes)
 				loadedText.text = "Completed!";
 			else
-				loadedText.text = '$loopTimes/$maxLoopTimes';
+			{
+				var fileName:String = currentFile;
+				if (fileName.length > 50)
+					fileName = '...' + fileName.substr(fileName.length - 47);
+				loadedText.text = '$loopTimes/$maxLoopTimes - $fileName';
+			}
 
 			loadingBar.percent = Math.min((loopTimes / maxLoopTimes) * 100, 100);
 		}
@@ -248,6 +265,7 @@ class CopyState extends MusicBeatState
 
 	public static function checkExistingFiles():Bool
 	{
+		
 		locatedFiles = OpenFLAssets.list();
 
 		// removes unwanted assets

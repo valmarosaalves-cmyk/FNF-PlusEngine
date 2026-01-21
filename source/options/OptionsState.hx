@@ -5,17 +5,23 @@ import backend.StageData;
 
 class OptionsState extends MusicBeatState
 {
-	var options:Array<String> = [
-		'Note Colors',
-		'Controls',
-		'Adjust Delay and Combo',
-		'Graphics',
-		'Visuals',
-		'Gameplay',
-		#if MODCHARTS_NOTITG_ALLOWED 'Modchart' #end
-		#if TRANSLATIONS_ALLOWED , 'Language' #end,
-		#if mobile 'Mobile Options' #end
-	];
+	var options:Array<String> = [];
+	
+	function buildOptions():Array<String> {
+		var opts:Array<String> = [];
+		if (ClientPrefs.data.colorQuantization == false) opts.push('Note Colors');
+		opts.push('Controls');
+		opts.push('Adjust Delay and Combo');
+		opts.push('Graphics');
+		opts.push('Visuals');
+		opts.push('Gameplay');
+		opts.push('Legacy');
+		#if MODCHARTS_NOTITG_ALLOWED opts.push('Modchart'); #end
+		#if TRANSLATIONS_ALLOWED opts.push('Language'); #end
+		#if mobile opts.push('Mobile Options'); #end
+		return opts;
+	}
+	
 	private var grpOptions:FlxTypedGroup<Alphabet>;
 	private static var curSelected:Int = 0;
 	var lerpSelected:Float = 0;
@@ -30,7 +36,9 @@ class OptionsState extends MusicBeatState
 		switch(label)
 		{
 			case 'Note Colors':
+			if (ClientPrefs.data.colorQuantization == false) {
 				openSubState(new options.NotesColorSubState());
+			}
 			case 'Controls':
 				openSubState(new options.ControlsSubState());
 			case 'Graphics':
@@ -39,8 +47,10 @@ class OptionsState extends MusicBeatState
 				openSubState(new options.VisualsSettingsSubState());
 			case 'Gameplay':
 				openSubState(new options.GameplaySettingsSubState());
+			case 'Legacy':
+				openSubState(new options.LegacySettingsSubState());
 			case 'Modchart':
-				openSubState(new options.ModchartOptionsSubState());
+				openSubState(new options.ModchartSettingsSubState());
 			case 'Adjust Delay and Combo':
 				MusicBeatState.switchState(new options.NoteOffsetState());
 			case 'Mobile Options':
@@ -58,6 +68,8 @@ class OptionsState extends MusicBeatState
 		#if DISCORD_ALLOWED
 		DiscordClient.changePresence("Options Menu", null);
 		#end
+		
+		options = buildOptions();
 
 		var bg:FlxSprite = new FlxSprite().loadGraphic(Paths.image('menuDesat'));
 		bg.antialiasing = ClientPrefs.data.antialiasing;
@@ -70,7 +82,7 @@ class OptionsState extends MusicBeatState
 		if (controls.mobileC)
 		{
 			var tipText:FlxText = new FlxText(150, FlxG.height - 24, 0, Language.getPhrase('mobile_controls_tip', 'Press {1} to Go Mobile Controls Menu', [(FlxG.onMobile ? 'C' : 'CTRL or C')]), 16);
-			tipText.setFormat("VCR OSD Mono", 17, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+			tipText.setFormat("PhantomMuff 1.5", 17, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 			tipText.borderSize = 1.25;
 			tipText.scrollFactor.set();
 			tipText.antialiasing = ClientPrefs.data.antialiasing;

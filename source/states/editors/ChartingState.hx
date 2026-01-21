@@ -85,7 +85,8 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 		['Change Scroll Speed', "Value 1: Scroll Speed Multiplier (1 is default)\nValue 2: Time it takes to change fully in seconds."],
 		['Set Property', "Value 1: Variable name\nValue 2: New value"],
 		['Play Sound', "Value 1: Sound file name\nValue 2: Volume (Default: 1), ranges from 0 to 1"],
-		['Set Camera Bopping', "Sets how camera should bop.\nValue 1: Frequency (in beats)\nValue 2: Intensity scale (1 for default)"]
+		['Set Camera Bopping', "Sets how camera should bop.\nValue 1: Frequency (in beats)\nValue 2: Intensity scale (1 for default)"],
+		['Add Secondary Icon', "Value 1: Side of Health Bar (Dad, BF)\nValue 2: Swap position of BF and GF icons when GF Sing (true, false)"]
 	];
 	
 	public static var keysArray:Array<FlxKey> = [ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT]; //Used for Vortex Editor
@@ -411,7 +412,7 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 		add(dragDropOverlay);
 
 		dragDropText = new FlxText(0, 0, FlxG.width - 40, 'Drop JSON file here\nto load chart or events', 36);
-		dragDropText.setFormat(Paths.font('vcr.ttf'), 36, FlxColor.WHITE, CENTER);
+		dragDropText.setFormat(Paths.font('phantom.ttf'), 36, FlxColor.WHITE, CENTER);
 		dragDropText.setBorderStyle(OUTLINE, FlxColor.BLACK, 3);
 		dragDropText.scrollFactor.set();
 		dragDropText.screenCenter();
@@ -524,7 +525,7 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 		add(tipBg);
 		
 		fullTipText = new FlxText(0, 0, FlxG.width - 200);
-		fullTipText.setFormat(Paths.font('vcr.ttf'), 24, FlxColor.WHITE, CENTER);
+		fullTipText.setFormat(Paths.font('phantom.ttf'), 24, FlxColor.WHITE, CENTER);
 		fullTipText.cameras = [camUI];
 		fullTipText.scrollFactor.set();
 		fullTipText.visible = fullTipText.active = false;

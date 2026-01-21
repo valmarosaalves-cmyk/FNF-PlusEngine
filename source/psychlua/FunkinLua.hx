@@ -31,6 +31,7 @@ import psychlua.SScript;
 #end
 
 import psychlua.ModchartSprite;
+import psychlua.LuaClass;
 
 import mobile.psychlua.Functions;
 
@@ -48,7 +49,7 @@ class FunkinLua {
 	public var hscript:HScript = null;
 	#end
 	#if SSCRIPT_ALLOWED
-	public var sscript:SScriptCompat = null; // Para compatibilidad con mods antiguos
+	public var sscript:SScript = null; // Para compatibilidad con mods antiguos
 	#end
 
 	public var callbacks:Map<String, Dynamic> = new Map<String, Dynamic>();
@@ -71,8 +72,25 @@ class FunkinLua {
 		#end
 
 		this.scriptName = scriptName.trim();
+		
+		// Support both PlayState and ModState
 		var game:PlayState = PlayState.instance;
-		if(game != null) game.luaArray.push(this);
+		if(game != null) 
+		{
+			game.luaArray.push(this);
+		}
+		else 
+		{
+			// Try ModState if PlayState is not available
+			var modState:Dynamic = FlxG.state;
+			if(Std.isOfType(modState, states.ModState))
+			{
+				var ms:states.ModState = cast modState;
+				#if LUA_ALLOWED
+				ms.luaArray.push(this);
+				#end
+			}
+		}
 
 		var myFolder:Array<String> = this.scriptName.split('/');
 		#if MODS_ALLOWED
@@ -297,6 +315,198 @@ class FunkinLua {
 		});
 		Lua_helper.add_callback(lua, "getVar", function(varName:String) {
 			return MusicBeatState.getVariables().get(varName);
+		});
+		
+		// ModState Variable Functions
+		Lua_helper.add_callback(lua, "setSharedVar", function(varName:String, value:Dynamic) {
+			var modState:Dynamic = FlxG.state;
+			if(Std.isOfType(modState, states.ModState))
+			{
+				var ms:states.ModState = cast modState;
+				#if HSCRIPT_ALLOWED
+				states.ModState.globalVariables.set(varName, value);
+				#end
+				MusicBeatState.getVariables().set(varName, value);
+			}
+			else
+			{
+				MusicBeatState.getVariables().set(varName, value);
+			}
+			return value;
+		});
+		Lua_helper.add_callback(lua, "getSharedVar", function(varName:String, ?defaultValue:Dynamic = null) {
+			var modState:Dynamic = FlxG.state;
+			if(Std.isOfType(modState, states.ModState))
+			{
+				#if HSCRIPT_ALLOWED
+				if(states.ModState.globalVariables.exists(varName))
+					return states.ModState.globalVariables.get(varName);
+				#end
+				if(MusicBeatState.getVariables().exists(varName))
+					return MusicBeatState.getVariables().get(varName);
+			}
+			else if(MusicBeatState.getVariables().exists(varName))
+				return MusicBeatState.getVariables().get(varName);
+			
+			return defaultValue;
+		});
+		
+		Lua_helper.add_callback(lua, "setPublicVar", function(varName:String, value:Dynamic) {
+			#if HSCRIPT_ALLOWED
+			states.ModState.publicVariables.set(varName, value);
+			#end
+			return value;
+		});
+		Lua_helper.add_callback(lua, "getPublicVar", function(varName:String, ?defaultValue:Dynamic = null) {
+			#if HSCRIPT_ALLOWED
+			return states.ModState.publicVariables.exists(varName) ? states.ModState.publicVariables.get(varName) : defaultValue;
+			#else
+			return defaultValue;
+			#end
+		});
+		
+		Lua_helper.add_callback(lua, "setStaticVar", function(varName:String, value:Dynamic) {
+			#if HSCRIPT_ALLOWED
+			states.ModState.staticVariables.set(varName, value);
+			#end
+			return value;
+		});
+		Lua_helper.add_callback(lua, "getStaticVar", function(varName:String, ?defaultValue:Dynamic = null) {
+			#if HSCRIPT_ALLOWED
+			return states.ModState.staticVariables.exists(varName) ? states.ModState.staticVariables.get(varName) : defaultValue;
+			#else
+			return defaultValue;
+			#end
+		});
+		
+		Lua_helper.add_callback(lua, "setGlobalVar", function(varName:String, value:Dynamic) {
+			#if HSCRIPT_ALLOWED
+			states.ModState.globalVariables.set(varName, value);
+			#end
+			return value;
+		});
+		Lua_helper.add_callback(lua, "getGlobalVar", function(varName:String, ?defaultValue:Dynamic = null) {
+			#if HSCRIPT_ALLOWED
+			return states.ModState.globalVariables.exists(varName) ? states.ModState.globalVariables.get(varName) : defaultValue;
+			#else
+			return defaultValue;
+			#end
+		});
+		
+		// ============================================
+		// CLASS SYSTEM FOR LUA
+		// ============================================
+		
+		Lua_helper.add_callback(lua, "createClass", function(className:String, ?parentClass:String = null, ?interfaceClass:String = null) {
+			if (LuaClass.hasClass(className)) {
+				luaTrace('createClass: Class "$className" already exists!', false, false, FlxColor.YELLOW);
+				return LuaClass.getClass(className);
+			}
+			
+			var classDef = LuaClass.registerClass(className, parentClass, interfaceClass);
+			luaTrace('Created class: $className' + (parentClass != null ? ' extends $parentClass' : ''));
+			return classDef;
+		});
+		
+		Lua_helper.add_callback(lua, "setClassConstructor", function(className:String, constructorFunc:Dynamic) {
+			if (!LuaClass.hasClass(className)) {
+				luaTrace('setClassConstructor: Class "$className" not found!', false, false, FlxColor.RED);
+				return false;
+			}
+			
+			var classDef = LuaClass.getClass(className);
+			classDef.constructor = constructorFunc;
+			return true;
+		});
+		
+		Lua_helper.add_callback(lua, "setClassMethod", function(className:String, methodName:String, methodFunc:Dynamic) {
+			if (!LuaClass.hasClass(className)) {
+				luaTrace('setClassMethod: Class "$className" not found!', false, false, FlxColor.RED);
+				return false;
+			}
+			
+			var classDef = LuaClass.getClass(className);
+			if (classDef.methods == null) 
+				classDef.methods = {};
+			
+			Reflect.setField(classDef.methods, methodName, methodFunc);
+			return true;
+		});
+		
+		Lua_helper.add_callback(lua, "setClassStaticMethod", function(className:String, methodName:String, methodFunc:Dynamic) {
+			if (!LuaClass.hasClass(className)) {
+				luaTrace('setClassStaticMethod: Class "$className" not found!', false, false, FlxColor.RED);
+				return false;
+			}
+			
+			var classDef = LuaClass.getClass(className);
+			if (classDef.staticMethods == null) 
+				classDef.staticMethods = {};
+			
+			Reflect.setField(classDef.staticMethods, methodName, methodFunc);
+			return true;
+		});
+		
+		Lua_helper.add_callback(lua, "createClassInstance", function(className:String, ?args:Array<Dynamic>) {
+			if (!LuaClass.hasClass(className)) {
+				luaTrace('createClassInstance: Class "$className" not found!', false, false, FlxColor.RED);
+				return null;
+			}
+			
+			return LuaClass.createInstance(className, args);
+		});
+		
+		Lua_helper.add_callback(lua, "callClassMethod", function(instance:Dynamic, methodName:String, ?args:Array<Dynamic>) {
+			if (instance == null || !Std.isOfType(instance, LuaClassInstance)) {
+				luaTrace('callClassMethod: Invalid instance!', false, false, FlxColor.RED);
+				return null;
+			}
+			
+			var classInstance:LuaClassInstance = cast instance;
+			return classInstance.callMethod(methodName, args);
+		});
+		
+		Lua_helper.add_callback(lua, "callClassStatic", function(className:String, methodName:String, ?args:Array<Dynamic>) {
+			if (!LuaClass.hasClass(className)) {
+				luaTrace('callClassStatic: Class "$className" not found!', false, false, FlxColor.RED);
+				return null;
+			}
+			
+			return LuaClass.callStatic(className, methodName, args);
+		});
+		
+		Lua_helper.add_callback(lua, "setInstanceField", function(instance:Dynamic, fieldName:String, value:Dynamic) {
+			if (instance == null || !Std.isOfType(instance, LuaClassInstance)) {
+				luaTrace('setInstanceField: Invalid instance!', false, false, FlxColor.RED);
+				return false;
+			}
+			
+			var classInstance:LuaClassInstance = cast instance;
+			classInstance.setField(fieldName, value);
+			return true;
+		});
+		
+		Lua_helper.add_callback(lua, "getInstanceField", function(instance:Dynamic, fieldName:String) {
+			if (instance == null || !Std.isOfType(instance, LuaClassInstance)) {
+				luaTrace('getInstanceField: Invalid instance!', false, false, FlxColor.RED);
+				return null;
+			}
+			
+			var classInstance:LuaClassInstance = cast instance;
+			return classInstance.getField(fieldName);
+		});
+		
+		Lua_helper.add_callback(lua, "isInstanceOf", function(instance:Dynamic, className:String) {
+			if (instance == null || !Std.isOfType(instance, LuaClassInstance)) {
+				return false;
+			}
+			
+			var classInstance:LuaClassInstance = cast instance;
+			return classInstance.isInstanceOf(className);
+		});
+		
+		Lua_helper.add_callback(lua, "hasClass", function(className:String) {
+			return LuaClass.hasClass(className);
 		});
 
 		Lua_helper.add_callback(lua, "addLuaScript", function(luaFile:String, ?ignoreAlreadyRunning:Bool = false) {
@@ -1616,7 +1826,12 @@ class FunkinLua {
 		#if ACHIEVEMENTS_ALLOWED Achievements.addLuaCallbacks(lua); #end
 		#if TRANSLATIONS_ALLOWED Language.addLuaCallbacks(lua); #end
 		HScript.implement(this);
-		#if SSCRIPT_ALLOWED SScriptCompat.implement(this); #end // Compatibilidad con mods antiguos 0.6.x - 0.7.3
+		// Only implement SScript callbacks if compatibility mode is enabled
+		#if SSCRIPT_ALLOWED 
+		if (ClientPrefs.data.useSScriptCompat) {
+			SScript.implement(this);
+		}
+		#end
 		#if flxanimate FlxAnimateFunctions.implement(this); #end
 		ReflectionFunctions.implement(this);
 		TextFunctions.implement(this);

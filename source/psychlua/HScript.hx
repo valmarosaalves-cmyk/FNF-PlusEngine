@@ -3,6 +3,7 @@ package psychlua;
 import objects.Character;
 import psychlua.LuaUtils;
 import psychlua.CustomSubstate;
+import psychlua.LuaClass;
 
 #if LUA_ALLOWED
 import psychlua.FunkinLua;
@@ -14,6 +15,8 @@ import crowplexus.iris.Iris;
 import crowplexus.iris.IrisConfig;
 import crowplexus.hscript.Expr.Error as IrisError;
 import crowplexus.hscript.Printer;
+
+import psychlua.SScript;
 
 import haxe.ValueException;
 
@@ -39,17 +42,34 @@ class HScript extends Iris
 	{
 		if(parent.hscript == null)
 		{
-			trace('initializing haxe interp for: ${parent.scriptName}');
+			// Check if user wants SScript compatibility mode
+			#if SSCRIPT_ALLOWED
+			if (ClientPrefs.data.useSScriptCompat) {
+				trace('SScript (Psych 0.7.x) initializing for: ${parent.scriptName}');
+				SScript.initHaxeModule(parent);
+				return;
+			}
+			#end
+			
+			trace('HScript (Psych 1.0.x) initializing for: ${parent.scriptName}');
 			parent.hscript = new HScript(parent);
 		}
 	}
 
 	public static function initHaxeModuleCode(parent:FunkinLua, code:String, ?varsToBring:Any = null)
 	{
+		// Check if user wants SScript compatibility mode
+		#if SSCRIPT_ALLOWED
+		if (ClientPrefs.data.useSScriptCompat) {
+			SScript.initHaxeModuleCode(parent, code, varsToBring);
+			return;
+		}
+		#end
+		
 		var hs:HScript = try parent.hscript catch (e) null;
 		if(hs == null)
 		{
-			trace('initializing haxe interp for: ${parent.scriptName}');
+			trace('HScript (Psych 1.0.x) initializing for: ${parent.scriptName}');
 			try {
 				parent.hscript = new HScript(parent, code, varsToBring);
 			}
@@ -206,6 +226,7 @@ class HScript extends Iris
 		#if DISCORD_ALLOWED
 		set('Discord', backend.DiscordClient);
 		#end
+		set('ModState', states.ModState);
 		set('PlayState', PlayState);
 		set('TitleState', states.TitleState);
 		set('MainMenuState', states.MainMenuState);
@@ -241,16 +262,16 @@ class HScript extends Iris
 		set('VideoSprite', objects.VideoSprite);
 		set('FlxVideoSprite', hxvlc.flixel.FlxVideoSprite);
 		set('FlxVideo', hxvlc.flixel.FlxVideo);
-		// Compatibilidad con versiones anteriores
-		set('VideoHandler', objects.wrappers.VideoHandler);
-		set('MP4Handler', objects.wrappers.MP4Handler);
+		// Backward compatibility - use organized wrapper structure
+		set('VideoHandler', objects.wrappers.v2.VideoHandler);
+		set('MP4Handler', objects.wrappers.v3.MP4Handler);
 		#end
 		// Functions & Variables
 		set('setVar', function(name:String, value:Dynamic) {
 			
 			// Si es un VideoHandler o MP4Handler, guardarlo por separado
-			if (Type.getClassName(Type.getClass(value)) == "objects.wrappers.VideoHandler" || 
-				Type.getClassName(Type.getClass(value)) == "objects.wrappers.MP4Handler") {
+			if (Type.getClassName(Type.getClass(value)) == "objects.wrappers.v2.VideoHandler" || 
+				Type.getClassName(Type.getClass(value)) == "objects.wrappers.v3.MP4Handler") {
 				MusicBeatState.getVideoHandlers().set(name, value);
 			} else {
 			MusicBeatState.getVariables().set(name, value);
@@ -306,6 +327,126 @@ class HScript extends Iris
 				modName = this.modFolder;
 			}
 			return LuaUtils.getModSetting(saveTag, modName);
+		});
+		
+		// ============================================
+		// CLASS SYSTEM FOR HSCRIPT
+		// ============================================
+		
+		set('LuaClass', LuaClass);
+		set('LuaClassDefinition', LuaClassDefinition);
+		set('LuaClassInstance', LuaClassInstance);
+		
+		set('createClass', function(className:String, ?parentClass:String = null, ?interfaceClass:String = null) {
+			if (LuaClass.hasClass(className)) {
+				trace('createClass: Class "$className" already exists!');
+				return LuaClass.getClass(className);
+			}
+			
+			var classDef = LuaClass.registerClass(className, parentClass, interfaceClass);
+			trace('Created class: $className' + (parentClass != null ? ' extends $parentClass' : ''));
+			return classDef;
+		});
+		
+		set('setClassConstructor', function(className:String, constructorFunc:Dynamic) {
+			if (!LuaClass.hasClass(className)) {
+				trace('setClassConstructor: Class "$className" not found!');
+				return false;
+			}
+			
+			var classDef = LuaClass.getClass(className);
+			classDef.constructor = constructorFunc;
+			return true;
+		});
+		
+		set('setClassMethod', function(className:String, methodName:String, methodFunc:Dynamic) {
+			if (!LuaClass.hasClass(className)) {
+				trace('setClassMethod: Class "$className" not found!');
+				return false;
+			}
+			
+			var classDef = LuaClass.getClass(className);
+			if (classDef.methods == null) 
+				classDef.methods = {};
+			
+			Reflect.setField(classDef.methods, methodName, methodFunc);
+			return true;
+		});
+		
+		set('setClassStaticMethod', function(className:String, methodName:String, methodFunc:Dynamic) {
+			if (!LuaClass.hasClass(className)) {
+				trace('setClassStaticMethod: Class "$className" not found!');
+				return false;
+			}
+			
+			var classDef = LuaClass.getClass(className);
+			if (classDef.staticMethods == null) 
+				classDef.staticMethods = {};
+			
+			Reflect.setField(classDef.staticMethods, methodName, methodFunc);
+			return true;
+		});
+		
+		set('createClassInstance', function(className:String, ?args:Array<Dynamic>) {
+			if (!LuaClass.hasClass(className)) {
+				trace('createClassInstance: Class "$className" not found!');
+				return null;
+			}
+			
+			return LuaClass.createInstance(className, args);
+		});
+		
+		set('callClassMethod', function(instance:Dynamic, methodName:String, ?args:Array<Dynamic>) {
+			if (instance == null || !Std.isOfType(instance, LuaClassInstance)) {
+				trace('callClassMethod: Invalid instance!');
+				return null;
+			}
+			
+			var classInstance:LuaClassInstance = cast instance;
+			return classInstance.callMethod(methodName, args);
+		});
+		
+		set('callClassStatic', function(className:String, methodName:String, ?args:Array<Dynamic>) {
+			if (!LuaClass.hasClass(className)) {
+				trace('callClassStatic: Class "$className" not found!');
+				return null;
+			}
+			
+			return LuaClass.callStatic(className, methodName, args);
+		});
+		
+		set('setInstanceField', function(instance:Dynamic, fieldName:String, value:Dynamic) {
+			if (instance == null || !Std.isOfType(instance, LuaClassInstance)) {
+				trace('setInstanceField: Invalid instance!');
+				return false;
+			}
+			
+			var classInstance:LuaClassInstance = cast instance;
+			classInstance.setField(fieldName, value);
+			return true;
+		});
+		
+		set('getInstanceField', function(instance:Dynamic, fieldName:String) {
+			if (instance == null || !Std.isOfType(instance, LuaClassInstance)) {
+				trace('getInstanceField: Invalid instance!');
+				return null;
+			}
+			
+			var classInstance:LuaClassInstance = cast instance;
+			return classInstance.getField(fieldName);
+		});
+		
+		set('isInstanceOf', function(instance:Dynamic, className:String) {
+			if (instance == null || !Std.isOfType(instance, LuaClassInstance)) {
+				return false;
+			}
+			
+			var classInstance:LuaClassInstance = cast instance;
+			return classInstance.isInstanceOf(className);
+		});
+		
+		set('hasClass', function(className:String) {
+			return LuaClass.hasClass(className);
 		});
 
 		// Window Functions (shortcuts for WindowTweens)
@@ -464,20 +605,20 @@ class HScript extends Iris
 			// Compatibilidad con rutas antiguas de hxcodec
 			var compatibilityClass:Dynamic = null;
 			if(libPackage == 'vlc' && libName == 'VideoHandler') {
-				compatibilityClass = objects.wrappers.VideoHandler;
-				PlayState.instance.addTextToDebug('VideoHandler is from Psych Engine 0.7.3, redirected to FlxVideoSprite', FlxColor.YELLOW);
+				compatibilityClass = objects.wrappers.v2.VideoHandler;
+				PlayState.instance.addTextToDebug('VideoHandler is from Psych Engine 0.7.3, redirected to v2.VideoHandler', FlxColor.YELLOW);
 			}
 			else if(libPackage == 'vlc' && libName == 'MP4Handler') {
-				compatibilityClass = objects.wrappers.MP4Handler;
-				PlayState.instance.addTextToDebug('MP4Handler is from Psych Engine 0.6.3, redirected to FlxVideoSprite', FlxColor.YELLOW);
+				compatibilityClass = objects.wrappers.v3.MP4Handler;
+				PlayState.instance.addTextToDebug('MP4Handler is from Psych Engine 0.6.3, redirected to v3.MP4Handler', FlxColor.YELLOW);
 			}
 			else if(libPackage == 'hxcodec.vlc' && libName == 'VideoHandler') {
-				compatibilityClass = objects.wrappers.VideoHandler;
-				PlayState.instance.addTextToDebug('VideoHandler is from Psych Engine 0.7.3, redirected to FlxVideoSprite', FlxColor.YELLOW);
+				compatibilityClass = objects.wrappers.v2.VideoHandler;
+				PlayState.instance.addTextToDebug('VideoHandler is from Psych Engine 0.7.3, redirected to v2.VideoHandler', FlxColor.YELLOW);
 			}
 			else if(libPackage == 'hxcodec.vlc' && libName == 'MP4Handler') {
-				compatibilityClass = objects.wrappers.MP4Handler;
-				PlayState.instance.addTextToDebug('MP4Handler is from Psych Engine 0.6.3, redirected to FlxVideoSprite', FlxColor.YELLOW);
+				compatibilityClass = objects.wrappers.v3.MP4Handler;
+				PlayState.instance.addTextToDebug('MP4Handler is from Psych Engine 0.6.3, redirected to v3.MP4Handler', FlxColor.YELLOW);
 			}				if(compatibilityClass != null) {
 					set(libName, compatibilityClass);
 				} else {
@@ -598,20 +739,20 @@ class HScript extends Iris
 			
 			// Compatibilidad con rutas antiguas de hxcodec
 			if(libPackage == 'vlc' && libName == 'VideoHandler') {
-				c = objects.wrappers.VideoHandler;
-				PlayState.instance.addTextToDebug('VideoHandler is from Psych Engine 0.7.3, redirected to FlxVideoSprite', FlxColor.YELLOW);
+				c = objects.wrappers.v2.VideoHandler;
+				PlayState.instance.addTextToDebug('VideoHandler is from Psych Engine 0.7.3, redirected to v2.VideoHandler', FlxColor.YELLOW);
 			}
 			else if(libPackage == 'vlc' && libName == 'MP4Handler') {
-				c = objects.wrappers.MP4Handler;
-				PlayState.instance.addTextToDebug('MP4Handler is from Psych Engine 0.6.3, redirected to FlxVideoSprite', FlxColor.YELLOW);
+				c = objects.wrappers.v3.MP4Handler;
+				PlayState.instance.addTextToDebug('MP4Handler is from Psych Engine 0.6.3, redirected to v3.MP4Handler', FlxColor.YELLOW);
 			}
 			else if(libPackage == 'hxcodec.vlc' && libName == 'VideoHandler') {
-				c = objects.wrappers.VideoHandler;
-				PlayState.instance.addTextToDebug('VideoHandler is from Psych Engine 0.7.3, redirected to FlxVideoSprite', FlxColor.YELLOW);
+				c = objects.wrappers.v2.VideoHandler;
+				PlayState.instance.addTextToDebug('VideoHandler is from Psych Engine 0.7.3, redirected to v2.VideoHandler', FlxColor.YELLOW);
 			}
 			else if(libPackage == 'hxcodec.vlc' && libName == 'MP4Handler') {
-				c = objects.wrappers.MP4Handler;
-				PlayState.instance.addTextToDebug('MP4Handler is from Psych Engine 0.6.3, redirected to FlxVideoSprite', FlxColor.YELLOW);
+				c = objects.wrappers.v3.MP4Handler;
+				PlayState.instance.addTextToDebug('MP4Handler is from Psych Engine 0.6.3, redirected to v3.MP4Handler', FlxColor.YELLOW);
 			}
 			else {
 				c = Type.resolveClass(str + libName);

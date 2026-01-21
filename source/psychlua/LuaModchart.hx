@@ -45,31 +45,101 @@ class LuaModchart
         });
         
         // Set a value at a specific beat
-        Lua_helper.add_callback(lua, "set", function(name:String, beat:Float, value:Float, ?player:Int = -1, ?field:Int = -1) {
-            if (Manager.instance != null)
-                Manager.instance.set(name, beat, value, player, field);
+        Lua_helper.add_callback(lua, "set", function(nameOrMods:Dynamic, beat:Float, ?value:Dynamic, ?player:Int = -1, ?field:Int = -1) {
+            if (Manager.instance == null)
+                return;
+            
+            // Check if first parameter is a table of mods
+            if (Std.isOfType(nameOrMods, String)) {
+                // Single mod: set('modname', beat, value, player, field)
+                Manager.instance.set(cast nameOrMods, beat, cast value, player, field);
+            } else {
+                // Multiple mods: set({mod1=100, mod2=50}, beat, player, field)
+                // In this case: value becomes player, player becomes field
+                final mods:Dynamic = nameOrMods;
+                final actualPlayer:Int = value != null ? cast value : -1;
+                final actualField:Int = player != null ? player : -1;
+                
+                for (modName in Reflect.fields(mods)) {
+                    final modValue:Float = Reflect.field(mods, modName);
+                    Manager.instance.set(modName, beat, modValue, actualPlayer, actualField);
+                }
+            }
         });
         
         // Ease a modifier
-        Lua_helper.add_callback(lua, "ease", function(name:String, beat:Float, length:Float, value:Float, easeName:String, ?player:Int = -1, ?field:Int = -1) {
-            if (Manager.instance != null) {
+        Lua_helper.add_callback(lua, "ease", function(nameOrMods:Dynamic, beat:Float, length:Float, ?value:Dynamic, ?easeName:String, ?player:Int = -1, ?field:Int = -1) {
+            if (Manager.instance == null)
+                return;
+            
+            // Check if first parameter is a table of mods
+            if (Std.isOfType(nameOrMods, String)) {
+                // Single mod: ease('modname', beat, length, value, ease, player, field)
                 var easeFunc = getEaseFunction(easeName);
-                Manager.instance.ease(name, beat, length, value, easeFunc, player, field);
+                Manager.instance.ease(cast nameOrMods, beat, length, cast value, easeFunc, player, field);
+            } else {
+                // Multiple mods: ease({mod1=100, mod2=50}, beat, length, ease, player, field)
+                // In this case: value becomes easeName, easeName becomes player, player becomes field
+                final mods:Dynamic = nameOrMods;
+                final actualEaseName:String = cast value;
+                final actualPlayer:Int = easeName != null ? Std.parseInt(easeName) : -1;
+                final actualField:Int = player != null ? player : -1;
+                
+                var easeFunc = getEaseFunction(actualEaseName);
+                for (modName in Reflect.fields(mods)) {
+                    final modValue:Float = Reflect.field(mods, modName);
+                    Manager.instance.ease(modName, beat, length, modValue, easeFunc, actualPlayer, actualField);
+                }
             }
         });
         
         // Add with easing
-        Lua_helper.add_callback(lua, "add", function(name:String, beat:Float, length:Float, value:Float, easeName:String, ?player:Int = -1, ?field:Int = -1) {
-            if (Manager.instance != null) {
+        Lua_helper.add_callback(lua, "add", function(nameOrMods:Dynamic, beat:Float, length:Float, ?value:Dynamic, ?easeName:String, ?player:Int = -1, ?field:Int = -1) {
+            if (Manager.instance == null)
+                return;
+            
+            // Check if first parameter is a table of mods
+            if (Std.isOfType(nameOrMods, String)) {
+                // Single mod: add('modname', beat, length, value, ease, player, field)
                 var easeFunc = getEaseFunction(easeName);
-                Manager.instance.add(name, beat, length, value, easeFunc, player, field);
+                Manager.instance.add(cast nameOrMods, beat, length, cast value, easeFunc, player, field);
+            } else {
+                // Multiple mods: add({mod1=100, mod2=50}, beat, length, ease, player, field)
+                // In this case: value becomes easeName, easeName becomes player, player becomes field
+                final mods:Dynamic = nameOrMods;
+                final actualEaseName:String = cast value;
+                final actualPlayer:Int = easeName != null ? Std.parseInt(easeName) : -1;
+                final actualField:Int = player != null ? player : -1;
+                
+                var easeFunc = getEaseFunction(actualEaseName);
+                for (modName in Reflect.fields(mods)) {
+                    final modValue:Float = Reflect.field(mods, modName);
+                    Manager.instance.add(modName, beat, length, modValue, easeFunc, actualPlayer, actualField);
+                }
             }
         });
         
         // SetAdd helper
-        Lua_helper.add_callback(lua, "setAdd", function(name:String, beat:Float, value:Float, ?player:Int = -1, ?field:Int = -1) {
-            if (Manager.instance != null)
-                Manager.instance.setAdd(name, beat, value, player, field);
+        Lua_helper.add_callback(lua, "setAdd", function(nameOrMods:Dynamic, beat:Float, ?value:Dynamic, ?player:Int = -1, ?field:Int = -1) {
+            if (Manager.instance == null)
+                return;
+            
+            // Check if first parameter is a table of mods
+            if (Std.isOfType(nameOrMods, String)) {
+                // Single mod: setAdd('modname', beat, value, player, field)
+                Manager.instance.setAdd(cast nameOrMods, beat, cast value, player, field);
+            } else {
+                // Multiple mods: setAdd({mod1=100, mod2=50}, beat, player, field)
+                // In this case: value becomes player, player becomes field
+                final mods:Dynamic = nameOrMods;
+                final actualPlayer:Int = value != null ? cast value : -1;
+                final actualField:Int = player != null ? player : -1;
+                
+                for (modName in Reflect.fields(mods)) {
+                    final modValue:Float = Reflect.field(mods, modName);
+                    Manager.instance.setAdd(modName, beat, modValue, actualPlayer, actualField);
+                }
+            }
         });
         
         // Add new playfield
@@ -152,7 +222,7 @@ class LuaModchart
         });
 
 		// PathModifier helpers (works for any modifier that extends PathModifier, e.g. arrowshape, luapath)
-		Lua_helper.add_callback(lua, "setModifierPath", function(modName:String, nodes:Array<Dynamic>, ?field:Int = 0) {
+		Lua_helper.add_callback(lua, "setModifierPath", function(modName:String, nodes:Array<Dynamic>, ?field:Int = 0, ?lane:Int = -1) {
 			if (Manager.instance == null)
 				return;
 			final pf = Manager.instance.playfields[field];
@@ -172,7 +242,13 @@ class LuaModchart
 			}
 
 			final parsed = parsePathNodes(nodes);
-			cast(mod, PathModifier).loadPath(parsed);
+			if (lane >= 0) {
+				// Set path for specific lane
+				cast(mod, PathModifier).loadPathForLane(parsed, lane);
+			} else {
+				// Set global path (affects all lanes without specific paths)
+				cast(mod, PathModifier).loadPath(parsed);
+			}
 		});
 
 		Lua_helper.add_callback(lua, "setModifierPathOffset", function(modName:String, x:Float, y:Float, ?z:Float = 0, ?field:Int = 0) {

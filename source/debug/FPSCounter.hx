@@ -45,6 +45,13 @@ class FPSCounter extends Sprite
 		Peak memory usage tracking
 	**/
 	public var memoryPeak(default, null):Float = 0;
+	
+	/**
+		Smooth memory display (interpolated for smooth animation)
+	**/
+	private var displayedMemory:Float = 0;
+	private var displayedMemoryPeak:Float = 0;
+	private var memoryLerpSpeed:Float = 0.1; // Speed of memory interpolation (0.1 = smooth, 1.0 = instant)
 
 	/**
 		Debug level for FPS counter (0: normal without bg, 1: normal with bg, 2: basic debug, 3: extended debug)
@@ -224,15 +231,29 @@ class FPSCounter extends Sprite
 
 	public dynamic function updateText():Void // so people can override it in hscript
 	{
-		// Actualizar memoria pico
+		// Get current real memory
 		var currentMemory = memoryMegas;
+		
+		// Update peak memory
 		if (currentMemory > memoryPeak) {
 			memoryPeak = currentMemory;
 		}
 		
-		// Formatear memoria actual y pico
-		var currentMemoryStr = flixel.util.FlxStringUtil.formatBytes(currentMemory);
-		var peakMemoryStr = flixel.util.FlxStringUtil.formatBytes(memoryPeak);
+		// Smooth interpolation for displayed memory (lerp)
+		// This makes the memory counter animate smoothly instead of jumping
+		if (displayedMemory == 0) {
+			// First time initialization
+			displayedMemory = currentMemory;
+			displayedMemoryPeak = memoryPeak;
+		} else {
+			// Lerp towards target values
+			displayedMemory += (currentMemory - displayedMemory) * memoryLerpSpeed;
+			displayedMemoryPeak += (memoryPeak - displayedMemoryPeak) * memoryLerpSpeed;
+		}
+		
+		// Format displayed memory (smoothed values)
+		var currentMemoryStr = flixel.util.FlxStringUtil.formatBytes(displayedMemory);
+		var peakMemoryStr = flixel.util.FlxStringUtil.formatBytes(displayedMemoryPeak);
 
 		// White or red color based on FPS
 		var targetFPS = #if (ClientPrefs && ClientPrefs.data && ClientPrefs.data.framerate) ClientPrefs.data.framerate #else FlxG.stage.window.frameRate #end;
@@ -390,7 +411,8 @@ class FPSCounter extends Sprite
 			if (currentTime >= updateTime)
 			{
 				var elapsed = currentTime - prevTime;
-				currentFPS = Math.ceil((framesCount * 1000) / elapsed);
+				// Use round instead of ceil for more accurate FPS display
+				currentFPS = Math.round((framesCount * 1000) / elapsed);
 				framesCount = 0;
 				prevTime = currentTime;
 				updateTime = currentTime + 500;
@@ -407,18 +429,22 @@ class FPSCounter extends Sprite
 		}
 		else
 		{
+			// Improved standard FPS calculation - more accurate and responsive
 			final now:Float = haxe.Timer.stamp() * 1000;
 			times.push(now);
 			while (times[0] < now - 1000)
 				times.shift();
-			// prevents the overlay from updating every frame, why would you need to anyways @crowplexus
-			if (deltaTimeout < 50)
+			
+			// Update more frequently for better accuracy (every 33ms instead of 50ms)
+			if (deltaTimeout < 33)
 			{
 				deltaTimeout += deltaTime;
 				return;
 			}
 
-			currentFPS = times.length < FlxG.updateFramerate ? times.length : FlxG.updateFramerate;
+			// Show actual FPS instead of capping at updateFramerate
+			// This gives more accurate representation of performance
+			currentFPS = times.length;
 			deltaTimeout = 0.0;
 		}
 

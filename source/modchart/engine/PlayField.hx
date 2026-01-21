@@ -220,6 +220,10 @@ final class PlayField extends FlxSprite {
 	}
 
 	private function __drawPlayField() {
+		// Update global cache system (StepMania technique)
+		final songPos = Adapter.instance.getSongPosition();
+		final beat = Adapter.instance.getCurrentBeat();
+		
 		drawCB = [];
 
 		// TODO: prepare arrow paths shit

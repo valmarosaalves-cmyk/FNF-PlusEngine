@@ -15,10 +15,10 @@ import openfl.display.BitmapData;
 import openfl.display.StageScaleMode;
 import lime.app.Application;
 import states.TitleState;
+import states.InitialState;
 #if HSCRIPT_ALLOWED
 import crowplexus.iris.Iris;
 import psychlua.HScript.HScriptInfos;
-import psychlua.SScript.SScriptCompat;
 #end
 import openfl.events.KeyboardEvent;
 
@@ -105,9 +105,13 @@ class Main extends Sprite
 		Mods.pushGlobalMods();
 		#end
 		Mods.loadTopMod();
+		
+		// Initialize GlobalScript
+		#if HSCRIPT_ALLOWED
+		states.ModState.initGlobalScript();
+		#end
 
 		FlxG.save.bind('funkin', CoolUtil.getSavePath());
-		Highscore.load();
 
 		#if HSCRIPT_ALLOWED
 		Iris.warn = function(x, ?pos:haxe.PosInfos) {
@@ -166,30 +170,10 @@ class Main extends Sprite
 		}
 		#end
 
-		#if SSCRIPT_ALLOWED
-		// Handlers para SScript (Psych 0.7.3)
-		SScriptCompat.sscriptWarnHandler = function(message:String, origin:String) {
-			if (PlayState.instance != null)
-				PlayState.instance.addTextToDebug('SSCRIPT WARNING ($origin): $message', FlxColor.YELLOW);
-			debug.TraceDisplay.addWarning('SSCRIPT WARNING ($origin): $message');
-		};
-		
-		SScriptCompat.sscriptErrorHandler = function(message:String, origin:String) {
-			if (PlayState.instance != null)
-				PlayState.instance.addTextToDebug('SSCRIPT ERROR ($origin): $message', FlxColor.RED);
-			debug.TraceDisplay.addSScriptError(message, origin);
-		};
-		#end
-
 		#if LUA_ALLOWED Lua.set_callbacks_function(cpp.Callable.fromStaticFunction(psychlua.CallbackHandler.call)); #end
 		Controls.instance = new Controls();
 		ClientPrefs.loadDefaultKeys();
 		#if ACHIEVEMENTS_ALLOWED Achievements.load(); #end
-
-		// Initialize Global Scripts system
-		#if HSCRIPT_ALLOWED
-		lenin.slushithings.codenameengine.scripting.GlobalScript.init();
-		#end
 
 		#if mobile
 		FlxG.signals.postGameStart.addOnce(() -> {
@@ -197,18 +181,15 @@ class Main extends Sprite
 		});
 		#end
 		
-		// Determine initial state based on preloader preference
-		var initialState:Class<FlxState> = game.initialState;
+		// Determine initial state. InitialState will load mods and redirect accordingly.
+		var initialState:Class<FlxState> = InitialState;
 		#if COPYSTATE_ALLOWED
 		if (!CopyState.checkExistingFiles()) {
 			initialState = CopyState;
 		} else
 		#end
 		{
-			// Load prefs early to check preloader setting
-			if (ClientPrefs.data.enablePreloader) {
-				initialState = FunkinPreloader;
-			}
+			// Preloader removed: always start at InitialState
 		}
 		
 		addChild(new FlxGame(game.width, game.height, initialState, game.framerate, game.framerate, game.skipSplash, game.startFullscreen));
@@ -219,6 +200,8 @@ class Main extends Sprite
 		traceDisplay = new TraceDisplay(10, 100, 0xFFFFFF);
 		addChild(traceDisplay);
 		
+		// Preferences and MobileData initialization moved to InitialState.
+
 		// Agregar los botones de TraceDisplay y Debug para móvil
 		#if mobile
 		traceButton = new TraceButton();
@@ -269,8 +252,6 @@ class Main extends Sprite
 		LimeSystem.allowScreenTimeout = ClientPrefs.data.screensaver;
 		#end
 
-		Application.current.window.vsync = ClientPrefs.data.vsync;
-
 		#if (cpp && windows)
 		// Add window close handler for fade out effect
 		Application.current.window.onClose.add(onWindowClose);
@@ -280,7 +261,8 @@ class Main extends Sprite
 		#end
 
 		// shader coords fix
-		FlxG.signals.gameResized.add(function (w, h) {
+		var resizeDebounceTimer:FlxTimer = null;
+		function handleGameResized():Void {
 			// Only reposition the FPS counter, no scaling.
 			if(fpsVar != null) {
 				var marginX = 10;
@@ -311,6 +293,16 @@ class Main extends Sprite
 
 			if (FlxG.game != null)
 			resetSpriteCache(FlxG.game);
+		}
+
+		FlxG.signals.gameResized.add(function (w, h) {
+			if(resizeDebounceTimer == null) {
+				resizeDebounceTimer = new FlxTimer();
+			}
+			// Debounce window scripts so we only run heavy work once the resize settles.
+			resizeDebounceTimer.start(0.05, function(_) {
+				handleGameResized();
+			});
 		});
 
 		setupGame();
@@ -325,7 +317,7 @@ class Main extends Sprite
 
 	function toggleFullScreen(event:KeyboardEvent) {
 		if (Controls.instance.justReleased('fullscreen'))
-			backend.WindowMode.toggleBorderlessFullscreen();
+			backend.WindowMode.toggleFullscreen();
 	}
 
 	function positionWatermark():Void {

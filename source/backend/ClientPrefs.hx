@@ -15,11 +15,14 @@ import states.TitleState;
 	public var controlsAlpha:Float = FlxG.onMobile ? 0.6 : 0;
 	public var screensaver:Bool = false;
 	public var wideScreen:Bool = false;
+	#if android
+	public var storageType:String = "EXTERNAL_DATA";
+	#end
 	public var hitboxType:String = "Gradient";
 	public var popUpRating:Bool = true;
-	public var vsync:Bool = false;
 	public var gameOverVibration:Bool = false;
 	public var fpsRework:Bool = false;
+	public var fullscreenMode:String = 'Borderless'; // 'Borderless', 'Exclusive'
 	
 	// Sistema de Accuracy/Rating
 	public var accuracySystem:String = 'Wife3'; // 'Wife3', 'Psych', 'Simple', 'osu!mania', 'DJMAX', 'ITG'
@@ -42,6 +45,7 @@ import states.TitleState;
 	public var noteSkin:String = 'Default';
 	public var splashSkin:String = 'Psych';
 	public var splashAlpha:Float = 0.6;
+	public var colorQuantization:Bool = false; // StepMania-style color quantization
 	public var lowQuality:Bool = false;
 	public var shaders:Bool = true;
 	public var colorblindMode:String = 'None';
@@ -52,6 +56,7 @@ import states.TitleState;
 	public var hideSustainSplash:Bool = false;
 	public var showKeyViewer:Bool = false;
 	public var judgementCounter:Bool = true;
+	public var showCombo:Bool = true;
 	public var comboInGame:Bool = false;
 	public var useFreakyFont:Bool = false;
 	public var showStateInFPS:Bool = true;
@@ -64,7 +69,6 @@ import states.TitleState;
 	public var zScale:Float = 1.0; // Escala del eje Z (profundidad)
 	public var renderArrowPaths:Bool = false; // Renderiza las líneas de trayectoria de las flechas
 	public var styledArrowPaths:Bool = false; // Aplica estilos visuales a las trayectorias
-	public var arrowPathFrameSkip:Int = 2; // Frameskip para paths (1=60fps, 2=30fps, 3=20fps, etc.)
 	public var arrowPathBoundary:Int = 300; // Margen de boundary checking para paths (pixeles fuera de pantalla)
 	public var holdCacheEnabled:Bool = true; // Cache de hold graphics para mejor performance
 	public var holdAlphaDivisions:Int = 20; // Variantes de alpha pre-calculadas (10-30)
@@ -129,7 +133,6 @@ import states.TitleState;
 	public var keyViewerOffset:Array<Int> = [0, 0]; // X, Y offset for key viewer
 	public var keyViewerColor:String = 'Gray'; // Color name for key viewer
 	public var ratingOffset:Int = 0;
-	public var judgeDiff:String = 'J4'; // Judge Difficulty: J1 (easiest) to JUSTICE (hardest)
 	public var flawlessWindow:Float = 20.0;
 	public var sickWindow:Float = 45.0;
 	public var goodWindow:Float = 90.0;
@@ -142,6 +145,12 @@ import states.TitleState;
 	public var abbreviateScore:Bool = true;
 	public var heavyCharts:Bool = false; // Heavy Charts Mode para charts pesados
 	public var vanillaTransition:Bool = false; // Use vanilla Psych Engine transition instead of custom
+	
+	// Compatibility Settings
+	public var useSScriptCompat:Bool = false; // Use SScript instead of hscript-iris for Psych 0.7.3 mods compatibility
+	public var legacyMemoryManagement:Bool = false; // Use Psych 0.7.3 memory management style (no GPU disposal)
+	public var legacyFileSystemAccess:Bool = false; // Allow direct FileSystem.readDirectory access like in Psych 0.7.3
+	public var useLegacyFont:Bool = false; // Use legacy VCR font instead of Phantom font
 }
 
 class ClientPrefs {
@@ -289,20 +298,18 @@ class ClientPrefs {
             judgementCounter = !!Reflect.field(FlxG.save.data, "judgementCounter");
 		    judgementCounter = data.judgementCounter;
 
+		// Apply framerate settings consistently
 		if (data.fpsRework)
+		{
+			// FPS Rework mode: Set window framerate directly
 			FlxG.stage.window.frameRate = data.framerate;
+		}
 		else
 		{
-			if (data.framerate > FlxG.drawFramerate)
-			{
-				FlxG.updateFramerate = data.framerate;
-				FlxG.drawFramerate = data.framerate;
-			}
-			else
-			{
-				FlxG.drawFramerate = data.framerate;
-				FlxG.updateFramerate = data.framerate;
-			}
+			// Standard mode: Set both update and draw framerates equally
+			// This ensures consistent timing on all devices
+			FlxG.updateFramerate = data.framerate;
+			FlxG.drawFramerate = data.framerate;
 		}
 
 		if (FlxG.save.data.showIntroVideo != null) {

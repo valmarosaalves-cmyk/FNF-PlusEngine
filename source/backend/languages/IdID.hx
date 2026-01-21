@@ -259,8 +259,6 @@ class IdID
         "description_framerate" => "Cukup jelas, bukan?",
         "setting_fps_rework" => "Pembenahan FPS",
         "description_fps_rework" => "Jika dicentang, ini mencegah game menjadi \"lebih lambat\" dan \"lebih halus\" saat FPS saat ini lebih rendah dari batas framerate.",
-        "setting_enable_preloader" => "Aktifkan Preloader",
-        "description_enable_preloader" => "Jika diaktifkan, akan memuat terlebih dahulu aset umum (gambar, suara, musik) saat startup untuk meningkatkan kinerja.\nDapat memperpanjang waktu pemuatan awal.",
 
         // Visuals Settings
         "setting_note_skins" => "Note Skins:",

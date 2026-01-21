@@ -16,7 +16,7 @@ import crowplexus.iris.IrisConfig;
 import crowplexus.hscript.Expr.Error as IrisError;
 import crowplexus.hscript.Printer;
 
-import psychlua.SScript.SScriptCompat;
+import psychlua.SScript;
 
 import haxe.ValueException;
 
@@ -46,7 +46,7 @@ class HScript extends Iris
 			#if SSCRIPT_ALLOWED
 			if (ClientPrefs.data.useSScriptCompat) {
 				trace('SScript (Psych 0.7.x) initializing for: ${parent.scriptName}');
-				SScriptCompat.initHaxeModule(parent);
+				SScript.initHaxeModule(parent);
 				return;
 			}
 			#end
@@ -61,7 +61,7 @@ class HScript extends Iris
 		// Check if user wants SScript compatibility mode
 		#if SSCRIPT_ALLOWED
 		if (ClientPrefs.data.useSScriptCompat) {
-			SScriptCompat.initHaxeModuleCode(parent, code, varsToBring);
+			SScript.initHaxeModuleCode(parent, code, varsToBring);
 			return;
 		}
 		#end
@@ -262,16 +262,16 @@ class HScript extends Iris
 		set('VideoSprite', objects.VideoSprite);
 		set('FlxVideoSprite', hxvlc.flixel.FlxVideoSprite);
 		set('FlxVideo', hxvlc.flixel.FlxVideo);
-		// Compatibilidad con versiones anteriores
-		set('VideoHandler', objects.wrappers.VideoHandler);
-		set('MP4Handler', objects.wrappers.MP4Handler);
+		// Backward compatibility - use organized wrapper structure
+		set('VideoHandler', objects.wrappers.v2.VideoHandler);
+		set('MP4Handler', objects.wrappers.v3.MP4Handler);
 		#end
 		// Functions & Variables
 		set('setVar', function(name:String, value:Dynamic) {
 			
 			// Si es un VideoHandler o MP4Handler, guardarlo por separado
-			if (Type.getClassName(Type.getClass(value)) == "objects.wrappers.VideoHandler" || 
-				Type.getClassName(Type.getClass(value)) == "objects.wrappers.MP4Handler") {
+			if (Type.getClassName(Type.getClass(value)) == "objects.wrappers.v2.VideoHandler" || 
+				Type.getClassName(Type.getClass(value)) == "objects.wrappers.v3.MP4Handler") {
 				MusicBeatState.getVideoHandlers().set(name, value);
 			} else {
 			MusicBeatState.getVariables().set(name, value);
@@ -605,20 +605,20 @@ class HScript extends Iris
 			// Compatibilidad con rutas antiguas de hxcodec
 			var compatibilityClass:Dynamic = null;
 			if(libPackage == 'vlc' && libName == 'VideoHandler') {
-				compatibilityClass = objects.wrappers.VideoHandler;
-				PlayState.instance.addTextToDebug('VideoHandler is from Psych Engine 0.7.3, redirected to FlxVideoSprite', FlxColor.YELLOW);
+				compatibilityClass = objects.wrappers.v2.VideoHandler;
+				PlayState.instance.addTextToDebug('VideoHandler is from Psych Engine 0.7.3, redirected to v2.VideoHandler', FlxColor.YELLOW);
 			}
 			else if(libPackage == 'vlc' && libName == 'MP4Handler') {
-				compatibilityClass = objects.wrappers.MP4Handler;
-				PlayState.instance.addTextToDebug('MP4Handler is from Psych Engine 0.6.3, redirected to FlxVideoSprite', FlxColor.YELLOW);
+				compatibilityClass = objects.wrappers.v3.MP4Handler;
+				PlayState.instance.addTextToDebug('MP4Handler is from Psych Engine 0.6.3, redirected to v3.MP4Handler', FlxColor.YELLOW);
 			}
 			else if(libPackage == 'hxcodec.vlc' && libName == 'VideoHandler') {
-				compatibilityClass = objects.wrappers.VideoHandler;
-				PlayState.instance.addTextToDebug('VideoHandler is from Psych Engine 0.7.3, redirected to FlxVideoSprite', FlxColor.YELLOW);
+				compatibilityClass = objects.wrappers.v2.VideoHandler;
+				PlayState.instance.addTextToDebug('VideoHandler is from Psych Engine 0.7.3, redirected to v2.VideoHandler', FlxColor.YELLOW);
 			}
 			else if(libPackage == 'hxcodec.vlc' && libName == 'MP4Handler') {
-				compatibilityClass = objects.wrappers.MP4Handler;
-				PlayState.instance.addTextToDebug('MP4Handler is from Psych Engine 0.6.3, redirected to FlxVideoSprite', FlxColor.YELLOW);
+				compatibilityClass = objects.wrappers.v3.MP4Handler;
+				PlayState.instance.addTextToDebug('MP4Handler is from Psych Engine 0.6.3, redirected to v3.MP4Handler', FlxColor.YELLOW);
 			}				if(compatibilityClass != null) {
 					set(libName, compatibilityClass);
 				} else {
@@ -739,20 +739,20 @@ class HScript extends Iris
 			
 			// Compatibilidad con rutas antiguas de hxcodec
 			if(libPackage == 'vlc' && libName == 'VideoHandler') {
-				c = objects.wrappers.VideoHandler;
-				PlayState.instance.addTextToDebug('VideoHandler is from Psych Engine 0.7.3, redirected to FlxVideoSprite', FlxColor.YELLOW);
+				c = objects.wrappers.v2.VideoHandler;
+				PlayState.instance.addTextToDebug('VideoHandler is from Psych Engine 0.7.3, redirected to v2.VideoHandler', FlxColor.YELLOW);
 			}
 			else if(libPackage == 'vlc' && libName == 'MP4Handler') {
-				c = objects.wrappers.MP4Handler;
-				PlayState.instance.addTextToDebug('MP4Handler is from Psych Engine 0.6.3, redirected to FlxVideoSprite', FlxColor.YELLOW);
+				c = objects.wrappers.v3.MP4Handler;
+				PlayState.instance.addTextToDebug('MP4Handler is from Psych Engine 0.6.3, redirected to v3.MP4Handler', FlxColor.YELLOW);
 			}
 			else if(libPackage == 'hxcodec.vlc' && libName == 'VideoHandler') {
-				c = objects.wrappers.VideoHandler;
-				PlayState.instance.addTextToDebug('VideoHandler is from Psych Engine 0.7.3, redirected to FlxVideoSprite', FlxColor.YELLOW);
+				c = objects.wrappers.v2.VideoHandler;
+				PlayState.instance.addTextToDebug('VideoHandler is from Psych Engine 0.7.3, redirected to v2.VideoHandler', FlxColor.YELLOW);
 			}
 			else if(libPackage == 'hxcodec.vlc' && libName == 'MP4Handler') {
-				c = objects.wrappers.MP4Handler;
-				PlayState.instance.addTextToDebug('MP4Handler is from Psych Engine 0.6.3, redirected to FlxVideoSprite', FlxColor.YELLOW);
+				c = objects.wrappers.v3.MP4Handler;
+				PlayState.instance.addTextToDebug('MP4Handler is from Psych Engine 0.6.3, redirected to v3.MP4Handler', FlxColor.YELLOW);
 			}
 			else {
 				c = Type.resolveClass(str + libName);

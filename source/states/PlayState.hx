@@ -74,7 +74,7 @@ import modchart.Manager;
 #end
 
 #if SSCRIPT_ALLOWED
-import psychlua.SScript.SScriptCompat;
+import psychlua.SScript;
 #end
 
 #if HSCRIPT_ALLOWED
@@ -162,6 +162,12 @@ class PlayState extends MusicBeatState
 	#if HSCRIPT_ALLOWED
 	public var hscriptArray:Array<HScript> = [];
 	#end
+
+	#if SSCRIPT_ALLOWED
+	public var sscriptArray:Array<SScript> = [];
+	#end
+
+	public var instancesExclude:Array<String> = [];
 
 	#if LUA_ALLOWED
 	public var modchartTweens:Map<String, FlxTween> = new Map<String, FlxTween>();
@@ -516,7 +522,7 @@ class PlayState extends MusicBeatState
 		#if LUA_ALLOWED
 		FunkinLua.lua_Errors = 0;
 		#if SSCRIPT_ALLOWED
-		psychlua.SScript.SScriptCompat.sscript_Errors = 0;
+		// SScript errors are now handled internally
 		#end
 		#end
 		
@@ -2599,11 +2605,6 @@ class PlayState extends MusicBeatState
 			psychlua.LuaVideo.resumeAll();
 			#end
 			
-			// Reanudar todos los VideoHandlers
-			#if VIDEOS_ALLOWED
-			objects.wrappers.VideoHandler.resumeAll();
-			#end
-			
 			callOnScripts('onResume');
 			resetRPC(startTimer != null && startTimer.finished);
 			runSongSyncThread();
@@ -3197,11 +3198,6 @@ class PlayState extends MusicBeatState
 		// Pausar todos los videos de Lua
 		#if (LUA_ALLOWED && VIDEOS_ALLOWED)
 		psychlua.LuaVideo.pauseAll();
-		#end
-		
-		// Pausar todos los VideoHandlers
-		#if VIDEOS_ALLOWED
-		objects.wrappers.VideoHandler.pauseAll();
 		#end
 		
 		if(!cpuControlled)
@@ -5563,19 +5559,34 @@ class PlayState extends MusicBeatState
 		// Check if user wants SScript compatibility mode for .hx files
 		#if SSCRIPT_ALLOWED
 		if (ClientPrefs.data.useSScriptCompat) {
-			trace('SScript (Psych 0.7.x) file load succesfully: $file');
-			var newScript:SScriptCompat = null;
+			var newScript:SScript = null;
 			try {
-				newScript = new SScriptCompat(null, file);
-				if (newScript != null) {
-					if (newScript.exists('onCreate'))
-						newScript.executeCode('onCreate');
-					trace('SScript loaded successfully: $file');
+				newScript = new SScript(null, file);
+				if(newScript.parsingException != null)
+				{
+					addTextToDebug('ERROR ON LOADING (${newScript.origin}): ${newScript.parsingException.message}', FlxColor.RED);
+					newScript.destroy();
+					return;
 				}
+
+				sscriptArray.push(newScript);
+				if(newScript.exists('onCreate'))
+				{
+					var callValue = newScript.call('onCreate');
+					if(!callValue.succeeded)
+					{
+						var e = callValue.exceptions[0];
+						if(e != null)
+						{
+							addTextToDebug('ERROR (${newScript.origin}: onCreate) - ${e.message}', FlxColor.RED);
+							return;
+						}
+					}
+				}
+				trace('SScript (Psych 0.7.x) loaded successfully: $file');
 			}
 			catch(e:Dynamic) {
-				trace('ERROR loading SScript file ($file): $e');
-				addTextToDebug('ERROR loading SScript: $file', FlxColor.RED);
+				addTextToDebug('ERROR loading SScript: $file - $e', FlxColor.RED);
 				if(newScript != null)
 					newScript.destroy();
 			}
@@ -5699,6 +5710,52 @@ class PlayState extends MusicBeatState
 		if(excludeValues == null) excludeValues = new Array();
 		excludeValues.push(LuaUtils.Function_Continue);
 
+		// Call on SScript array if using compatibility mode
+		#if SSCRIPT_ALLOWED
+		if(ClientPrefs.data.useSScriptCompat) {
+			var len:Int = sscriptArray.length;
+			if (len > 0) {
+				for(i in 0...len) {
+					var script:SScript = sscriptArray[i];
+					if(script == null || !script.exists(funcToCall) || exclusions.contains(script.origin))
+						continue;
+
+					var myValue:Dynamic = null;
+					try {
+						var callValue = script.call(funcToCall, args);
+						if(!callValue.succeeded)
+						{
+							var e = callValue.exceptions[0];
+							if(e != null)
+							{
+								var len:Int = e.message.indexOf('\n') + 1;
+								if(len <= 0) len = e.message.length;
+								addTextToDebug('ERROR (${callValue.calledFunction}) - ' + e.message.substr(0, len), FlxColor.RED);
+							}
+						}
+						else
+						{
+							myValue = callValue.returnValue;
+							if((myValue == LuaUtils.Function_StopHScript || myValue == LuaUtils.Function_StopAll) && !excludeValues.contains(myValue) && !ignoreStops)
+							{
+								returnVal = myValue;
+								break;
+							}
+
+							if(myValue != null && !excludeValues.contains(myValue))
+								returnVal = myValue;
+						}
+					}
+					catch(e:Dynamic) {
+						addTextToDebug('ERROR calling $funcToCall on ${script.origin}: $e', FlxColor.RED);
+					}
+				}
+			}
+			return returnVal;
+		}
+		#end
+
+		// Use HScript array (hscript-iris) by default
 		var len:Int = hscriptArray.length;
 		if (len < 1)
 			return returnVal;
@@ -5750,6 +5807,23 @@ class PlayState extends MusicBeatState
 	public function setOnHScript(variable:String, arg:Dynamic, exclusions:Array<String> = null) {
 		#if HSCRIPT_ALLOWED
 		if(exclusions == null) exclusions = [];
+		
+		// Set on SScript array if using compatibility mode
+		#if SSCRIPT_ALLOWED
+		if(ClientPrefs.data.useSScriptCompat) {
+			for (script in sscriptArray) {
+				if(exclusions.contains(script.origin))
+					continue;
+
+				if(!instancesExclude.contains(variable))
+					instancesExclude.push(variable);
+				script.set(variable, arg);
+			}
+			return;
+		}
+		#end
+		
+		// Use HScript array (hscript-iris) by default
 		for (script in hscriptArray) {
 			if(exclusions.contains(script.origin))
 				continue;

@@ -219,6 +219,8 @@ jobs:
           rm -rf export
           rm -rf build
           rm -rf ~/.gradle
+          rm -rf ~/.android/cache
+          rm -rf ~/.m2/repository
       
       - name: Configure Gradle memory settings
         run: |
@@ -236,7 +238,7 @@ jobs:
         uses: actions/upload-artifact@v4.3.4
         with:
           name: androidBuild
-          path: export/release/android/bin
+          path: export/release/android/bin/*.apk
 
   iOS:
     if: contains(github.event.head_commit.message, 'wd')

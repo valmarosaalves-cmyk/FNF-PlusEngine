@@ -134,7 +134,7 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 
 	var sectionFirstNoteID:Int = 0;
 	var sectionFirstEventID:Int = 0;
-	var curSec:Int = 0;
+	public var curSec:Int = 0;
 
 	var chartEditorSave:FlxSave;
 	var mainBox:PsychUIBox;
@@ -1970,7 +1970,7 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 		selectionBox.updateHitbox();
 	}
 
-	function showOutput(message:String, isError:Bool = false)
+	public function showOutput(message:String, isError:Bool = false)
 	{
 		trace(message);
 		outputTxt.text = message;
@@ -2109,7 +2109,7 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 	}
 
 	var cachedSectionRow:Array<Int>;
-	var cachedSectionTimes:Array<Float>;
+	public var cachedSectionTimes:Array<Float>;
 	var cachedSectionCrochets:Array<Float>;
 	var cachedSectionBPMs:Array<Float>;
 	function loadChart(song:SwagSong)
@@ -2255,7 +2255,7 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 		}
 	}
 
-	function reloadNotes()
+	public function reloadNotes()
 	{
 		selectedNotes = [];
 		for (note in notes) if(note != null) note.destroy();

@@ -202,7 +202,7 @@ class Main extends Sprite
 		
 		addChild(new FlxGame(game.width, game.height, initialState, game.framerate, game.framerate, game.skipSplash, game.startFullscreen));
 		FlxG.save.bind('funkin', CoolUtil.getSavePath());
-
+		ClientPrefs.loadPrefs();
 		fpsVar = new FPSCounter(10, 3, 0xFFFFFF);
 		addChild(fpsVar);
 		

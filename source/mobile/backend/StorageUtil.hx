@@ -218,11 +218,29 @@ class StorageUtil
 		copyDirectoryIfExists(oldRoot + 'logs', newRoot + 'logs');
 		copyDirectoryIfExists(oldRoot + 'assets', newRoot + 'assets');
 
-		// Cleanup old data to avoid duplicated storage usage
+		// Cleanup old data to avoid duplicated storage usage and prevent filling up device storage
 		deleteDirectoryIfExists(oldRoot + 'saves');
 		deleteDirectoryIfExists(oldRoot + 'logs');
 		deleteDirectoryIfExists(oldRoot + 'assets');
 		
+		// Try to delete the entire old root directory if it's now empty
+		try
+		{
+			if (FileSystem.exists(oldRoot) && FileSystem.isDirectory(oldRoot))
+			{
+				var contents = FileSystem.readDirectory(oldRoot);
+				// Only delete if empty or only contains hidden files
+				if (contents.length == 0 || !contents.exists(f -> !f.startsWith('.')))
+				{
+					deleteDirectoryIfExists(oldRoot);
+					trace('[StorageUtil] Deleted old storage directory: ' + oldRoot);
+				}
+			}
+		}
+		catch (e:Dynamic)
+		{
+			trace('[StorageUtil] Could not delete old root directory: ' + e);
+		}
 	}
 
 	static function copyFileIfExists(src:String, dst:String):Void

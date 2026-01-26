@@ -144,14 +144,15 @@ class MobileOptionsSubState extends BaseOptionsMenu
 			trace('[MobileOptions] Old path: ' + oldPath);
 			trace('[MobileOptions] New path: ' + newPath);
 
-			// Copy what we can before exiting (best-effort)
+			// Copy data and delete old directory to free up space
 			StorageUtil.migrateStorage(initialStorageType, pendingStorageType);
 
 			var message = 'Storage directory changed.\n\n';
 			message += 'The game will now close. Please reopen it.\n\n';
 			message += 'Old: ' + oldPath + '\n';
 			message += 'New: ' + newPath + '\n\n';
-			message += 'Missing files will be copied on next launch.';
+			message += 'Your data has been copied to the new location.\n';
+			message += 'The old directory will be cleaned up to free space.';
 			
 			FlxG.stage.window.alert(message, 'Restart Required');
 			lime.system.System.exit(0);

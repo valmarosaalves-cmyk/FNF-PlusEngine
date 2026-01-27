@@ -76,6 +76,15 @@ class FreeplayState extends MusicBeatState
 	// Variables para el zoom del bg
 	var bgZoom:Float = 1;
 	var defaultBgZoom:Float = 1;
+	
+	// Variables para swipe/touch gestures
+	var touchStartY:Float = 0;
+	var isSwiping:Bool = false;
+	var lastTouchY:Float = 0;
+	var swipeVelocity:Float = 0;
+	var swipeMomentum:Float = 0; // velocity after release for inertia
+	var isDeccelerating:Bool = false;
+	var swipeSensitivity:Float = 100; // pixels needed to change selection
 
 	override function create()
 	{
@@ -464,6 +473,114 @@ class FreeplayState extends MusicBeatState
 						FlxG.sound.play(Paths.sound('scrollMenu'), 0.2);
 						changeSelection(-shiftMult * FlxG.mouse.wheel, false);
 					}
+
+					#if mobile
+					// Touch/swipe gesture detection - continuous scrolling withccccc momentum
+					for (touch in FlxG.touches.list)
+					{
+						if (touch.justPressed)
+						{
+							touchStartY = touch.screenY;
+							lastTouchY = touch.screenY;
+							isSwiping = false;
+							swipeVelocity = 0;
+							swipeMomentum = 0;
+							isDeccelerating = false;
+							
+							// Check if tapped on a visible card
+							for (i in 0...cardArray.length)
+							{
+								var card = cardArray[i];
+								if (card != null && card.visible && card.overlapsPoint(touch.getWorldPosition()))
+								{
+									// Calculate difference from current selection
+									var difference = i - curSelected;
+									if (difference != 0)
+									{
+										// Select different card
+										changeSelection(difference);
+									}
+									else
+									{
+										// Tapped on currently selected card - enter difficulty select
+										if (!inDifficultySelect)
+										{
+											enterDifficultySelect();
+										}
+									}
+									break;
+								}
+							}
+						}
+						
+						if (touch.pressed)
+						{
+							var deltaY = touch.screenY - lastTouchY;
+							
+							// Detect if user is swiping (moved more than a small threshold)
+							if (Math.abs(touch.screenY - touchStartY) > 10)
+							{
+								isSwiping = true;
+							}
+							
+							if (isSwiping)
+							{
+								// Continuous scrolling while dragging
+								lerpSelected += -deltaY / 120; // Adjust sensitivity as needed
+								lerpSelected = FlxMath.bound(lerpSelected, 0, songs.length - 1);
+								
+								// Update curSelected when it changes, but don't play sound while dragging
+								var newSelected = Math.round(lerpSelected);
+								if (newSelected != curSelected)
+								{
+									curSelected = newSelected;
+									changeSelection(0, false);
+								}
+								
+								swipeVelocity = deltaY;
+								lastTouchY = touch.screenY;
+							}
+						}
+						
+						if (touch.justReleased && isSwiping)
+						{
+							// Start deceleration with momentum
+							swipeMomentum = -swipeVelocity / 30; // Convert velocity to momentum
+							isDeccelerating = true;
+							isSwiping = false;
+						}
+					}
+					
+					// Apply momentum/inertia after release
+					if (isDeccelerating && !isSwiping)
+					{
+						// Apply momentum to lerpSelected
+						lerpSelected += swipeMomentum * elapsed * 60;
+						lerpSelected = FlxMath.bound(lerpSelected, 0, songs.length - 1);
+						
+						// Decelerate momentum (friction)
+						swipeMomentum *= Math.pow(0.92, elapsed * 60); // Exponential decay
+						
+						// Update curSelected when it changes
+						var newSelected = Math.round(lerpSelected);
+						if (newSelected != curSelected)
+						{
+							curSelected = newSelected;
+							changeSelection(0, false);
+						}
+						
+						// Stop deceleration when momentum is very small
+						if (Math.abs(swipeMomentum) < 0.01)
+						{
+							isDeccelerating = false;
+							swipeMomentum = 0;
+							
+							// Snap to nearest card
+							curSelected = Math.round(lerpSelected);
+							changeSelection(0, true); // Play sound
+						}
+					}
+					#end
 				}
 			}
 			else

@@ -240,7 +240,7 @@ class IdID
 
         // Graphics Settings
         "setting_auto-optimization_tier" => "Tingkat Optimasi Otomatis",
-        "setting_auto-optimization_tier-auto" => "Otomatis (Disarankan)"
+        "setting_auto-optimization_tier-auto" => "Otomatis (Disarankan)",
         "setting_auto-optimization_tier-force_low-end" => "Paksa Kelas-Rendah",
         "setting_auto-optimization_tier-force_mid-range" => "Paksa Kelas-Menengah",
         "setting_auto-optimization_tier-force_high-end" => "Paksa Kelas-Tinggi",

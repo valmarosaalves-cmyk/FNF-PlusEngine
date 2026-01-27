@@ -26,6 +26,8 @@ import lime.system.System as LimeSystem;
 import haxe.io.Path;
 import haxe.Exception;
 
+using Lambda;
+
 /**
  * A storage class for mobile.
  * @author Karim Akra and Homura Akemi (HomuHomu833)
@@ -230,7 +232,7 @@ class StorageUtil
 			{
 				var contents = FileSystem.readDirectory(oldRoot);
 				// Only delete if empty or only contains hidden files
-				if (contents.length == 0 || !contents.exists(f -> !f.startsWith('.')))
+				if (contents.length == 0 || !Lambda.exists(contents, f -> !f.startsWith('.')))
 				{
 					deleteDirectoryIfExists(oldRoot);
 					trace('[StorageUtil] Deleted old storage directory: ' + oldRoot);

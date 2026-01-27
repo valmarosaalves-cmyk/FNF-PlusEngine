@@ -208,14 +208,13 @@ class Main extends Sprite
 		
 		traceDisplay = new TraceDisplay(10, 100, 0xFFFFFF);
 		addChild(traceDisplay);
-		
-
-
-		// Add TraceDisplay and Debug buttons for mobile.
+	
+		// Initialize touch pointer visualization for mobile
 		#if mobile
+
+		// Add TraceDisplay and Debug and buttons for mobile.
 		traceButton = new TraceButton();
 		addChild(traceButton);
-		
 		debugButton = new DebugButton();
 		addChild(debugButton);
 		#end

@@ -2148,7 +2148,6 @@ class PlayState extends MusicBeatState
 		FlxTween.tween(timeBar.scale, {x: 1}, 0.5, {ease: FlxEase.circOut});
 		FlxTween.tween(versionText, {y: 5}, 0.5, {ease: FlxEase.circOut});
 		
-		// Después de 5 segundos, cambiar el alpha a 0.6
 		new FlxTimer().start(5.0, function(tmr:FlxTimer)
 		{
 			FlxTween.tween(versionText, {alpha: 0.4}, 1.0, {ease: FlxEase.sineInOut});
@@ -4469,7 +4468,7 @@ class PlayState extends MusicBeatState
 
 			var daLoop:Int = 0;
 			var xThing:Float = 0;
-			if (ClientPrefs.data.showCombo && combo > 10)
+			if (ClientPrefs.data.showCombo && combo >= 10 || combo == 0)
 				comboGroup.add(comboSpr);
 
 			var separatedScore:String = Std.string(combo).lpad('0', 3);

@@ -60,47 +60,37 @@ class Sserafim extends BaseStage
 		// Store default zoom
 		defaultZoom = FlxG.camera.zoom;
 		
-		trace('[Sserafim Stage] Loading stage assets...');
-		trace('[Sserafim Stage] Asset folder should be: sserafim');
-		
 		// Background elements (layered from back to front)
-		trace('[Sserafim Stage] Loading bg at path: sserafim/bg');
 		bg = new BGSprite('sserafim/bg', -1888, -660, 0.9, 0.9);
 		bg.scale.set(2.5, 2.5);
 		bg.updateHitbox();
 		add(bg);
 
-		trace('[Sserafim Stage] Loading back-tables');
 		backTables = new BGSprite('sserafim/back-tables', -1908, 267, 0.9, 0.9);
 		backTables.scale.set(2.5, 2.5);
 		backTables.updateHitbox();
 		add(backTables);
 
-		trace('[Sserafim Stage] Loading floor');
 		floor = new BGSprite('sserafim/floor', -2232, 631, 1.0, 1.0);
 		floor.scale.set(2.5, 2.5);
 		floor.updateHitbox();
 		add(floor);
 
-		trace('[Sserafim Stage] Loading back-stools');
 		backStools = new BGSprite('sserafim/back-stools', -1551, 431, 1.0, 1.0);
 		backStools.scale.set(2.5, 2.5);
 		backStools.updateHitbox();
 		add(backStools);
 
-		trace('[Sserafim Stage] Loading front-stool');
 		frontStools = new BGSprite('sserafim/front-stool', -1551, 431, 1.0, 1.0);
 		frontStools.scale.set(1.66, 1.66);
 		frontStools.updateHitbox();
 		add(frontStools);
 
-		trace('[Sserafim Stage] Loading truck-stuff');
 		truck = new BGSprite('sserafim/truck-stuff', -983, -707, 1.0, 1.0);
 		truck.scale.set(2.0, 2.0);
 		truck.updateHitbox();
 		add(truck);
 
-		trace('[Sserafim Stage] Loading truck-door');
 		door = new BGSprite('sserafim/truck-door', -980, -173, 1.0, 1.0);
 		door.scale.set(1.0, 1.0);
 		door.updateHitbox();
@@ -136,20 +126,15 @@ class Sserafim extends BaseStage
 		gfGetUp.alpha = 1;
 		add(gfGetUp);
 
-		trace('[Sserafim Stage] Stage assets loaded successfully');
-		// Extra characters will be created in createPost() to be above the floor
-		
-		trace('[Sserafim Stage] isStoryMode: $isStoryMode, seenCutscene: $seenCutscene');
 		
 		// Start video cutscene if haven't seen it (works in both Story and Freeplay)
 		if (!seenCutscene)
 		{
-			trace('[Sserafim Stage] Setting up video cutscene callback');
 			setStartCallback(videoCutscene);
 		}
 		else
 		{
-			trace('[Sserafim Stage] Cutscene already seen, skipping video');
+			//XD
 		}
 	}
 	
@@ -514,22 +499,18 @@ class Sserafim extends BaseStage
 	// Video cutscene before countdown
 	function videoCutscene()
 	{
-		trace('[Sserafim Stage] videoCutscene called, videoEnded: $videoEnded');
 		inCutscene = true;
 		if(!videoEnded)
 		{
-			trace('[Sserafim Stage] Starting video: sserafim-cutscene');
 			#if VIDEOS_ALLOWED
 			game.startVideo('sserafim-cutscene');
 			game.videoCutscene.finishCallback = game.videoCutscene.onSkip = function()
 			{
-				trace('[Sserafim Stage] Video finished/skipped');
 				videoEnded = true;
 				game.videoCutscene = null;
 				videoCutscene();
 			};
 			#else
-			trace('[Sserafim Stage] Videos not allowed, using timer');
 			new FlxTimer().start(0.0, function(tmr:FlxTimer)
 			{
 				videoEnded = true;
@@ -539,8 +520,6 @@ class Sserafim extends BaseStage
 			return;
 		}
 		
-		// Video ended, skip countdown and start song directly
-		trace('[Sserafim Stage] Video ended, skipping countdown and starting song');
 		game.skipCountdown = true;
 		
 		// Play intro animations when countdown starts
@@ -696,7 +675,7 @@ class Sserafim extends BaseStage
 				// Create light sprites if they don't exist
 				if (backLight == null)
 				{
-					backLight = new FlxSprite(-2000, -950);
+					backLight = new FlxSprite(-1200, -850);
 					backLight.loadGraphic(Paths.image('sserafim/lights/back-light-color'));
 					backLight.scrollFactor.set(1, 1);
 					backLight.scale.set(1.3, 1.3);
@@ -707,7 +686,7 @@ class Sserafim extends BaseStage
 				
 				if (backLight2 == null)
 				{
-					backLight2 = new FlxSprite(-1000, -700);
+					backLight2 = new FlxSprite(-200, -600);
 					backLight2.loadGraphic(Paths.image('sserafim/lights/back-light-color'));
 					backLight2.scrollFactor.set(1, 1);
 					backLight2.scale.set(0.9, 0.9);
@@ -718,10 +697,10 @@ class Sserafim extends BaseStage
 				
 				if (truckLight1 == null)
 				{
-					truckLight1 = new FlxSprite(-800, -470);
+					truckLight1 = new FlxSprite(-910, -620);
 					truckLight1.loadGraphic(Paths.image('sserafim/lights/truck-light1'));
 					truckLight1.scrollFactor.set(1, 1);
-					truckLight1.scale.set(1, 1);
+					truckLight1.scale.set(1.4, 1.4);
 					truckLight1.updateHitbox();
 					truckLight1.alpha = 0;
 					insert(members.indexOf(truck) + 1, truckLight1);
@@ -729,10 +708,10 @@ class Sserafim extends BaseStage
 				
 				if (truckLight2 == null)
 				{
-					truckLight2 = new FlxSprite(-800, -470);
+					truckLight2 = new FlxSprite(-780, -465);
 					truckLight2.loadGraphic(Paths.image('sserafim/lights/truck-light2'));
 					truckLight2.scrollFactor.set(1, 1);
-					truckLight2.scale.set(1, 1);
+					truckLight2.scale.set(1.25, 1.25);
 					truckLight2.updateHitbox();
 					truckLight2.alpha = 0;
 					insert(members.indexOf(truck) + 2, truckLight2);

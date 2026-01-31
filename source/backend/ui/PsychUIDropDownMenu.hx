@@ -136,6 +136,32 @@ class PsychUIDropDownMenu extends PsychUIInputText
 		}
 		else if(PsychUIInputText.focusOn == this)
 		{
+			#if FLX_TOUCH
+			if(list.length > 1)
+			{
+				for (swipe in FlxG.swipes)
+				{
+					var dx = swipe.startPosition.x - swipe.endPosition.x;
+					var dy = swipe.startPosition.y - swipe.endPosition.y;
+					var distance = Math.sqrt(dx * dx + dy * dy);
+
+					if (distance >= 25)
+					{
+						var angle = swipe.startPosition.angleBetween(swipe.endPosition);
+
+						if (angle >= -45 && angle <= 45)
+						{
+							showDropDown(true, curScroll - 1, _curFilter);
+						}
+						else if ((angle >= 135 && angle <= 180) || (angle >= -180 && angle <= -135))
+						{
+							showDropDown(true, curScroll + 1, _curFilter);
+						}
+					}
+				}
+			}
+			#end
+
 			var wheel:Int = FlxG.mouse.wheel;
 			if(FlxG.keys.justPressed.UP) wheel++;
 			if(FlxG.keys.justPressed.DOWN) wheel--;
@@ -165,7 +191,13 @@ class PsychUIDropDownMenu extends PsychUIInputText
 			_curFilter = null;
 		}
 
-		curScroll = Std.int(Math.max(0, Math.min(onlyAllowed != null ? (onlyAllowed.length - 1) : (list.length - 1), scroll)));
+		var maxVisibleItems = Math.floor((FlxG.height - (this.y + behindText.y + behindText.height)) / 20);
+		var totalItems = onlyAllowed != null ? onlyAllowed.length : list.length;
+
+		curScroll = scroll;
+		if(curScroll < 0) curScroll = 0;
+		if(curScroll >= totalItems) curScroll = Math.max(0, totalItems - 1);
+		
 		if(vis)
 		{
 			var n:Int = 0;
@@ -175,14 +207,14 @@ class PsychUIDropDownMenu extends PsychUIInputText
 				{
 					if(onlyAllowed.contains(item.label))
 					{
-						item.active = item.visible = (n >= curScroll);
+						item.active = item.visible = (n >= curScroll && n < curScroll + maxVisibleItems);
 						n++;
 					}
 					else item.active = item.visible = false;
 				}
 				else
 				{
-					item.active = item.visible = (n >= curScroll);
+					item.active = item.visible = (n >= curScroll && n < curScroll + maxVisibleItems);
 					n++;
 				}
 			}
@@ -196,7 +228,7 @@ class PsychUIDropDownMenu extends PsychUIInputText
 				txtY += item.height;
 				item.forceNextUpdate = true;
 			}
-			bg.scale.y = txtY - behindText.y + 2;
+			bg.scale.y = Math.min(txtY - behindText.y + 2, FlxG.height - (this.y + behindText.y));
 			bg.updateHitbox();
 		}
 		else

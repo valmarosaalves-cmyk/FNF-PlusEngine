@@ -10,31 +10,104 @@ on:
       - 'export/release/**'
 
 jobs:
-  scan-windows:
+  scan-linux-x64:
     runs-on: ubuntu-latest
     if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
     
     steps:
-      - name: Download Windows Build
+      - name: Download Linux x64 Build
         uses: dawidd6/action-download-artifact@v3
         with:
           workflow: main.yml
-          name: windowsBuild
-          path: ./windows-build
+          name: linuxBuild64
+          path: ./linux-build-x64
           
-      - name: Zip Windows Build
-        run: |
-          cd ./windows-build
-          zip -r ../FNF-PlusEngine-Windows.zip *
-          cd ..
-          
-      - name: VirusTotal Scan Windows
+      - name: VirusTotal Scan Linux x64
         uses: crazy-max/ghaction-virustotal@v4
         with:
           vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
           files: |
-            ./FNF-PlusEngine-Windows.zip
+            ./linux-build-x64/**
+          wait: true
+
+  scan-windows-x32:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Download Windows x32 Build
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          workflow: main.yml
+          name: windowsBuild32
+          path: ./windows-build-x32
           
+      - name: Zip Windows x32 Build
+        run: |
+          if [ -d ./windows-build-x32 ]; then
+            cd ./windows-build-x32
+            zip -r ../FNF-PlusEngine-Windows-x32.zip *
+            cd ..
+          fi
+          
+      - name: VirusTotal Scan Windows x32
+        uses: crazy-max/ghaction-virustotal@v4
+        with:
+          vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
+          files: |
+            ./FNF-PlusEngine-Windows-x32.zip
+            ./windows-build-x32/*.exe
+          wait: true
+
+  scan-windows-x64:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Download Windows x64 Build
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          workflow: main.yml
+          name: windowsBuild64
+          path: ./windows-build-x64
+          
+      - name: Zip Windows x64 Build
+        run: |
+          if [ -d ./windows-build-x64 ]; then
+            cd ./windows-build-x64
+            zip -r ../FNF-PlusEngine-Windows-x64.zip *
+            cd ..
+          fi
+          
+      - name: VirusTotal Scan Windows x64
+        uses: crazy-max/ghaction-virustotal@v4
+        with:
+          vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
+          files: |
+            ./FNF-PlusEngine-Windows-x64.zip
+            ./windows-build-x64/*.exe
+          wait: true
+
+  scan-mac-arm:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Download Mac ARM Build
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          workflow: main.yml
+          name: macBuildARM
+          path: ./mac-build-arm
+          
+      - name: VirusTotal Scan Mac ARM
+        uses: crazy-max/ghaction-virustotal@v4
+        with:
+          vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
+          files: |
+            ./mac-build-arm/**
+          wait: true
+
   scan-android:
     runs-on: ubuntu-latest
     if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
@@ -50,8 +123,12 @@ jobs:
       - name: Find APK
         id: find-apk
         run: |
-          APK_FILE=$(find ./android-build -name "*.apk" | head -n 1)
+          APK_FILE=$(find ./android-build -name "*.apk" -type f | head -n 1)
+          if [ -z "$APK_FILE" ]; then
+            APK_FILE=$(find ./android-build -name "*.apk" | head -n 1)
+          fi
           echo "apk_path=$APK_FILE" >> $GITHUB_OUTPUT
+          echo "Found APK: $APK_FILE"
           
       - name: VirusTotal Scan Android
         uses: crazy-max/ghaction-virustotal@v4
@@ -59,3 +136,45 @@ jobs:
           vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
           files: |
             ${{ steps.find-apk.outputs.apk_path }}
+          wait: true
+
+  scan-ios:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Download iOS Build
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          workflow: main.yml
+          name: iOSBuild
+          path: ./ios-build
+          
+      - name: Find IPA file
+        id: find-ipa
+        run: |
+          IPA_FILE=$(find ./ios-build -name "*.ipa" -type f | head -n 1)
+          if [ -z "$IPA_FILE" ]; then
+            APP_BUNDLE=$(find ./ios-build -name "*.app" -type d | head -n 1)
+            if [ -n "$APP_BUNDLE" ]; then
+              echo "Found .app bundle, will zip it for scanning"
+              cd $(dirname "$APP_BUNDLE")
+              zip -r ../../iOS-App-Bundle.zip $(basename "$APP_BUNDLE")
+              cd ../..
+              echo "ipa_path=./iOS-App-Bundle.zip" >> $GITHUB_OUTPUT
+            else
+              echo "No iOS build artifacts found"
+              echo "ipa_path=" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "ipa_path=$IPA_FILE" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: VirusTotal Scan iOS
+        uses: crazy-max/ghaction-virustotal@v4
+        with:
+          vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
+          files: |
+            ${{ steps.find-ipa.outputs.ipa_path }}
+          wait: true
+        if: steps.find-ipa.outputs.ipa_path != ''

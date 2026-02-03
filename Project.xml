@@ -144,6 +144,9 @@
 	<haxedef name="HXCPP_CFLAGS" value="-std=c99 -Wno-error=deprecated-non-prototype -Wno-deprecated-declarations -Wno-unused-command-line-argument -Wno-macro-redefined" if="macos || ios" />
 	<haxeflag name="-D" value="no-deprecation-warnings"/>
 
+	<!-- Android deprecation flags :v -->
+	<haxedef name="HXCPP_CFLAGS" value="-Wno-error=deprecated-non-prototype" if="android" />
+
 	<!-- Enables a terminal log prompt on debug builds -->
 	<haxelib name="hxcpp-debug-server" if="debug"/>
 	<haxedef name="HXC_LIBVLC_LOGGING" if="VIDEOS_ALLOWED debug" />
@@ -241,10 +244,11 @@
 
 	<assets path='art/icons/iconOG.png' rename='icon.png' if="linux || mac" />
 	
-	<icon path="art/icons/icon16.png" size='16'/>
-	<icon path="art/icons/icon32.png" size='32'/>
-	<icon path="art/icons/icon64.png" size='64'/>
-	<icon path="art/icons/iconOG.png" />
+	<!-- Desktop and other platforms icons (excluding Android which uses adaptive icons) -->
+	<icon path="art/icons/icon16.png" size='16' unless="android"/>
+	<icon path="art/icons/icon32.png" size='32' unless="android"/>
+	<icon path="art/icons/icon64.png" size='64' unless="android"/>
+	<icon path="art/icons/iconOG.png" unless="android"/>
 	
 	<section if="android">
 		<!-- Android Permissions -->
@@ -261,9 +265,8 @@
 		<config:android target-sdk-version="35" />
 		<android target-sdk-version="35" />
 		
-		<icon path="art/icons/mobile/icon32.png" size='32'/>
-		<icon path="art/icons/mobile/icon64.png" size='64'/>
-		<icon path="art/icons/mobile/iconOG.png"/>
+		<!-- Android templates for adaptive icons with Material Design 3 support -->
+		<template path="templates/android" />
 	</section>
 
 	<section if="ios">

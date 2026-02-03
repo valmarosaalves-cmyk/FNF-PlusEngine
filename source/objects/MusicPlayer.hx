@@ -5,6 +5,7 @@ import flixel.ui.FlxBar;
 import flixel.util.FlxStringUtil;
 
 import states.FreeplayState;
+import objects.AudioVisualizer;
 
 /**
  * Music player used for Freeplay
@@ -19,6 +20,7 @@ class MusicPlayer extends FlxGroup
 
 	public var playingMusic:Bool = false;
 	public var curTime:Float;
+	public var visualizer:AudioVisualizer;
 
 	var songBG:FlxSprite;
 	var songTxt:FlxText;
@@ -45,6 +47,10 @@ class MusicPlayer extends FlxGroup
 		songBG = new FlxSprite(xPos - 6, 0).makeGraphic(1, 100, 0xFF000000);
 		songBG.alpha = 0.6;
 		add(songBG);
+
+		visualizer = new AudioVisualizer(null, 10, FlxG.height - 110, 500, 100, 64, FlxColor.WHITE);
+		visualizer.visible = false;
+		add(visualizer);
 
 		playbackBG = new FlxSprite(xPos - 6, 0).makeGraphic(1, 100, 0xFF000000);
 		playbackBG.alpha = 0.6;
@@ -84,12 +90,22 @@ class MusicPlayer extends FlxGroup
 	override function update(elapsed:Float)
 	{
 		super.update(elapsed);
-
+		
 		if (!playingMusic)
 		{
 			return;
 		}
 
+		if (visualizer != null && visualizer.visible)
+		{
+			visualizer.sound = FlxG.sound.music;
+		}
+
+		if (visualizer != null && playingMusic && visualizer.visible != ClientPrefs.data.enableVisualizer)
+		{
+			visualizer.visible = ClientPrefs.data.enableVisualizer;
+		}
+		
 		var songName:String = instance.songs[FreeplayState.curSelected].songName;
 		if (playing && !wasPlaying)
 			songTxt.text = Language.getPhrase('musicplayer_playing', 'PLAYING: {1}', [songName]);
@@ -241,14 +257,24 @@ class MusicPlayer extends FlxGroup
 		}
 	}
 
+	public function updateVisualizerVisibility():Void
+	{
+		if (visualizer != null)
+		{
+			visualizer.visible = playingMusic && ClientPrefs.data.enableVisualizer;
+		}
+	}
+
 	public function switchPlayMusic()
 	{
 		FlxG.autoPause = (!playingMusic && ClientPrefs.data.autoPause);
 		active = visible = playingMusic;
 
+		visualizer.visible = playingMusic && ClientPrefs.data.enableVisualizer;
+		
 		// scoreText ya no existe, eliminado
-		songTxt.visible = timeTxt.visible = songBG.visible = playbackTxt.visible = playbackBG.visible = progressBar.visible = playingMusic; //Show Music Player texts and boxes if playingMusic is true
-
+		songTxt.visible = timeTxt.visible = songBG.visible = playbackTxt.visible = playbackBG.visible = progressBar.visible = playingMusic;
+		
 		for (i in playbackSymbols)
 			i.visible = playingMusic;
 		
@@ -332,6 +358,12 @@ class MusicPlayer extends FlxGroup
 			progressBar.x -= length - 10;
 		}
 
+		if (visualizer != null)
+		{
+			visualizer.x = (FlxG.width - visualizer.width) / 2;
+			visualizer.y = FlxG.height - visualizer.height - 10;
+		}
+
 		for (i in 0...2)
 		{
 			var text = playbackSymbols[i];
@@ -371,5 +403,16 @@ class MusicPlayer extends FlxGroup
 		if (value > 3) value = 3;
 		else if (value <= 0.25) value = 0.25;
 		return playbackRate = value;
+	}
+
+	override function destroy()
+	{
+		if (visualizer != null)
+		{
+			visualizer.destroy();
+			visualizer = null;
+		}
+		
+		super.destroy();
 	}
 }

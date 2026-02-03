@@ -338,8 +338,6 @@ class IdID
         "description_discord_rich_presence" => "Batalkan centang ini untuk mencegah leaks yang tidak disengaja, hal ini akan menyembunyikan Aplikasi dari kotak \"Playing\" Anda di Discord.",
         "setting_combo_stacking" => "Penumpukan Kombo",
         "description_combo_stacking" => "Jika tidak dicentangkan, Rating dan Kombo tidak akan ditumpuk, menghemat memori sistem dan membuatnya lebih mudah dibaca.",
-        "setting_enable_visualizer" => "Aktifkan Visualizer",
-        "description_enable_visualizer" => "Jika dicentang, akan menampilkan visualisasi.",
         "setting_show_combo_sprite" => "Tampilkan Sprite Kombo",
         "description_show_combo_sprite" => "Jika dicentang, akan menampilkan sprite \"KOMBO\" saat Anda menekan note.",
         "setting_combo_and_rating_in_camgame" => "Kombo dan Rating di camGame",

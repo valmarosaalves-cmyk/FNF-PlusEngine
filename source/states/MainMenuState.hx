@@ -5,7 +5,6 @@ import flixel.effects.FlxFlicker;
 import states.editors.MasterEditorMenu;
 import options.OptionsState;
 import flixel.text.FlxText;
-import objects.AudioVisualizer;
 
 enum MainMenuColumn {
 	LEFT;
@@ -40,7 +39,6 @@ class MainMenuState extends MusicBeatState
 	var magenta:FlxSprite;
 	var camFollow:FlxObject;
 	
-	var audioVisualizer:AudioVisualizer;
 	var visualizerEnabled:Bool = true;
 
 	static var showOutdatedWarning:Bool = true;
@@ -111,8 +109,6 @@ class MainMenuState extends MusicBeatState
 		fnfVer.scrollFactor.set();
 		fnfVer.setFormat(Paths.font("phantom.ttf"), 16, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 		add(fnfVer);
-
-		createAudioVisualizer();
 		
 		changeItem();
 
@@ -143,33 +139,6 @@ class MainMenuState extends MusicBeatState
 
 		addTouchPad('NONE', 'E_X');
 	}
-	
-	function createAudioVisualizer()
-	{
-		if (audioVisualizer != null)
-		{
-			remove(audioVisualizer);
-			audioVisualizer.destroy();
-		}
-
-		visualizerEnabled = ClientPrefs.data.enableVisualizer;
-		
-		if (!visualizerEnabled) return;
-
-		var visualizerWidth = Std.int(FlxG.width * 0.8);
-		var visualizerHeight = 80;
-		var visualizerX = (FlxG.width - visualizerWidth) / 2;
-		var visualizerY = FlxG.height - visualizerHeight - 20;
-
-		audioVisualizer = new AudioVisualizer(FlxG.sound.music, visualizerX, visualizerY, 
-			visualizerWidth, visualizerHeight, 32, 0xFFfd719b);
-
-		add(audioVisualizer);
-
-		sendToBack(audioVisualizer);
-		sendToBack(magenta);
-		sendToBack(bg);
-	}
 
 	function createMenuItem(name:String, x:Float, y:Float):FlxSprite
 	{
@@ -196,14 +165,6 @@ class MainMenuState extends MusicBeatState
 
 		if (!selectedSomethin)
 		{
-			if (FlxG.keys.justPressed.F5)
-			{
-				visualizerEnabled = !visualizerEnabled;
-				ClientPrefs.data.enableVisualizer = visualizerEnabled;
-				ClientPrefs.saveSettings();
-				createAudioVisualizer();
-				FlxG.sound.play(Paths.sound('scrollMenu'));
-			}
 
 			if (controls.UI_UP_P)
 				changeItem(-1);
@@ -431,15 +392,5 @@ class MainMenuState extends MusicBeatState
 		selectedItem.animation.play('selected');
 		selectedItem.centerOffsets();
 		camFollow.y = selectedItem.getGraphicMidpoint().y;
-	}
-	
-	override function destroy()
-	{
-		if (audioVisualizer != null)
-		{
-			audioVisualizer.destroy();
-			audioVisualizer = null;
-		}
-		super.destroy();
 	}
 }

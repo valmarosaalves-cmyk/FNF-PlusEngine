@@ -230,28 +230,28 @@ jobs:
         run: |
           find export/release/android -name "*.apk" -type f | head -5
           
-          mkdir -p android-artifacts
+          mkdir -p android-artifact
           
           for apk in export/release/android/bin/*.apk; do
             if [ -f "$apk" ]; then
               echo "Found APK: $apk"
-              cp "$apk" android-artifacts/
+              cp "$apk" android-artifact/
             fi
           done
           
-          if [ ! "$(ls -A android-artifacts 2>/dev/null)" ]; then
+          if [ ! "$(ls -A android-artifact 2>/dev/null)" ]; then
             echo "Searching for APK files in export directory..."
-            find export -name "*.apk" -type f -exec cp {} android-artifacts/ \;
+            find export -name "*.apk" -type f -exec cp {} android-artifact/ \;
           fi
           
-          echo "Artifacts to upload:"
-          ls -la android-artifacts/
+          echo "Artifact to upload:"
+          ls -la android-artifact/
       
       - name: Publish Artifact
         uses: actions/upload-artifact@v4.3.4
         with:
           name: androidBuild
-          path: android-artifacts/
+          path: android-artifact/
 
   iOS:
     if: contains(github.event.head_commit.message, 'wd')

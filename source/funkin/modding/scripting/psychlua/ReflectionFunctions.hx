@@ -14,79 +14,131 @@ class ReflectionFunctions
 {
 	static final instanceStr:Dynamic = "##PSYCHLUA_STRINGTOOBJ";
 	
-	// Mapa de compatibilidad para Psych Engine 0.6.3 a 0.7.3 - 1.0.4
+	// Compatibility map for Psych Engine 0.6.3 -> 0.7.3 -> 1.0.4 -> FNF PlusEngine
+	// This allows old mods to work without modification by redirecting old class paths to new ones
 	static final classAliasMap:Map<String, String> = [
-		// Backend classes (movidas de raíz a backend/)
-		'Conductor' => 'backend.Conductor',
-		'ClientPrefs' => 'backend.ClientPrefs',
-		'Paths' => 'backend.Paths',
-		'CoolUtil' => 'backend.CoolUtil',
-		'Difficulty' => 'backend.Difficulty',
-		'Mods' => 'backend.Mods',
-		'Highscore' => 'backend.Highscore',
-		'Achievements' => 'backend.Achievements',
-		'MusicBeatState' => 'backend.MusicBeatState',
-		'MusicBeatSubstate' => 'backend.MusicBeatSubstate',
-		'BaseStage' => 'backend.BaseStage',
-		'StageData' => 'backend.StageData',
-		'WeekData' => 'backend.WeekData',
-		'Song' => 'backend.Song',
-		'Rating' => 'backend.Rating',
-		'Controls' => 'backend.Controls',
-		'Discord' => 'backend.Discord',
-		'DiscordClient' => 'backend.Discord',
-		'Language' => 'backend.Language',
-		'Native' => 'backend.Native',
-		'PsychCamera' => 'backend.PsychCamera',
-		'CustomFadeTransition' => 'backend.CustomFadeTransition',
-		'FlxGUtils' => 'backend.FlxGUtils',
-		'ALSoftConfig' => 'backend.ALSoftConfig',
-		'CrashHandler' => 'backend.CrashHandler',
-		'InputFormatter' => 'backend.InputFormatter',
-		'NoteTypesConfig' => 'backend.NoteTypesConfig',
+		// ===== Psych 0.6.3/0.7.3 backend.* -> FNF PlusEngine funkin.* =====
+		'backend.Conductor' => 'funkin.audio.Conductor',
+		'backend.ClientPrefs' => 'funkin.Preferences.ClientPrefs',
+		'backend.Paths' => 'funkin.Paths',
+		'backend.CoolUtil' => 'funkin.util.CoolUtil',
+		'backend.Difficulty' => 'funkin.data.story.level.Difficulty',
+		'backend.Mods' => 'funkin.data.Mods',
+		'backend.Highscore' => 'funkin.save.Highscore',
+		'backend.Achievements' => 'funkin.data.Achievements',
+		'backend.MusicBeatState' => 'funkin.ui.MusicBeatState',
+		'backend.MusicBeatSubstate' => 'funkin.ui.MusicBeatSubstate',
+		'backend.BaseStage' => 'funkin.play.stage.Stage',
+		'backend.StageData' => 'funkin.data.stage.StageData',
+		'backend.WeekData' => 'funkin.data.story.level.WeekData',
+		'backend.Song' => 'funkin.data.song.Song',
+		'backend.Rating' => 'funkin.play.scoring.Rating',
+		'backend.Controls' => 'funkin.input.Controls',
+		'backend.Discord' => 'funkin.api.discord.Discord',
+		'backend.DiscordClient' => 'funkin.api.discord.Discord',
 		
-		// States (movidas a states/)
-		'PlayState' => 'states.PlayState',
-		'MainMenuState' => 'states.MainMenuState',
-		'FreeplayState' => 'states.FreeplayState',
-		'StoryMenuState' => 'states.StoryMenuState',
-		'TitleState' => 'states.TitleState',
-		'LoadingState' => 'states.LoadingState',
-		'CreditsState' => 'states.CreditsState',
-		'ModsMenuState' => 'states.ModsMenuState',
+		// ===== Psych 0.6.3/0.7.3 states.* -> FNF PlusEngine funkin.ui.* =====
+		'states.PlayState' => 'funkin.play.PlayState',
+		'states.MainMenuState' => 'funkin.ui.mainmenu.MainMenuState',
+		'states.FreeplayState' => 'funkin.ui.freeplay.FreeplayState',
+		'states.StoryMenuState' => 'funkin.ui.story.StoryMenuState',
+		'states.TitleState' => 'funkin.ui.title.TitleState',
+		'states.LoadingState' => 'funkin.ui.LoadingState',
+		'states.CreditsState' => 'funkin.ui.credits.CreditsState',
+		'states.ModsMenuState' => 'funkin.ui.mods.ModsMenuState',
+		'states.editors.CharacterEditorState' => 'funkin.ui.debug.character.CharacterEditorState',
+		'states.editors.ChartingState' => 'funkin.ui.debug.charting.ChartingState',
 		
-		// Objects (movidas a objects/)
-		'Alphabet' => 'objects.Alphabet',
-		'Character' => 'objects.Character',
-		'Note' => 'objects.Note',
-		'NoteSplash' => 'objects.NoteSplash',
-		'StrumNote' => 'objects.StrumNote',
-		'HealthIcon' => 'objects.HealthIcon',
-		'BGSprite' => 'objects.BGSprite',
-		'AttachedSprite' => 'objects.AttachedSprite',
-		'AttachedText' => 'objects.AttachedText',
-		'MenuCharacter' => 'objects.MenuCharacter',
+		// ===== Psych 0.6.3/0.7.3 objects.* -> FNF PlusEngine funkin.* =====
+		'objects.Alphabet' => 'funkin.graphics.Alphabet',
+		'objects.Character' => 'funkin.play.character.Character',
+		'objects.Note' => 'funkin.play.notes.Note',
+		'objects.NoteSplash' => 'funkin.play.notes.NoteSplash',
+		'objects.StrumNote' => 'funkin.play.notes.StrumNote',
+		'objects.HealthIcon' => 'funkin.play.components.HealthIcon',
+		'objects.BGSprite' => 'funkin.play.stage.BGSprite',
+		'objects.AttachedSprite' => 'funkin.graphics.AttachedSprite',
+		'objects.AttachedText' => 'funkin.graphics.AttachedText',
+		'objects.MenuCharacter' => 'funkin.ui.freeplay.charselect.MenuCharacter',
 		
-		// Substates (movidas a substates/)
-		'GameOverSubstate' => 'substates.GameOverSubstate',
-		'PauseSubState' => 'substates.PauseSubState',
-		'CustomSubstate' => 'substates.CustomSubstate',
+		// ===== Psych 0.6.3/0.7.3 substates.* -> FNF PlusEngine funkin.play.substates.* =====
+		'substates.GameOverSubstate' => 'funkin.play.substates.GameOverSubstate',
+		'substates.PauseSubState' => 'funkin.play.substates.PauseSubState',
+		'substates.CustomSubstate' => 'funkin.modding.scripting.psychlua.CustomSubstate',
 		
-		// Options (movidas a options/)
-		'OptionsState' => 'options.OptionsState',
-		'Option' => 'options.Option'
+		// ===== Psych 0.6.3/0.7.3 options.* -> FNF PlusEngine funkin.ui.options.* =====
+		'options.OptionsState' => 'funkin.ui.options.OptionsState',
+		
+		// ===== OLD Psych 0.6.3 (no namespace) -> FNF PlusEngine =====
+		'Conductor' => 'funkin.audio.Conductor',
+		'ClientPrefs' => 'funkin.Preferences.ClientPrefs',
+		'Paths' => 'funkin.Paths',
+		'CoolUtil' => 'funkin.util.CoolUtil',
+		'Difficulty' => 'funkin.data.story.level.Difficulty',
+		'Mods' => 'funkin.data.Mods',
+		'Highscore' => 'funkin.save.Highscore',
+		'Achievements' => 'funkin.data.Achievements',
+		'MusicBeatState' => 'funkin.ui.MusicBeatState',
+		'MusicBeatSubstate' => 'funkin.ui.MusicBeatSubstate',
+		'BaseStage' => 'funkin.play.stage.Stage',
+		'StageData' => 'funkin.data.stage.StageData',
+		'WeekData' => 'funkin.data.story.level.WeekData',
+		'Song' => 'funkin.data.song.Song',
+		'Rating' => 'funkin.play.scoring.Rating',
+		'Controls' => 'funkin.input.Controls',
+		'Discord' => 'funkin.api.discord.Discord',
+		'DiscordClient' => 'funkin.api.discord.Discord',
+		'PlayState' => 'funkin.play.PlayState',
+		'MainMenuState' => 'funkin.ui.mainmenu.MainMenuState',
+		'FreeplayState' => 'funkin.ui.freeplay.FreeplayState',
+		'StoryMenuState' => 'funkin.ui.story.StoryMenuState',
+		'TitleState' => 'funkin.ui.title.TitleState',
+		'LoadingState' => 'funkin.ui.LoadingState',
+		'CreditsState' => 'funkin.ui.credits.CreditsState',
+		'ModsMenuState' => 'funkin.ui.mods.ModsMenuState',
+		'CharacterEditorState' => 'funkin.ui.debug.character.CharacterEditorState',
+		'ChartingState' => 'funkin.ui.debug.charting.ChartingState',
+		'Alphabet' => 'funkin.graphics.Alphabet',
+		'Character' => 'funkin.play.character.Character',
+		'Note' => 'funkin.play.notes.Note',
+		'NoteSplash' => 'funkin.play.notes.NoteSplash',
+		'StrumNote' => 'funkin.play.notes.StrumNote',
+		'HealthIcon' => 'funkin.play.components.HealthIcon',
+		'BGSprite' => 'funkin.play.stage.BGSprite',
+		'AttachedSprite' => 'funkin.graphics.AttachedSprite',
+		'AttachedText' => 'funkin.graphics.AttachedText',
+		'MenuCharacter' => 'funkin.ui.freeplay.charselect.MenuCharacter',
+		'GameOverSubstate' => 'funkin.play.substates.GameOverSubstate',
+		'PauseSubState' => 'funkin.play.substates.PauseSubState',
+		'CustomSubstate' => 'funkin.modding.scripting.psychlua.CustomSubstate',
+		'OptionsState' => 'funkin.ui.options.OptionsState'
 	];
 	
-	static function resolveClass(className:String):Class<Dynamic> {
+	/**
+	 * Resolves a class by name with backwards compatibility support.
+	 * Public version for use in other scripting systems (HScript, SScript, etc.)
+	 * @param className The full class path to resolve
+	 * @return The resolved class or null if not found
+	 */
+	public static function resolveClassCompat(className:String):Class<Dynamic> {
 		var myClass:Dynamic = Type.resolveClass(className);
 		
+		// If class not found, try aliases for backwards compatibility
 		if(myClass == null && classAliasMap.exists(className)) {
-			myClass = Type.resolveClass(classAliasMap.get(className));
+			var newClassName = classAliasMap.get(className);
+			myClass = Type.resolveClass(newClassName);
 			if(myClass != null) {
+				#if debug
+				trace('[Compatibility] Redirected "$className" to "$newClassName"');
+				#end
 			}
 		}
 		
 		return myClass;
+	}
+	
+	static function resolveClass(className:String):Class<Dynamic> {
+		return resolveClassCompat(className);
 	}
 	
 	public static function implement(funk:FunkinLua)

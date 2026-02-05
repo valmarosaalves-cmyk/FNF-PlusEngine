@@ -51,11 +51,21 @@ class FlxShader extends OriginalFlxShader
 		@:privateAccess
 		var gl = __context.gl;
 
-		#if lime_opengles
-		var prefix = "#version 300 es\n";
-		#else
-		var prefix = "#version 330\n";
-		#end
+		// Check if modern OpenGL is supported
+		var supportsModern = funkin.graphics.shaders.ShaderCompatibility.supportsModernGL();
+		
+		var prefix = "";
+		var vertex = "";
+		var fragment = "";
+
+		if (supportsModern)
+		{
+			// Use modern shader syntax (OpenGL 3.3+ / OpenGL ES 3.0+)
+			#if lime_opengles
+			prefix = "#version 300 es\n";
+			#else
+			prefix = "#version 330\n";
+			#end
 
 			#if (js && html5)
 			prefix += (precisionHint == FULL ? "precision mediump float;\n" : "precision lowp float;\n");

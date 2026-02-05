@@ -51,36 +51,61 @@ class FlxShader extends OriginalFlxShader
 		@:privateAccess
 		var gl = __context.gl;
 
-		#if lime_opengles
-		var prefix = "#version 300 es\n";
-		#else
-		var prefix = "#version 330\n";
-		#end
+		// Check if modern OpenGL is supported
+		var supportsModern = shaders.ShaderCompatibility.supportsModernGL();
+		
+		var prefix = "";
+		var vertex = "";
+		var fragment = "";
 
-		#if (js && html5)
-		prefix += (precisionHint == FULL ? "precision mediump float;\n" : "precision lowp float;\n");
-		#else
-		prefix += "#ifdef GL_ES\n"
-			+ (precisionHint == FULL ? "#ifdef GL_FRAGMENT_PRECISION_HIGH\n"
-				+ "precision highp float;\n"
-				+ "#else\n"
-				+ "precision mediump float;\n"
-				+ "#endif\n" : "precision lowp float;\n")
-			+ "#endif\n\n";
-		#end
+		if (supportsModern)
+		{
+			// Use modern shader syntax (OpenGL 3.3+ / OpenGL ES 3.0+)
+			#if lime_opengles
+			prefix = "#version 300 es\n";
+			#else
+			prefix = "#version 330\n";
+			#end
 
-		#if lime_opengles
-		prefix += 'out vec4 output_FragColor;\n';
-		var vertex = prefix
-			+ glVertexSource.replace("attribute", "in")
-				.replace("varying", "out")
-				.replace("texture2D", "texture")
-				.replace("gl_FragColor", "output_FragColor");
-		var fragment = prefix + glFragmentSource.replace("varying", "in").replace("texture2D", "texture").replace("gl_FragColor", "output_FragColor");
-		#else
-		var vertex = prefix + glVertexSource;
-		var fragment = prefix + glFragmentSource;
-		#end
+			#if (js && html5)
+			prefix += (precisionHint == FULL ? "precision mediump float;\n" : "precision lowp float;\n");
+			#else
+			prefix += "#ifdef GL_ES\n"
+				+ (precisionHint == FULL ? "#ifdef GL_FRAGMENT_PRECISION_HIGH\n"
+					+ "precision highp float;\n"
+					+ "#else\n"
+					+ "precision mediump float;\n"
+					+ "#endif\n" : "precision lowp float;\n")
+				+ "#endif\n\n";
+			#end
+
+			#if lime_opengles
+			prefix += 'out vec4 output_FragColor;\n';
+			vertex = prefix
+				+ glVertexSource.replace("attribute", "in")
+					.replace("varying", "out")
+					.replace("texture2D", "texture")
+					.replace("gl_FragColor", "output_FragColor");
+			fragment = prefix + glFragmentSource.replace("varying", "in").replace("texture2D", "texture").replace("gl_FragColor", "output_FragColor");
+			#else
+			vertex = prefix + glVertexSource;
+			fragment = prefix + glFragmentSource;
+			#end
+		}
+		else
+		{
+			// Use legacy shader syntax (GLSL 1.2) for compatibility
+			prefix = "#ifdef GL_ES\n"
+				+ (precisionHint == FULL ? "#ifdef GL_FRAGMENT_PRECISION_HIGH\n"
+					+ "precision highp float;\n"
+					+ "#else\n"
+					+ "precision mediump float;\n"
+					+ "#endif\n" : "precision lowp float;\n")
+				+ "#endif\n\n";
+			
+			vertex = prefix + glVertexSource;
+			fragment = prefix + glFragmentSource;
+		}
 
 		var id = vertex + fragment;
 

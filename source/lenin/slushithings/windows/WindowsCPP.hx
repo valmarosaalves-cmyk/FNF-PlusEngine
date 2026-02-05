@@ -34,6 +34,7 @@ package lenin.slushithings.windows;
 
 #include <chrono>
 #include <thread>
+#include <sysinfoapi.h>
 
 #define UNICODE
 
@@ -766,6 +767,83 @@ class WindowsCPP
 		return 0;
 	')
 	public static function getWindowY():Int
+	{
+		return 0;
+	}
+
+	// === Memory Information Functions ===
+
+	/**
+	 * Gets the total physical RAM installed in the system (in MB)
+	 * @return Total RAM in megabytes
+	 */
+	@:functionCode('
+		MEMORYSTATUSEX memInfo;
+		memInfo.dwLength = sizeof(MEMORYSTATUSEX);
+		
+		if (GlobalMemoryStatusEx(&memInfo)) {
+			DWORDLONG totalPhysMem = memInfo.ullTotalPhys;
+			// Convert bytes to MB
+			return (int)(totalPhysMem / 1024 / 1024);
+		}
+		
+		return 0;
+	')
+	public static function getTotalSystemRAM():Int
+	{
+		return 0;
+	}
+
+	/**
+	 * Gets the available (free) physical RAM (in MB)
+	 * @return Available RAM in megabytes
+	 */
+	@:functionCode('
+		MEMORYSTATUSEX memInfo;
+		memInfo.dwLength = sizeof(MEMORYSTATUSEX);
+		
+		if (GlobalMemoryStatusEx(&memInfo)) {
+			DWORDLONG availPhysMem = memInfo.ullAvailPhys;
+			// Convert bytes to MB
+			return (int)(availPhysMem / 1024 / 1024);
+		}
+		
+		return 0;
+	')
+	public static function getAvailableSystemRAM():Int
+	{
+		return 0;
+	}
+
+	/**
+	 * Gets the memory load percentage (0-100)
+	 * @return Memory usage percentage
+	 */
+	@:functionCode('
+		MEMORYSTATUSEX memInfo;
+		memInfo.dwLength = sizeof(MEMORYSTATUSEX);
+		
+		if (GlobalMemoryStatusEx(&memInfo)) {
+			return (int)memInfo.dwMemoryLoad;
+		}
+		
+		return 0;
+	')
+	public static function getMemoryLoadPercentage():Int
+	{
+		return 0;
+	}
+
+	/**
+	 * Gets the number of CPU cores
+	 * @return Number of logical processors
+	 */
+	@:functionCode('
+		SYSTEM_INFO sysInfo;
+		GetSystemInfo(&sysInfo);
+		return (int)sysInfo.dwNumberOfProcessors;
+	')
+	public static function getCPUCoreCount():Int
 	{
 		return 0;
 	}

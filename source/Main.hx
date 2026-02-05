@@ -91,6 +91,22 @@ class Main extends Sprite
 		Sys.setCwd(StorageUtil.getStorageDirectory());
 		#end
 		funkin.util.CrashHandler.init();
+		
+		// Initialize optimization systems EARLY
+		trace('Initializing optimization systems...');
+		
+		#if !macro
+		// Initialize ThreadUtil
+		#if (target.threaded && sys)
+		funkin.util.ThreadUtil.init();
+		#end
+		
+		// Initialize Paths with temp cache
+		funkin.Paths.init();
+		
+		// Initialize MemoryManager
+		funkin.util.MemoryManager.init();
+		#end
 
 		#if (cpp && windows)
 		funkin.util.Native.fixScaling();

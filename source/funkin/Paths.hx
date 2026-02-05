@@ -29,6 +29,52 @@ class Paths
 	inline public static var SOUND_EXT = #if web "mp3" #else "ogg" #end;
 	inline public static var VIDEO_EXT = "mp4";
 
+	/**
+	 * Temporary frames cache that gets cleared between states
+	 * Reduces memory usage by not keeping frames permanently
+	 * Similar to Codename Engine's approach
+	 */
+	public static var tempFramesCache:Map<String, flixel.graphics.frames.FlxFramesCollection> = [];
+	
+	/**
+	 * Initialize Paths system
+	 * Call this at game startup
+	 */
+	public static function init():Void
+	{
+		tempFramesCache = [];
+		
+		// Clear temp cache on state switch
+		FlxG.signals.preStateSwitch.add(function() {
+			clearTempFramesCache();
+		});
+	}
+	
+	/**
+	 * Clear temporary frames cache
+	 * Called automatically between state switches
+	 */
+	public static function clearTempFramesCache():Void
+	{
+		if (tempFramesCache == null) return;
+		
+		var count = 0;
+		for (key => frames in tempFramesCache)
+		{
+			if (frames != null && frames.parent != null)
+			{
+				frames.parent.persist = false;
+				frames.parent.destroyOnNoUse = true;
+				count++;
+			}
+		}
+		
+		tempFramesCache.clear();
+		
+		if (count > 0)
+			trace('[Paths] Cleared $count temporary frames from cache');
+	}
+
 	public static function excludeAsset(key:String) {
 		if (!dumpExclusions.contains(key))
 			dumpExclusions.push(key);

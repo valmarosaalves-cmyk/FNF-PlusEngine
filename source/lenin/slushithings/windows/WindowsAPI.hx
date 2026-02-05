@@ -263,6 +263,62 @@ class WindowsAPI
 	}
 
 	/**
+	 * Gets the total physical RAM installed in the system (in MB)
+	 * @return Total RAM in megabytes
+	 */
+	public static function getTotalSystemRAM():Int
+	{
+		#if windows
+		return WindowsCPP.getTotalSystemRAM();
+		#else
+		trace("System memory info is only available on Windows");
+		return 0;
+		#end
+	}
+
+	/**
+	 * Gets the available (free) physical RAM (in MB)
+	 * @return Available RAM in megabytes
+	 */
+	public static function getAvailableRAM():Int
+	{
+		#if windows
+		return WindowsCPP.getAvailableSystemRAM();
+		#else
+		trace("System memory info is only available on Windows");
+		return 0;
+		#end
+	}
+
+	/**
+	 * Gets the memory usage percentage (0-100)
+	 * @return Percentage of RAM currently in use
+	 */
+	public static function getMemoryUsagePercentage():Int
+	{
+		#if windows
+		return WindowsCPP.getMemoryLoadPercentage();
+		#else
+		trace("System memory info is only available on Windows");
+		return 0;
+		#end
+	}
+
+	/**
+	 * Gets the number of CPU cores
+	 * @return Number of logical processors
+	 */
+	public static function getCPUCoreCount():Int
+	{
+		#if windows
+		return WindowsCPP.getCPUCoreCount();
+		#else
+		trace("CPU info is only available on Windows");
+		return 0;
+		#end
+	}
+
+	/**
 	 * Sends a Windows notification (Windows 8+)
 	 * @param desc Description text
 	 * @param title Title text

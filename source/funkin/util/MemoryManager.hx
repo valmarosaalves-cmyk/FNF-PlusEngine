@@ -4,14 +4,17 @@ import flixel.FlxG;
 import flixel.graphics.FlxGraphic;
 import openfl.utils.Assets;
 import openfl.system.System;
+import funkin.util.SystemMemory;
 
 #if sys
 import sys.FileSystem;
 #end
 
 /**
- * Sistema de gestión avanzada de memoria, especialmente optimizado para Android.
- * Permite liberar assets dinámicamente para reducir el consumo de RAM.
+ * Advanced memory management system, especially optimized for Android and low-end PCs.
+ * Allows dynamic asset freeing to reduce RAM consumption.
+ * 
+ * Improved with Codename Engine techniques
  */
 class MemoryManager
 {
@@ -20,6 +23,110 @@ class MemoryManager
     #else
     private static var isAndroid:Bool = false;
     #end
+    
+    /**
+     * Whether aggressive memory management is enabled
+     * Auto-enabled on low-end devices
+     */
+    public static var aggressiveMode:Bool = false;
+    
+    /**
+     * Threshold for automatic cleanup (in MB)
+     */
+    public static var autoCleanupThreshold:Float = 500;
+    
+    /**
+     * Last time automatic cleanup was run
+     */
+    private static var lastAutoCleanup:Float = 0;
+    
+    /**
+     * Interval between automatic cleanups (in seconds)
+     */
+    public static var autoCleanupInterval:Float = 30;
+    
+    /**
+     * Initialize memory manager
+     * Call this at game startup
+     */
+    public static function init():Void
+    {
+        // Get total system RAM (works on all platforms)
+        var totalSystemRAM = SystemMemory.getTotalRAM();
+        var ramString = SystemMemory.getTotalRAMString();
+        var cpuCores = SystemMemory.getCPUCores();
+        
+        trace('\n\nSystem Info:\nTotal RAM: $ramString ($totalSystemRAM MB)\nCPU Cores: $cpuCores\n');
+        
+        #if android
+        // On Android, also check optimizer tier
+        var tier = funkin.mobile.AndroidOptimizer.getCurrentTier();
+        trace('  - Android Tier: $tier');
+        
+        if (tier == 0 || (totalSystemRAM > 0 && totalSystemRAM < 3072))
+        {
+            trace('Low-end Android device detected');
+            enableAggressiveMode();
+        }
+        #else
+        // On desktop/other platforms, use RAM threshold
+        if (totalSystemRAM > 0 && totalSystemRAM < 4096)
+        {
+            trace('Low-end device detected (${totalSystemRAM}MB RAM < 4GB)');
+            enableAggressiveMode();
+        }
+        else if (totalSystemRAM >= 4096)
+        {
+            trace('High-end device detected (${totalSystemRAM}MB RAM >= 4GB)');
+        }
+        #end
+        
+        trace('Initialized (Aggressive: $aggressiveMode)');
+    }
+    
+    /**
+     * Enable aggressive memory management
+     */
+    public static function enableAggressiveMode():Void
+    {
+        aggressiveMode = true;
+        autoCleanupThreshold = 300; // Lower threshold
+        autoCleanupInterval = 20; // More frequent cleanups
+        trace('[MemoryManager] Aggressive mode ENABLED');
+    }
+    
+    /**
+     * Disable aggressive memory management
+     */
+    public static function disableAggressiveMode():Void
+    {
+        aggressiveMode = false;
+        autoCleanupThreshold = 500;
+        autoCleanupInterval = 30;
+        trace('[MemoryManager] Aggressive mode DISABLED');
+    }
+    
+    /**
+     * Update function - call this in game loop for automatic cleanup
+     */
+    public static function update(elapsed:Float):Void
+    {
+        if (!aggressiveMode) return;
+        
+        lastAutoCleanup += elapsed;
+        
+        if (lastAutoCleanup >= autoCleanupInterval)
+        {
+            lastAutoCleanup = 0;
+            
+            var currentMem = getMemoryUsage();
+            if (currentMem > autoCleanupThreshold)
+            {
+                trace('[MemoryManager] Auto-cleanup triggered (${Math.round(currentMem)}MB > ${autoCleanupThreshold}MB)');
+                quickCleanup();
+            }
+        }
+    }
 
     /**
      * Elimina una imagen específica de todos los cachés (OpenFL, FlxG y Paths tracking)
@@ -97,7 +204,7 @@ class MemoryManager
         if (PlayState.instance == null || characterName == null) return;
 
         var imageFile:String = null;
-        var char:objects.Character = null;
+        var char:funkin.play.character.Character = null;
 
         // Buscar en boyfriend map
         if (PlayState.instance.boyfriendMap.exists(characterName))
@@ -134,16 +241,16 @@ class MemoryManager
     }
 
     /**
-     * Limpia assets de UI que no se están usando (pixel UI vs UI normal)
+     * Clears unused UI assets (pixel UI vs normal UI)
+     * Works on all platforms to save memory
      */
     public static function clearUnusedUI():Void
     {
-        #if android
         if (PlayState.instance == null) return;
 
         if (!PlayState.isPixelStage)
         {
-            // Limpiar UI pixel si estamos en stage normal
+            // Clear pixel UI if we're on normal stage
             Assets.cache.clear('assets/shared/images/pixelUI');
             removeImageFromMemory('pixelUI/arrows-pixels');
             removeImageFromMemory('pixelUI/arrows-pixels-ends');
@@ -151,57 +258,147 @@ class MemoryManager
         }
         else
         {
-            // Limpiar UI normal si estamos en stage pixel
+            // Clear normal UI if we're on pixel stage
             removeImageFromMemory('NOTE_assets');
             removeImageFromMemory('noteSplashes');
         }
-        #end
     }
 
     /**
-     * Elimina personajes precargados que no se usan
+     * Clears preloaded characters that are not in use
+     * Useful for low-end devices (mobile and desktop)
      */
     public static function clearPreloadedCharacters():Void
     {
-        #if android
-        // Personaje de muerte que rara vez se usa
+        // Death character rarely used
         removeCharacterFromMemory('bf-dead', true);
         
-        // Logo del menú
+        // Menu logo
         removeImageFromMemory('logoBumpin', true);
-        #end
     }
 
     /**
-     * Limpieza agresiva de memoria para Android
-     * Combina todas las funciones de limpieza y fuerza el garbage collector
+     * Quick cleanup - lighter than aggressive cleanup
+     * Good for periodic automatic cleanup
+     */
+    public static function quickCleanup():Void
+    {
+        trace('[MemoryManager] Running quick cleanup...');
+        
+        // Clear Paths unused memory
+        Paths.clearUnusedMemory();
+        
+        // Clear temp frames cache
+        Paths.clearTempFramesCache();
+        
+        // Minor GC
+        System.gc();
+        
+        #if cpp
+        cpp.NativeGc.run(false);
+        #end
+        
+        trace('[MemoryManager] Quick cleanup complete');
+    }
+
+    /**
+     * Aggressive cleanup - full memory cleanup
+     * Combines all cleanup functions and forces garbage collection
+     * Use sparingly as it's expensive
      */
     public static function aggressiveCleanup():Void
     {
-        #if android
-        trace('MemoryManager: Ejecutando limpieza agresiva de memoria...');
+        trace('[MemoryManager] Running AGGRESSIVE cleanup...');
         
-        // Limpiar cachés de Paths
+        // Clear Paths caches
         Paths.clearUnusedMemory();
+        Paths.clearStoredMemory();
+        Paths.clearTempFramesCache();
         
-        // Limpiar UI no utilizada
+        // Clear UI not in use
         clearUnusedUI();
         
-        // Limpiar personajes precargados
+        // Clear preloaded characters
         clearPreloadedCharacters();
         
-        // Forzar garbage collection
+        // Clear shaders
+        clearShaders();
+        
+        // Force multiple GC cycles for thorough cleanup
         System.gc();
         #if cpp
         cpp.NativeGc.run(true);
+        cpp.NativeGc.compact();
+        #elseif neko
+        neko.vm.Gc.run(true);
         #end
         
-        trace('MemoryManager: Limpieza completada');
-        #end
+        // On aggressive mode, do multiple passes
+        if (aggressiveMode)
+        {
+            System.gc();
+            #if cpp
+            cpp.NativeGc.run(true);
+            #end
+        }
+        
+        trace('[MemoryManager] Aggressive cleanup complete');
     }
-
+    
     /**
-     * Obtiene el uso actual de memoria en MB (solo en sistemas que lo soporten)
+     * Ultra cleanup - nuclear option
+     * Clears almost everything possible
+     * WARNING: May cause visual glitches temporarily
+     */
+    public static function ultraCleanup():Void
+    {
+        trace('[MemoryManager] ⚠️ ULTRA CLEANUP - This may cause temporary issues');
+        
+        // Run aggressive cleanup first
+        aggressiveCleanup();
+        
+        // Clear FlxG bitmap cache (careful!)
+        @:privateAccess
+        {
+            for (key in FlxG.bitmap._cache.keys())
+            {
+                var graphic = FlxG.bitmap.get(key);
+                if (graphic != null && !graphic.persist && graphic.useCount == 0)
+                {
+                    FlxG.bitmap.remove(graphic);
+                    graphic.destroy();
+                }
+            }
+        }
+        
+        // Clear all sound caches
+        Assets.cache.clear();
+        
+        // Force maximum GC
+        for (i in 0...3)
+        {
+            System.gc();
+            #if cpp
+            cpp.NativeGc.run(true);
+            cpp.NativeGc.compact();
+            #end
+        }
+        
+        trace('[MemoryManager] Ultra cleanup complete - ${Math.round(getMemoryUsage())}MB in use');
+    }
+    
+    /**
+     * Gets total system RAM installed (in MB)
+     * Works on Windows, Mac, Linux, iOS, and Android
+     */
+    public static function getTotalSystemRAM():Int
+    {
+        return SystemMemory.getTotalRAM();
+    }
+    
+    /**
+     * Gets current memory usage in MB (only on supported systems)
+     * This is the RAM currently being used by the application
      */
     public static function getMemoryUsage():Float
     {
@@ -211,27 +408,38 @@ class MemoryManager
         return 0;
         #end
     }
-
+    
     /**
-     * Reporta el uso de memoria en consola (útil para debugging)
+     * Gets available (free) system RAM in MB
+     * Works on Windows, Mac, Linux, iOS, and Android
      */
-    public static function reportMemoryUsage():Void
+    public static function getAvailableRAM():Int
     {
-        #if android
-        var memoryMB:Float = getMemoryUsage();
-        trace('MemoryManager: Uso actual de memoria: ${Math.round(memoryMB)}MB');
-        #end
+        return SystemMemory.getAvailableRAM();
     }
 
     /**
-     * Limpia todos los shaders cargados (muy útil en Android donde los shaders consumen mucha RAM)
+     * Reports current memory usage to console (useful for debugging)
+     * Works on all platforms that support memory reporting
+     */
+    public static function reportMemoryUsage():Void
+    {
+        var memoryMB:Float = getMemoryUsage();
+        if (memoryMB > 0)
+            trace('[MemoryManager] Current memory usage: ${Math.round(memoryMB)}MB');
+        else
+            trace('[MemoryManager] Memory usage reporting not available on this platform');
+    }
+
+    /**
+     * Clears all loaded shaders (very useful on low-end devices where shaders consume lots of RAM)
+     * Works on all platforms - especially helpful for low-end desktop PCs
      */
     public static function clearShaders():Void
     {
-        #if android
         if (PlayState.instance == null) return;
         
-        // Limpiar shaders del stage
+        // Clear stage shaders
         if (PlayState.instance.camGame != null && PlayState.instance.camGame.filters != null)
             PlayState.instance.camGame.filters = [];
         
@@ -241,25 +449,25 @@ class MemoryManager
         if (PlayState.instance.camOther != null && PlayState.instance.camOther.filters != null)
             PlayState.instance.camOther.filters = [];
         
-        trace('MemoryManager: Shaders limpiados');
-        #end
+        trace('[MemoryManager] Shaders cleared');
     }
 
     /**
-     * Monitoreo automático de memoria para Android
-     * Ejecuta limpieza automática si el uso excede el umbral especificado
-     * @param thresholdMB Umbral en MB (por defecto 500MB)
+     * Automatic memory monitoring for low-end devices (mobile and desktop)
+     * Runs automatic cleanup if usage exceeds specified threshold
+     * @param thresholdMB Threshold in MB (default 500MB)
      */
     public static function autoMonitor(thresholdMB:Float = 500):Void
     {
-        #if android
         var currentMemory:Float = getMemoryUsage();
         
-        if (currentMemory > thresholdMB)
+        if (currentMemory > 0 && currentMemory > thresholdMB)
         {
-            trace('MemoryManager: Umbral excedido (${Math.round(currentMemory)}MB > ${thresholdMB}MB). Ejecutando limpieza...');
-            aggressiveCleanup();
+            trace('[MemoryManager] Threshold exceeded (${Math.round(currentMemory)}MB > ${thresholdMB}MB). Running cleanup...');
+            if (aggressiveMode)
+                aggressiveCleanup();
+            else
+                quickCleanup();
         }
-        #end
     }
 }

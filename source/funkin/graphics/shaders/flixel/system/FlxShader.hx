@@ -52,7 +52,7 @@ class FlxShader extends OriginalFlxShader
 		var gl = __context.gl;
 
 		// Check if modern OpenGL is supported
-		var supportsModern = shaders.ShaderCompatibility.supportsModernGL();
+		var supportsModern = funkin.graphics.shaders.ShaderCompatibility.supportsModernGL();
 		
 		var prefix = "";
 		var vertex = "";

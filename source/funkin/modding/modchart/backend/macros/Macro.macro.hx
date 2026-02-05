@@ -8,11 +8,9 @@ import haxe.macro.Type.ClassField;
 
 class Macro {
 	public static function includeFiles() {
-		trace('[FunkinModchart Macro] Starting includeFiles()');
 		
 		// Include all modchart files except adapters - using full package path
 		Compiler.include('funkin.modding.modchart', true, ['funkin.modding.modchart.backend.standalone.adapters']);
-		trace('[FunkinModchart Macro] Included modchart base files');
 		
 		// Get the engine name
 		var engineName = haxe.macro.Context.definedValue("FM_ENGINE");
@@ -21,11 +19,9 @@ class Macro {
 		}
 		
 		var adapterPackage = "funkin.modding.modchart.backend.standalone.adapters." + engineName.toLowerCase();
-		trace('[FunkinModchart Macro] Including adapter package: $adapterPackage');
 		
 		// Include the specific adapter
 		Compiler.include(adapterPackage);
-		trace('[FunkinModchart Macro] Adapter package included successfully');
 	}
 
 	// public static function buildFlxShader():Array<Field> {

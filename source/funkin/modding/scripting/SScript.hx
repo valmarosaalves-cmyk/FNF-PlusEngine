@@ -4,6 +4,7 @@ import funkin.play.character.Character;
 import funkin.modding.scripting.psychlua.LuaUtils;
 import funkin.modding.scripting.psychlua.CustomSubstate;
 import funkin.modding.scripting.psychlua.ReflectionFunctions;
+import funkin.util.StructureOld;
 
 #if LUA_ALLOWED
 import funkin.modding.scripting.FunkinLua;
@@ -303,7 +304,7 @@ class SScriptCompat extends SScript
 					str = libPackage + '.';
 
 				var className = str + libName;
-				var resolvedClass = ReflectionFunctions.resolveClassCompat(className);
+			var resolvedClass = StructureOld.resolveClass(className);
 				set(libName, resolvedClass);
 			}
 			catch (e:Dynamic) {
@@ -523,7 +524,7 @@ class SScriptCompat extends SScript
 				libName = '';
 
 			var className = str + libName;
-			var c:Dynamic = ReflectionFunctions.resolveClassCompat(className);
+			var c:Dynamic = StructureOld.resolveClass(className);
 			if (c == null)
 				c = Type.resolveEnum(className);
 			

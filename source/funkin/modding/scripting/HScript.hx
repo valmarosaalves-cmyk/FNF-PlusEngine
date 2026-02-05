@@ -4,6 +4,7 @@ import funkin.play.character.Character;
 import funkin.modding.scripting.psychlua.LuaUtils;
 import funkin.modding.scripting.psychlua.CustomSubstate;
 import funkin.modding.scripting.psychlua.ReflectionFunctions;
+import funkin.util.StructureOld;
 #if LUA_ALLOWED
 import funkin.modding.scripting.FunkinLua;
 #end
@@ -418,7 +419,7 @@ class HScript extends Iris
 					str = libPackage + '.';
 		
 				var className = str + libName;
-				var resolvedClass = ReflectionFunctions.resolveClassCompat(className);
+				var resolvedClass = StructureOld.resolveClass(className);
 				set(libName, resolvedClass);
 			}
 			catch (e:IrisError) {
@@ -532,7 +533,7 @@ class HScript extends Iris
 				libName = '';
 
 			var className = str + libName;
-			var c:Dynamic = ReflectionFunctions.resolveClassCompat(className);
+			var c:Dynamic = StructureOld.resolveClass(className);
 
 			if (c == null)
 				c = Type.resolveEnum(className);
@@ -813,6 +814,22 @@ class CustomInterp extends crowplexus.hscript.Interp
 	public function new()
 	{
 		super();
+	}
+	
+	/**
+	 * Override to resolve classes with backwards compatibility support.
+	 * This allows old mods that use `import backend.Conductor` to work properly.
+	 */
+	override function cnew(className:String, args:Array<Dynamic>):Dynamic {
+		// Try to resolve with backwards compatibility first
+		var resolvedClass = StructureOld.resolveClass(className);
+		
+		if (resolvedClass != null) {
+			return Type.createInstance(resolvedClass, args);
+		}
+		
+		// Fallback to default behavior (will throw error if class not found)
+		return super.cnew(className, args);
 	}
 
 	override function fcall(o:Dynamic, funcToRun:String, args:Array<Dynamic>):Dynamic {

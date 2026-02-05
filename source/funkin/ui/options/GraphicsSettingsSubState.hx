@@ -20,7 +20,7 @@ class GraphicsSettingsSubState extends BaseOptionsMenu
 
 		#if android
 		// Show auto-detected tier and manual override
-		var tierName = backend.AndroidOptimizer.getTierName();
+		var tierName = funkin.mobile.AndroidOptimizer.getTierName();
 		var option:Option = new Option('Auto-Optimization Tier',
 			'Detected: $tierName\n\nYou can manually force a tier below to override.\nLow-End = Maximum performance\nHigh-End = Maximum quality',
 			'',
@@ -30,17 +30,17 @@ class GraphicsSettingsSubState extends BaseOptionsMenu
 			var selected = option.getValue();
 			switch(selected) {
 				case 'Force Low-End':
-					backend.AndroidOptimizer.forceOptimizationTier(0);
+					funkin.mobile.AndroidOptimizer.forceOptimizationTier(0);
 					FlxG.sound.play(Paths.sound('scrollMenu'));
 				case 'Force Mid-Range':
-					backend.AndroidOptimizer.forceOptimizationTier(1);
+					funkin.mobile.AndroidOptimizer.forceOptimizationTier(1);
 					FlxG.sound.play(Paths.sound('scrollMenu'));
 				case 'Force High-End':
-					backend.AndroidOptimizer.forceOptimizationTier(2);
+					funkin.mobile.AndroidOptimizer.forceOptimizationTier(2);
 					FlxG.sound.play(Paths.sound('scrollMenu'));
 				default:
 					// Re-run auto-detection
-					backend.AndroidOptimizer.init();
+					funkin.mobile.AndroidOptimizer.init();
 					FlxG.sound.play(Paths.sound('scrollMenu'));
 			}
 		};

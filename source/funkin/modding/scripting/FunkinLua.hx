@@ -1671,49 +1671,49 @@ class FunkinLua {
 		// Memory Manager callbacks (Android optimization)
 		#if android
 		addLocalCallback("removeImageFromMemory", function(path:String, ?removeInstantly:Bool = true) {
-			backend.MemoryManager.removeImageFromMemory(path, removeInstantly);
+			funkin.util.MemoryManager.removeImageFromMemory(path, removeInstantly);
 		});
 		
 		addLocalCallback("removeImagesFromMemory", function(paths:Array<String>, ?removeInstantly:Bool = true) {
-			backend.MemoryManager.removeImagesFromMemory(paths, removeInstantly);
+			funkin.util.MemoryManager.removeImagesFromMemory(paths, removeInstantly);
 		});
 		
 		addLocalCallback("removeCharacterFromMemory", function(characterName:String, ?removeInstantly:Bool = true) {
-			backend.MemoryManager.removeCharacterFromMemory(characterName, removeInstantly);
+			funkin.util.MemoryManager.removeCharacterFromMemory(characterName, removeInstantly);
 		});
 		
 		addLocalCallback("clearUnusedUI", function() {
-			backend.MemoryManager.clearUnusedUI();
+			funkin.util.MemoryManager.clearUnusedUI();
 		});
 		
 		addLocalCallback("clearPreloadedCharacters", function() {
-			backend.MemoryManager.clearPreloadedCharacters();
+			funkin.util.MemoryManager.clearPreloadedCharacters();
 		});
 		
 		addLocalCallback("aggressiveMemoryCleanup", function() {
-			backend.MemoryManager.aggressiveCleanup();
+			funkin.util.MemoryManager.aggressiveCleanup();
 		});
 		
 		addLocalCallback("getMemoryUsage", function() {
-			return backend.MemoryManager.getMemoryUsage();
+			return funkin.util.MemoryManager.getMemoryUsage();
 		});
 		
 		addLocalCallback("reportMemoryUsage", function() {
-			backend.MemoryManager.reportMemoryUsage();
+			funkin.util.MemoryManager.reportMemoryUsage();
 		});
 		
 		addLocalCallback("clearShaders", function() {
-			backend.MemoryManager.clearShaders();
+			funkin.util.MemoryManager.clearShaders();
 		});
 		
 		addLocalCallback("autoMonitorMemory", function(?thresholdMB:Float = 500) {
-			backend.MemoryManager.autoMonitor(thresholdMB);
+			funkin.util.MemoryManager.autoMonitor(thresholdMB);
 		});
 		
 		// Android Optimizer functions
 		addLocalCallback("getAndroidTier", function() {
 			#if android
-			return backend.AndroidOptimizer.getCurrentTier();
+			return funkin.mobile.AndroidOptimizer.getCurrentTier();
 			#else
 			return 2; // Desktop = high-end
 			#end
@@ -1721,7 +1721,7 @@ class FunkinLua {
 		
 		addLocalCallback("getAndroidTierName", function() {
 			#if android
-			return backend.AndroidOptimizer.getTierName();
+			return funkin.mobile.AndroidOptimizer.getTierName();
 			#else
 			return "Desktop";
 			#end
@@ -1729,7 +1729,7 @@ class FunkinLua {
 		
 		addLocalCallback("forceAndroidTier", function(tier:Int) {
 			#if android
-			backend.AndroidOptimizer.forceOptimizationTier(tier);
+			funkin.mobile.AndroidOptimizer.forceOptimizationTier(tier);
 			#end
 		});
 		

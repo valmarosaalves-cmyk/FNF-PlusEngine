@@ -43,7 +43,7 @@ class AndroidOptimizer
      */
     private static function detectDeviceTier():Int
     {
-        var gpuName = Native.detectGPU();
+        var gpuName = funkin.util.Native.detectGPU();
         var totalRAM = getTotalRAM();
         var cpuCores = getCPUCores();
         
@@ -153,9 +153,11 @@ class AndroidOptimizer
         #if cpp
         try
         {
-            // Try to get CPU cores from system
-            var cores = cpp.vm.Gc.stats().heapSize; // Placeholder, would need native code
-            // For now, estimate based on RAM
+            // Get CPU cores using sysconf
+            var cores:Int = untyped __cpp__('sysconf(_SC_NPROCESSORS_ONLN)');
+            if (cores > 0) return cores;
+            
+            // Fallback: estimate based on RAM
             var ram = getTotalRAM();
             if (ram >= 8000) return 8;
             if (ram >= 6000) return 6;
@@ -190,7 +192,7 @@ class AndroidOptimizer
         
         // Initialize optimization systems
         ObjectPool.init();
-        AudioOptimizer.resetSoundCount();
+        funkin.audio.AudioOptimizer.resetSoundCount();
         
         trace('AndroidOptimizer: Core optimization systems initialized');
     }
@@ -350,14 +352,6 @@ class AndroidOptimizer
         #end
         
         trace('AndroidOptimizer: HIGH-END mode active - Maximum quality enabled');
-    }
-        
-        // UI
-        ClientPrefs.data.showFPS = true;
-        ClientPrefs.data.fpsDebugLevel = 1;
-        
-        // Memory
-        ClientPrefs.data.heavyCharts = false;
     }
     
     /**

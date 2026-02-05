@@ -27,7 +27,7 @@ class ObjectPool
         if (initialized) return;
         
         #if android
-        var tier = AndroidOptimizer.getCurrentTier();
+        var tier = funkin.mobile.AndroidOptimizer.getCurrentTier();
         switch(tier)
         {
             case 0: // Low-end
@@ -115,7 +115,7 @@ class ObjectPool
         
         // Only prewarm on mid/high-end devices
         #if android
-        if (AndroidOptimizer.getCurrentTier() == 0) return;
+        if (funkin.mobile.AndroidOptimizer.getCurrentTier() == 0) return;
         #end
         
         trace('ObjectPool: Prewarming $spriteCount sprites...');

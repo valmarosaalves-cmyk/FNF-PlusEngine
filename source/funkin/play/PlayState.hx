@@ -526,8 +526,8 @@ class PlayState extends MusicBeatState
 		
 		// Optimización inicial para Android
 		#if android
-		backend.MemoryManager.reportMemoryUsage();
-		backend.MemoryManager.clearPreloadedCharacters();
+		funkin.util.MemoryManager.reportMemoryUsage();
+		funkin.util.MemoryManager.clearPreloadedCharacters();
 		#end
 		if(nextReloadAll)
 		{
@@ -1793,7 +1793,7 @@ class PlayState extends MusicBeatState
 		
 		// Limpiar UI no utilizada después del countdown (Android)
 		#if android
-		backend.MemoryManager.clearUnusedUI();
+		funkin.util.MemoryManager.clearUnusedUI();
 		#end
 		
 		return true;
@@ -5257,8 +5257,8 @@ class PlayState extends MusicBeatState
 	override function destroy() {
 		// Limpieza agresiva de memoria antes de destruir (Android)
 		#if android
-		backend.MemoryManager.aggressiveCleanup();
-		backend.MemoryManager.reportMemoryUsage();
+		funkin.util.MemoryManager.aggressiveCleanup();
+		funkin.util.MemoryManager.reportMemoryUsage();
 		#end
 		
 		// Limpiar todos los videos de Lua

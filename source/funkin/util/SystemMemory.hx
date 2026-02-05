@@ -85,55 +85,20 @@ class SystemMemory
 
     #if android
     /**
-     * Gets total RAM on Android using ActivityManager
+     * Gets total RAM on Android by reading /proc/meminfo
      */
     private static function getAndroidTotalRAM():Int
     {
-        try
-        {
-            // Use JNI to call Android's ActivityManager.getMemoryInfo()
-            var jni = new android.jni.JNICache();
-            var context = android.content.Context.getApplicationContext();
-            var activityManager:Dynamic = context.getSystemService("activity");
-            
-            var memInfo:Dynamic = untyped __java__('new android.app.ActivityManager.MemoryInfo()');
-            activityManager.getMemoryInfo(memInfo);
-            
-            // totalMem is in bytes, convert to MB
-            var totalBytes:Float = memInfo.totalMem;
-            return Std.int(totalBytes / 1024 / 1024);
-        }
-        catch (e:Dynamic)
-        {
-            trace('[SystemMemory] Failed to get Android total RAM: $e');
-            // Fallback: read from /proc/meminfo
-            return getLinuxTotalRAM();
-        }
+        // Android is Linux-based, read from /proc/meminfo
+        return readLinuxMemInfo(true);
     }
 
     /**
-     * Gets available RAM on Android using ActivityManager
+     * Gets available RAM on Android by reading /proc/meminfo
      */
     private static function getAndroidAvailableRAM():Int
     {
-        try
-        {
-            var jni = new android.jni.JNICache();
-            var context = android.content.Context.getApplicationContext();
-            var activityManager:Dynamic = context.getSystemService("activity");
-            
-            var memInfo:Dynamic = untyped __java__('new android.app.ActivityManager.MemoryInfo()');
-            activityManager.getMemoryInfo(memInfo);
-            
-            // availMem is in bytes, convert to MB
-            var availBytes:Float = memInfo.availMem;
-            return Std.int(availBytes / 1024 / 1024);
-        }
-        catch (e:Dynamic)
-        {
-            trace('[SystemMemory] Failed to get Android available RAM: $e');
-            return 0;
-        }
+        return readLinuxMemInfo(false);
     }
     #end
 
@@ -183,21 +148,24 @@ class SystemMemory
     }
     #end
 
-    #if linux
+    #if (linux || android)
     /**
-     * Gets total RAM on Linux by reading /proc/meminfo
+     * Reads memory info from /proc/meminfo
+     * Works on both Linux and Android (Android is Linux-based)
+     * @param total If true, returns total RAM; if false, returns available RAM
      */
-    private static function getLinuxTotalRAM():Int
+    private static function readLinuxMemInfo(total:Bool):Int
     {
         #if sys
         try
         {
             var content = sys.io.File.getContent("/proc/meminfo");
             var lines = content.split("\n");
+            var searchKey = total ? "MemTotal:" : "MemAvailable:";
             
             for (line in lines)
             {
-                if (line.indexOf("MemTotal:") == 0)
+                if (line.indexOf(searchKey) == 0)
                 {
                     // Format: MemTotal:       16384000 kB
                     var parts = line.split(":");
@@ -221,43 +189,21 @@ class SystemMemory
         #end
         return 0;
     }
+    
+    /**
+     * Gets total RAM on Linux by reading /proc/meminfo
+     */
+    private static function getLinuxTotalRAM():Int
+    {
+        return readLinuxMemInfo(true);
+    }
 
     /**
      * Gets available RAM on Linux by reading /proc/meminfo
      */
     private static function getLinuxAvailableRAM():Int
     {
-        #if sys
-        try
-        {
-            var content = sys.io.File.getContent("/proc/meminfo");
-            var lines = content.split("\n");
-            
-            for (line in lines)
-            {
-                if (line.indexOf("MemAvailable:") == 0)
-                {
-                    // Format: MemAvailable:    8192000 kB
-                    var parts = line.split(":");
-                    if (parts.length >= 2)
-                    {
-                        var valueStr = StringTools.trim(parts[1]).split(" ")[0];
-                        var kb = Std.parseInt(valueStr);
-                        if (kb != null)
-                        {
-                            // Convert KB to MB
-                            return Std.int(kb / 1024);
-                        }
-                    }
-                }
-            }
-        }
-        catch (e:Dynamic)
-        {
-            trace('[SystemMemory] Failed to read /proc/meminfo: $e');
-        }
-        #end
-        return 0;
+        return readLinuxMemInfo(false);
     }
     #end
 

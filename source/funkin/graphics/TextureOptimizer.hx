@@ -29,7 +29,7 @@ class TextureOptimizer
         if (tier == -1)
         {
             #if android
-            tier = AndroidOptimizer.getCurrentTier();
+            tier = funkin.mobile.AndroidOptimizer.getCurrentTier();
             #else
             tier = 2; // Desktop = high tier
             #end
@@ -60,7 +60,7 @@ class TextureOptimizer
     public static inline function shouldUseAntialiasing():Bool
     {
         #if android
-        return AndroidOptimizer.getCurrentTier() >= 1; // Mid and High only
+        return funkin.mobile.AndroidOptimizer.getCurrentTier() >= 1; // Mid and High only
         #else
         return true;
         #end
@@ -72,7 +72,7 @@ class TextureOptimizer
     public static function getMaxSpriteCount():Int
     {
         #if android
-        return switch(AndroidOptimizer.getCurrentTier())
+        return switch(funkin.mobile.AndroidOptimizer.getCurrentTier())
         {
             case 0: 150; // Low-end: limit sprites
             case 1: 300; // Mid-range: moderate

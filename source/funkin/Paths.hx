@@ -103,7 +103,7 @@ class Paths
 		
 		// Extra aggressive cleanup on low-end Android
 		#if android
-		if (AndroidOptimizer.getCurrentTier() == 0)
+		if (funkin.mobile.AndroidOptimizer.getCurrentTier() == 0)
 		{
 			// Force additional GC cycles on low-end
 			System.gc();
@@ -358,7 +358,7 @@ class Paths
 		else
 		{
 			// Even without GPU caching, optimize on low-end Android
-			bitmap = TextureOptimizer.optimize(bitmap);
+			bitmap = funkin.graphics.TextureOptimizer.optimize(bitmap);
 		}
 		#end
 

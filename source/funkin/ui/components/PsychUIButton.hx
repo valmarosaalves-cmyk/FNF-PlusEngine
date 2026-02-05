@@ -72,7 +72,7 @@ class PsychUIButton extends FlxSpriteGroup
 
 		if(forceCheckNext || FlxG.mouse.justMoved || FlxG.mouse.justPressed)
 		{
-			var overlapped:Bool = (FlxG.mouse.overlaps(bg, camera));
+			var overlapped:Bool = (camera != null && FlxG.mouse.overlaps(bg, camera));
 
 			forceCheckNext = false;
 

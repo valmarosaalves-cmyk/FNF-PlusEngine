@@ -234,6 +234,17 @@ jobs:
           haxelib run lime config ANDROID_NDK_ROOT $ANDROID_SDK_ROOT/ndk/27.0.12077973
           haxelib run lime config JAVA_HOME $JAVA_HOME
       
+      - name: Fix Lime StorageProvider icon bug
+        run: |
+          LIME_PATH=$(haxelib path lime | head -n 1)
+          STORAGE_FILE="${LIME_PATH}templates/android/template/app/src/main/java/org/haxe/lime/StorageProvider.java"
+          if [ -f "$STORAGE_FILE" ]; then
+            sed -i 's/R\.drawable\.icon/0/g' "$STORAGE_FILE"
+            echo "Fixed StorageProvider.java icon references"
+          else
+            echo "StorageProvider.java not found at $STORAGE_FILE"
+          fi
+      
       - name: Skip SScript setup mode
         run: |
           echo -n 'oy9:showMacroty8:loopCosti25y10:includeAllfg' > ~/settings.cocoa

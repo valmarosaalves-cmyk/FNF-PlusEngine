@@ -13,9 +13,11 @@ import lenin.slushithings.windows.WindowsCPP;
     <lib name="Kernel32.lib" if="windows" />
 </target>
 ')
-#if (cpp && !windows && !android)
-@:cppInclude("sys/sysinfo.h")
+#if (cpp && !windows)
 @:cppInclude("unistd.h")
+#end
+#if (linux && !android)
+@:cppInclude("sys/sysinfo.h")
 #end
 #if (mac || ios)
 @:cppInclude("sys/types.h")

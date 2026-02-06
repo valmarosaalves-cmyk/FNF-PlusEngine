@@ -8,6 +8,9 @@ import openfl.system.System;
  * Sistema automático de optimización para dispositivos Android
  * Ajusta configuraciones basándose en el hardware del dispositivo
  */
+#if cpp
+@:cppInclude("unistd.h")
+#end
 class AndroidOptimizer
 {
     // GPU Tiers for automatic quality adjustment

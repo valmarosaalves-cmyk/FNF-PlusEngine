@@ -1,3 +1,40 @@
+# ╔════════════════════════════════════════════════════════════════════╗
+# ║              FNF PlusEngine - Multi-Platform Builder              ║
+# ╚════════════════════════════════════════════════════════════════════╝
+#
+# 📦 Trigger builds by including keywords in your commit message
+#
+# ┌─────────────────────────────────────────────────────────────────┐
+# │ 🪟 WINDOWS BUILDS                                               │
+# ├─────────────────────────────────────────────────────────────────┤
+# │  ├── 'winall' or 'win'    → Build both 32-bit and 64-bit       │
+# │  ├── 'winx86' or 'win32'  → Build 32-bit only                  │
+# │  └── 'winx64' or 'win64'  → Build 64-bit only                  │
+# └─────────────────────────────────────────────────────────────────┘
+#
+# ┌─────────────────────────────────────────────────────────────────┐
+# │ 🍎 MAC BUILDS                                                   │
+# ├─────────────────────────────────────────────────────────────────┤
+# │  ├── 'macall' or 'mac'       → Build Intel and ARM             │
+# │  ├── 'macin' or 'macintel'   → Build Intel only                │
+# │  └── 'macar' or 'macarm'     → Build ARM (Apple Silicon) only  │
+# └─────────────────────────────────────────────────────────────────┘
+#
+# ┌─────────────────────────────────────────────────────────────────┐
+# │ 🐧📱 LINUX & MOBILE BUILDS                                      │
+# ├─────────────────────────────────────────────────────────────────┤
+# │  ├── 'linx' or 'linux'    → Build Linux 64-bit                 │
+# │  ├── 'andr' or 'android'  → Build Android APK                  │
+# │  └── 'ios'                → Build iOS (unsigned)               │
+# └─────────────────────────────────────────────────────────────────┘
+#
+# ┌─────────────────────────────────────────────────────────────────┐
+# │ 🌍 ALL PLATFORMS                                                │
+# ├─────────────────────────────────────────────────────────────────┤
+# │  └── 'all'  → Build everything (Win32, Win64, Mac Intel,       │
+# │               Mac ARM, Linux, Android, iOS)                     │
+# └─────────────────────────────────────────────────────────────────┘
+
 name: Build
 
 on:
@@ -8,8 +45,167 @@ on:
   workflow_dispatch:
 
 jobs:
+  # ╔═══════════════════════════════════════════════════════════════════╗
+  # ║                        🪟 WINDOWS BUILDS                          ║
+  # ╚═══════════════════════════════════════════════════════════════════╝
+  
+  # ├── Windows 32-bit (x86)
+  Windows-x86:
+    if: contains(github.event.head_commit.message, 'winx86') || contains(github.event.head_commit.message, 'win32') || contains(github.event.head_commit.message, 'winall') || contains(github.event.head_commit.message, 'win') || contains(github.event.head_commit.message, 'all')
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4.1.7
+
+      - uses: krdlab/setup-haxe@master
+        with:
+          haxe-version: 4.3.4
+      
+      - name: Install Haxelib
+        run: |
+          haxelib setup C:/haxelib
+          haxelib install hxcpp > $null
+          .\setup\windows-lib.bat
+        shell: cmd
+      
+      - name: Skip SScript setup mode
+        run: |
+          echo oy9:showMacroty8:loopCosti25y10:includeAllfg > %USERPROFILE%\settings.cocoa
+          type %USERPROFILE%\settings.cocoa
+        shell: cmd
+      
+      - name: Create Version Tag
+        run: echo "${{github.run_id}}" > VERSION
+      
+      - name: Compile
+        run: haxelib run lime build windows -32 -D 32bits --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
+        continue-on-error: true
+      
+      - name: Publish Artifact
+        uses: actions/upload-artifact@v4.3.4
+        with:
+          name: windowsBuild32
+          path: export/release/windows/bin/*
+  
+  # └── Windows 64-bit (x64)
+  Windows-x64:
+    if: contains(github.event.head_commit.message, 'winx64') || contains(github.event.head_commit.message, 'win64') || contains(github.event.head_commit.message, 'winall') || contains(github.event.head_commit.message, 'win') || contains(github.event.head_commit.message, 'all')
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4.1.7
+
+      - uses: krdlab/setup-haxe@master
+        with:
+          haxe-version: 4.3.4
+      
+      - name: Install Haxelib
+        run: |
+          haxelib setup C:/haxelib
+          haxelib install hxcpp > $null
+          .\setup\windows-lib.bat
+        shell: cmd
+      
+      - name: Skip SScript setup mode
+        run: |
+          echo oy9:showMacroty8:loopCosti25y10:includeAllfg > %USERPROFILE%\settings.cocoa
+          type %USERPROFILE%\settings.cocoa
+        shell: cmd
+      
+      - name: Create Version Tag
+        run: echo "${{github.run_id}}" > VERSION
+      
+      - name: Compile
+        run: haxelib run lime build windows -32 -D 32bits --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
+        continue-on-error: true
+      
+      - name: Publish Artifact
+        uses: actions/upload-artifact@v4.3.4
+        with:
+          name: windowsBuild64
+          path: export/release/windows/bin/*
+
+  # ╔═══════════════════════════════════════════════════════════════════╗
+  # ║                          🍎 MAC BUILDS                            ║
+  # ╚═══════════════════════════════════════════════════════════════════╝
+  
+  # ├── Mac Intel (x64)
+  Mac-Intel:
+    if: contains(github.event.head_commit.message, 'macin') || contains(github.event.head_commit.message, 'macintel') || contains(github.event.head_commit.message, 'macall') || contains(github.event.head_commit.message, 'mac') || contains(github.event.head_commit.message, 'all')
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4.1.7
+
+      - uses: krdlab/setup-haxe@master
+        with:
+          haxe-version: 4.3.4
+      
+      - name: Install Haxelib
+        run: |
+          haxelib setup ~/haxelib
+          chmod +x ./setup/unish-lib.sh
+          sh ./setup/unish-lib.sh
+      
+      - name: Skip SScript setup mode
+        run: |
+          echo -n 'oy9:showMacroty8:loopCosti25y10:includeAllfg' > ~/settings.cocoa
+          cat ~/settings.cocoa
+      
+      - name: Create Version Tag
+        run: echo "${{github.run_id}}" > VERSION
+      
+      - name: Compile
+        run: haxelib run lime build mac -64 --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
+      
+      - name: Publish Artifact
+        uses: actions/upload-artifact@v4.3.4
+        with:
+          name: macBuildIntel
+          path: export/release/macos/bin/*
+
+  # └── Mac ARM (Apple Silicon)
+  Mac-ARM:
+    if: contains(github.event.head_commit.message, 'macar') || contains(github.event.head_commit.message, 'macarm') || contains(github.event.head_commit.message, 'macall') || contains(github.event.head_commit.message, 'mac') || contains(github.event.head_commit.message, 'all')
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4.1.7
+
+      - uses: krdlab/setup-haxe@master
+        with:
+          haxe-version: 4.3.4
+      
+      - name: Install Haxelib
+        run: |
+          haxelib setup ~/haxelib
+          chmod +x ./setup/unish-lib.sh
+          sh ./setup/unish-lib.sh
+      
+      - name: Skip SScript setup mode
+        run: |
+          echo -n 'oy9:showMacroty8:loopCosti25y10:includeAllfg' > ~/settings.cocoa
+          cat ~/settings.cocoa
+      
+      - name: Create Version Tag
+        run: echo "${{github.run_id}}" > VERSION
+      
+      - name: Compile
+        run: haxelib run lime build linux -64bits --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
+      
+      - name: Publish Artifact
+        uses: actions/upload-artifact@v4.3.4
+        with:
+          name: macBuildARM
+          path: export/release/macos/bin/*
+
+  # ╔═══════════════════════════════════════════════════════════════════╗
+  # ║                    🐧📱 LINUX & MOBILE BUILDS                     ║
+  # ╚═══════════════════════════════════════════════════════════════════╝
+  
+  # ├── Linux 64-bit
   Linux-x64:
-    if: contains(github.event.head_commit.message, 'linx')
+    if: contains(github.event.head_commit.message, 'linx') || contains(github.event.head_commit.message, 'linux') || contains(github.event.head_commit.message, 'all')
     runs-on: ubuntu-latest
 
     steps:
@@ -47,149 +243,9 @@ jobs:
           name: linuxBuild64
           path: export/release/linux/bin/*
 
-  Windows-x86:
-    if: contains(github.event.head_commit.message, 'winx86')
-    runs-on: windows-latest
-
-    steps:
-      - uses: actions/checkout@v4.1.7
-
-      - uses: krdlab/setup-haxe@master
-        with:
-          haxe-version: 4.3.4
-      
-      - name: Install Haxelib
-        run: |
-          haxelib setup C:/haxelib
-          haxelib install hxcpp > $null
-          .\setup\windows-lib.bat
-        shell: cmd
-      
-      - name: Skip SScript setup mode
-        run: |
-          echo oy9:showMacroty8:loopCosti25y10:includeAllfg > %USERPROFILE%\settings.cocoa
-          type %USERPROFILE%\settings.cocoa
-        shell: cmd
-      
-      - name: Create Version Tag
-        run: echo "${{github.run_id}}" > VERSION
-      
-      - name: Compile
-        run: haxelib run lime build windows -32 -D 32bits --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
-        continue-on-error: true
-      
-      - name: Publish Artifact
-        uses: actions/upload-artifact@v4.3.4
-        with:
-          name: windowsBuild32
-          path: export/release/windows/bin/*
-
-  Windows-x64:
-    if: contains(github.event.head_commit.message, 'winx64')
-    runs-on: windows-latest
-
-    steps:
-      - uses: actions/checkout@v4.1.7
-
-      - uses: krdlab/setup-haxe@master
-        with:
-          haxe-version: 4.3.4
-      
-      - name: Install Haxelib
-        run: |
-          haxelib setup C:/haxelib
-          haxelib install hxcpp > $null
-          .\setup\windows-lib.bat
-        shell: cmd
-      
-      - name: Skip SScript setup mode
-        run: |
-          echo oy9:showMacroty8:loopCosti25y10:includeAllfg > %USERPROFILE%\settings.cocoa
-          type %USERPROFILE%\settings.cocoa
-        shell: cmd
-      
-      - name: Create Version Tag
-        run: echo "${{github.run_id}}" > VERSION
-      
-      - name: Compile
-        run: haxelib run lime build windows -64 -D 64bits --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
-      
-      - name: Publish Artifact
-        uses: actions/upload-artifact@v4.3.4
-        with:
-          name: windowsBuild64
-          path: export/release/windows/bin/*
-
-  Mac-Intel:
-    if: contains(github.event.head_commit.message, 'macin')
-    runs-on: macos-latest
-
-    steps:
-      - uses: actions/checkout@v4.1.7
-
-      - uses: krdlab/setup-haxe@master
-        with:
-          haxe-version: 4.3.4
-      
-      - name: Install Haxelib
-        run: |
-          haxelib setup ~/haxelib
-          chmod +x ./setup/unish-lib.sh
-          sh ./setup/unish-lib.sh
-      
-      - name: Skip SScript setup mode
-        run: |
-          echo -n 'oy9:showMacroty8:loopCosti25y10:includeAllfg' > ~/settings.cocoa
-          cat ~/settings.cocoa
-      
-      - name: Create Version Tag
-        run: echo "${{github.run_id}}" > VERSION
-      
-      - name: Compile
-        run: haxelib run lime build mac -64 --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
-      
-      - name: Publish Artifact
-        uses: actions/upload-artifact@v4.3.4
-        with:
-          name: macBuildIntel
-          path: export/release/macos/bin/*
-
-  Mac-ARM:
-    if: contains(github.event.head_commit.message, 'macar')
-    runs-on: macos-latest
-
-    steps:
-      - uses: actions/checkout@v4.1.7
-
-      - uses: krdlab/setup-haxe@master
-        with:
-          haxe-version: 4.3.4
-      
-      - name: Install Haxelib
-        run: |
-          haxelib setup ~/haxelib
-          chmod +x ./setup/unish-lib.sh
-          sh ./setup/unish-lib.sh
-      
-      - name: Skip SScript setup mode
-        run: |
-          echo -n 'oy9:showMacroty8:loopCosti25y10:includeAllfg' > ~/settings.cocoa
-          cat ~/settings.cocoa
-      
-      - name: Create Version Tag
-        run: echo "${{github.run_id}}" > VERSION
-      
-      - name: Compile
-        run: haxelib run lime build mac -arm64 --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
-      
-      - name: Publish Artifact
-        uses: actions/upload-artifact@v4.3.4
-        with:
-          name: macBuildARM
-          path: export/release/macos/bin/*
-
+  # ├── Android (APK)
   Android:
-    if: contains(github.event.head_commit.message, 'andr')
+    if: contains(github.event.head_commit.message, 'andr') || contains(github.event.head_commit.message, 'android') || contains(github.event.head_commit.message, 'all')
     runs-on: ubuntu-latest
 
     steps:
@@ -300,8 +356,9 @@ jobs:
           name: androidBuild
           path: android-artifact/*
 
+  # └── iOS (Unsigned)
   iOS:
-    if: contains(github.event.head_commit.message, 'ios')
+    if: contains(github.event.head_commit.message, 'ios') || contains(github.event.head_commit.message, 'all')
     runs-on: macos-15
 
     steps:

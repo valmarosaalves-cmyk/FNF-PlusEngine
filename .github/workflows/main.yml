@@ -44,14 +44,112 @@ on:
     branches: [ main, dev ]
   workflow_dispatch:
 
+env:
+  APP_VERSION: 4.0.0-${{ github.run_id }}
+
 jobs:
+  # ╔═══════════════════════════════════════════════════════════════════╗
+  # ║                       🧭 TARGET RESOLUTION                        ║
+  # ╚═══════════════════════════════════════════════════════════════════╝
+  # Decides what to build based on commit message (push) or PR title/body (pull_request)
+  targets:
+    runs-on: ubuntu-latest
+
+    outputs:
+      win32: ${{ steps.set.outputs.win32 }}
+      win64: ${{ steps.set.outputs.win64 }}
+      mac_intel: ${{ steps.set.outputs.mac_intel }}
+      mac_arm: ${{ steps.set.outputs.mac_arm }}
+      linux: ${{ steps.set.outputs.linux }}
+      android: ${{ steps.set.outputs.android }}
+      ios: ${{ steps.set.outputs.ios }}
+
+    steps:
+      - id: set
+        name: Resolve build targets
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          TRIGGER_TEXT="${{ github.event.head_commit.message }}"
+          if [ -z "$TRIGGER_TEXT" ]; then
+            TRIGGER_TEXT="${{ github.event.pull_request.title }}"
+          fi
+          if [ -z "$TRIGGER_TEXT" ]; then
+            TRIGGER_TEXT="${{ github.event.pull_request.body }}"
+          fi
+
+          text=$(echo "$TRIGGER_TEXT" | tr '[:upper:]' '[:lower:]')
+          echo "Trigger text: $text"
+
+          has() {
+            case "$text" in
+              *"$1"*) return 0 ;;
+              *) return 1 ;;
+            esac
+          }
+
+          do_all=false
+          if has "all"; then
+            do_all=true
+          fi
+
+          win32=false
+          win64=false
+          mac_intel=false
+          mac_arm=false
+          linux=false
+          android=false
+          ios=false
+
+          if $do_all || has "winall" || has "win" || has "winx86" || has "win32"; then
+            win32=true
+          fi
+          if $do_all || has "winall" || has "win" || has "winx64" || has "win64"; then
+            win64=true
+          fi
+          if $do_all || has "macall" || has "mac" || has "macin" || has "macintel"; then
+            mac_intel=true
+          fi
+          if $do_all || has "macall" || has "mac" || has "macar" || has "macarm"; then
+            mac_arm=true
+          fi
+          if $do_all || has "linx" || has "linux"; then
+            linux=true
+          fi
+          if $do_all || has "andr" || has "android"; then
+            android=true
+          fi
+          if $do_all || has "ios"; then
+            ios=true
+          fi
+
+          echo "win32=$win32" >> "$GITHUB_OUTPUT"
+          echo "win64=$win64" >> "$GITHUB_OUTPUT"
+          echo "mac_intel=$mac_intel" >> "$GITHUB_OUTPUT"
+          echo "mac_arm=$mac_arm" >> "$GITHUB_OUTPUT"
+          echo "linux=$linux" >> "$GITHUB_OUTPUT"
+          echo "android=$android" >> "$GITHUB_OUTPUT"
+          echo "ios=$ios" >> "$GITHUB_OUTPUT"
+
   # ╔═══════════════════════════════════════════════════════════════════╗
   # ║                        🪟 WINDOWS BUILDS                          ║
   # ╚═══════════════════════════════════════════════════════════════════╝
+
+  Windows-Setup:
+    if: needs.targets.outputs.win32 == 'true' || needs.targets.outputs.win64 == 'true'
+    needs: [targets]
+    runs-on: windows-latest
+
+    steps:
+      - name: Setup marker
+        shell: cmd
+        run: echo Windows setup complete
   
   # ├── Windows 32-bit (x86)
   Windows-x86:
-    if: contains(github.event.head_commit.message, 'winx86') || contains(github.event.head_commit.message, 'win32') || contains(github.event.head_commit.message, 'winall') || contains(github.event.head_commit.message, 'win') || contains(github.event.head_commit.message, 'all')
+    if: needs.targets.outputs.win32 == 'true'
+    needs: [targets, Windows-Setup]
     runs-on: windows-latest
 
     steps:
@@ -64,7 +162,7 @@ jobs:
       - name: Install Haxelib
         run: |
           haxelib setup C:/haxelib
-          haxelib install hxcpp > $null
+          haxelib install hxcpp --quiet > nul
           .\setup\windows-lib.bat
         shell: cmd
       
@@ -75,10 +173,10 @@ jobs:
         shell: cmd
       
       - name: Create Version Tag
-        run: echo "${{github.run_id}}" > VERSION
+        run: echo "${{ github.run_id }}" > VERSION
       
       - name: Compile
-        run: haxelib run lime build windows -32 -D 32bits --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
+        run: haxelib run lime build windows -32 -D 32bits --app-version="${{ env.APP_VERSION }}" -D officialBuild
         continue-on-error: true
       
       - name: Publish Artifact
@@ -89,7 +187,8 @@ jobs:
   
   # └── Windows 64-bit (x64)
   Windows-x64:
-    if: contains(github.event.head_commit.message, 'winx64') || contains(github.event.head_commit.message, 'win64') || contains(github.event.head_commit.message, 'winall') || contains(github.event.head_commit.message, 'win') || contains(github.event.head_commit.message, 'all')
+    if: needs.targets.outputs.win64 == 'true'
+    needs: [targets, Windows-Setup]
     runs-on: windows-latest
 
     steps:
@@ -102,7 +201,7 @@ jobs:
       - name: Install Haxelib
         run: |
           haxelib setup C:/haxelib
-          haxelib install hxcpp > $null
+          haxelib install hxcpp --quiet > nul
           .\setup\windows-lib.bat
         shell: cmd
       
@@ -113,10 +212,10 @@ jobs:
         shell: cmd
       
       - name: Create Version Tag
-        run: echo "${{github.run_id}}" > VERSION
+        run: echo "${{ github.run_id }}" > VERSION
       
       - name: Compile
-        run: haxelib run lime build windows -32 -D 32bits --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
+        run: haxelib run lime build windows -64 --app-version="${{ env.APP_VERSION }}" -D officialBuild
         continue-on-error: true
       
       - name: Publish Artifact
@@ -128,10 +227,20 @@ jobs:
   # ╔═══════════════════════════════════════════════════════════════════╗
   # ║                          🍎 MAC BUILDS                            ║
   # ╚═══════════════════════════════════════════════════════════════════╝
+
+  Mac-Setup:
+    if: needs.targets.outputs.mac_intel == 'true' || needs.targets.outputs.mac_arm == 'true' || needs.targets.outputs.ios == 'true'
+    needs: [targets]
+    runs-on: macos-latest
+
+    steps:
+      - name: Setup marker
+        run: echo "Mac setup complete"
   
   # ├── Mac Intel (x64)
   Mac-Intel:
-    if: contains(github.event.head_commit.message, 'macin') || contains(github.event.head_commit.message, 'macintel') || contains(github.event.head_commit.message, 'macall') || contains(github.event.head_commit.message, 'mac') || contains(github.event.head_commit.message, 'all')
+    if: needs.targets.outputs.mac_intel == 'true'
+    needs: [targets, Mac-Setup]
     runs-on: macos-latest
 
     steps:
@@ -153,10 +262,10 @@ jobs:
           cat ~/settings.cocoa
       
       - name: Create Version Tag
-        run: echo "${{github.run_id}}" > VERSION
+        run: echo "${{ github.run_id }}" > VERSION
       
       - name: Compile
-        run: haxelib run lime build mac -64 --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
+        run: haxelib run lime build mac -64 --app-version="${{ env.APP_VERSION }}" -D officialBuild
       
       - name: Publish Artifact
         uses: actions/upload-artifact@v4.3.4
@@ -166,7 +275,8 @@ jobs:
 
   # └── Mac ARM (Apple Silicon)
   Mac-ARM:
-    if: contains(github.event.head_commit.message, 'macar') || contains(github.event.head_commit.message, 'macarm') || contains(github.event.head_commit.message, 'macall') || contains(github.event.head_commit.message, 'mac') || contains(github.event.head_commit.message, 'all')
+    if: needs.targets.outputs.mac_arm == 'true'
+    needs: [targets, Mac-Setup]
     runs-on: macos-latest
 
     steps:
@@ -188,10 +298,10 @@ jobs:
           cat ~/settings.cocoa
       
       - name: Create Version Tag
-        run: echo "${{github.run_id}}" > VERSION
+        run: echo "${{ github.run_id }}" > VERSION
       
       - name: Compile
-        run: haxelib run lime build linux -64bits --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
+        run: haxelib run lime build mac -arm64 --app-version="${{ env.APP_VERSION }}" -D officialBuild -D HXCPP_ARM64
       
       - name: Publish Artifact
         uses: actions/upload-artifact@v4.3.4
@@ -202,10 +312,20 @@ jobs:
   # ╔═══════════════════════════════════════════════════════════════════╗
   # ║                    🐧📱 LINUX & MOBILE BUILDS                     ║
   # ╚═══════════════════════════════════════════════════════════════════╝
+
+  Linux-Setup:
+    if: needs.targets.outputs.linux == 'true' || needs.targets.outputs.android == 'true'
+    needs: [targets]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup marker
+        run: echo "Linux setup complete"
   
   # ├── Linux 64-bit
   Linux-x64:
-    if: contains(github.event.head_commit.message, 'linx') || contains(github.event.head_commit.message, 'linux') || contains(github.event.head_commit.message, 'all')
+    if: needs.targets.outputs.linux == 'true'
+    needs: [targets, Linux-Setup]
     runs-on: ubuntu-latest
 
     steps:
@@ -232,10 +352,10 @@ jobs:
           cat ~/settings.cocoa
       
       - name: Create Version Tag
-        run: echo "${{github.run_id}}" > VERSION
+        run: echo "${{ github.run_id }}" > VERSION
       
       - name: Compile
-        run: haxelib run lime build linux -64bits --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
+        run: haxelib run lime build linux -64bits --app-version="${{ env.APP_VERSION }}" -D officialBuild
       
       - name: Publish Artifact
         uses: actions/upload-artifact@v4.3.4
@@ -245,7 +365,8 @@ jobs:
 
   # ├── Android (APK)
   Android:
-    if: contains(github.event.head_commit.message, 'andr') || contains(github.event.head_commit.message, 'android') || contains(github.event.head_commit.message, 'all')
+    if: needs.targets.outputs.android == 'true'
+    needs: [targets, Linux-Setup]
     runs-on: ubuntu-latest
 
     steps:
@@ -274,10 +395,9 @@ jobs:
       - name: Install Haxelib
         run: |
           sudo apt-get update
-          sudo apt-get install libasound2-dev
-          sudo apt-get install libpulse-dev
-          sudo apt-get install libx11-dev libxext-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
-          sudo apt-get install libgl1-mesa-dev libglu1-mesa-dev
+          sudo apt-get install libasound2-dev libpulse-dev \
+            libx11-dev libxext-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev \
+            libgl1-mesa-dev libglu1-mesa-dev
           haxelib setup ~/haxelib
           haxelib install hxcpp > /dev/null --quiet
           chmod +x ./setup/unish-lib.sh
@@ -307,7 +427,7 @@ jobs:
           cat ~/settings.cocoa
       
       - name: Create Version Tag
-        run: echo "${{github.run_id}}" > VERSION
+        run: echo "${{ github.run_id }}" > VERSION
       
       - name: Clean old build artifacts only
         run: |
@@ -326,7 +446,7 @@ jobs:
       
       - name: Compile
         run: |
-          haxelib run lime build android --app-version="4.0.0-${{ github.run_id}}" -D officialBuild -D HXCPP_IGNORE_WARNINGS
+          haxelib run lime build android --app-version="${{ env.APP_VERSION }}" -D officialBuild -D HXCPP_IGNORE_WARNINGS
         continue-on-error: true
       
       - name: Find and move APK file to directory
@@ -358,7 +478,8 @@ jobs:
 
   # └── iOS (Unsigned)
   iOS:
-    if: contains(github.event.head_commit.message, 'ios') || contains(github.event.head_commit.message, 'all')
+    if: needs.targets.outputs.ios == 'true'
+    needs: [targets, Mac-Setup]
     runs-on: macos-15
 
     steps:
@@ -380,10 +501,10 @@ jobs:
           cat ~/settings.cocoa
       
       - name: Create Version Tag
-        run: echo "${{github.run_id}}" > VERSION
+        run: echo "${{ github.run_id }}" > VERSION
       
       - name: Compile
-        run: haxelib run lime build ios -nosign --app-version="4.0.0-${{ github.run_id}}" -D officialBuild
+        run: haxelib run lime build ios -nosign --app-version="${{ env.APP_VERSION }}" -D officialBuild
       
       - name: Publish Artifact
         uses: actions/upload-artifact@v4.3.4

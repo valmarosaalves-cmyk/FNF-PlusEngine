@@ -410,13 +410,39 @@ jobs:
       
       - name: Fix Lime StorageProvider icon bug
         run: |
-          LIME_PATH=$(haxelib path lime | head -n 1)
-          STORAGE_FILE="${LIME_PATH}templates/android/template/app/src/main/java/org/haxe/lime/StorageProvider.java"
-          if [ -f "$STORAGE_FILE" ]; then
+          LIME_MAIN_PATH=$(haxelib path lime | head -n 1)
+          echo "Lime main path: $LIME_MAIN_PATH"
+
+          POSSIBLE_PATHS=(
+            "$LIME_MAIN_PATH/templates/android/template/app/src/main/java/org/haxe/lime/StorageProvider.java"
+            "$LIME_MAIN_PATH/../../templates/android/template/app/src/main/java/org/haxe/lime/StorageProvider.java"
+            "$HOME/.haxelib/lime/8,3,2/templates/android/template/app/src/main/java/org/haxe/lime/StorageProvider.java"
+            "$HOME/.haxelib/lime/git/templates/android/template/app/src/main/java/org/haxe/lime/StorageProvider.java"
+            "/usr/local/lib/haxe/lib/lime/git/templates/android/template/app/src/main/java/org/haxe/lime/StorageProvider.java"
+          )
+          
+          STORAGE_FILE=""
+          for path in "${POSSIBLE_PATHS[@]}"; do
+            if [ -f "$path" ]; then
+              STORAGE_FILE="$path"
+              echo "Found StorageProvider at: $path"
+              break
+            fi
+          done
+          
+          if [ -n "$STORAGE_FILE" ]; then
+            cp "$STORAGE_FILE" "${STORAGE_FILE}.backup"
+
             sed -i 's/R\.drawable\.icon/0/g' "$STORAGE_FILE"
+            sed -i 's/getResources().getDrawable(R.drawable.icon)/null/g' "$STORAGE_FILE"
+            
             echo "Fixed StorageProvider.java icon references"
+            echo "Changes made:"
+            diff -u "${STORAGE_FILE}.backup" "$STORAGE_FILE" || true
           else
-            echo "StorageProvider.java not found at $STORAGE_FILE"
+            echo "Warning: StorageProvider.java not found. Listing Lime directory structure:"
+            find "$LIME_MAIN_PATH" -name "*.java" -type f | head -20
+            find "$HOME/.haxelib" -name "StorageProvider.java" -type f 2>/dev/null | head -10
           fi
       
       - name: Skip SScript setup mode

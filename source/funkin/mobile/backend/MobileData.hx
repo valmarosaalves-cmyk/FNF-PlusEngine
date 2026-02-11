@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 Mobile Porting Team
+ * Copyright (C) 2026 Mobile Porting Team
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -27,9 +27,15 @@ import haxe.Json;
 import haxe.io.Path;
 import flixel.util.FlxSave;
 
+#if sys
+import sys.FileSystem;
+import sys.io.File;
+#end
+import openfl.Assets;
+
 /**
  * ...
- * @author: Karim Akra
+ * @author: Karim Akra (rewor by Lenin)
  */
 class MobileData
 {
@@ -128,19 +134,37 @@ class MobileData
 	{
 		folder = folder.contains(':') ? folder.split(':')[1] : folder;
 
-		#if MODS_ALLOWED if (FileSystem.exists(folder)) #end
-		for (file in Paths.readDirectory(folder))
+		#if (MODS_ALLOWED && !mobile)
+		// On desktop, use FileSystem for mod support
+		if (FileSystem.exists(folder))
 		{
-			var fileWithNoLib:String = file.contains(':') ? file.split(':')[1] : file;
-			if (Path.extension(fileWithNoLib) == 'json')
+			for (file in Paths.readDirectory(folder))
 			{
-				file = Path.join([folder, Path.withoutDirectory(file)]);
-				var str = #if MODS_ALLOWED File.getContent(file) #else Assets.getText(file) #end;
+				var fileWithNoLib:String = file.contains(':') ? file.split(':')[1] : file;
+				if (Path.extension(fileWithNoLib) == 'json')
+				{
+					var fullPath:String = Path.join([folder, Path.withoutDirectory(file)]);
+					var str:String = File.getContent(fullPath);
+					var json:TouchButtonsData = cast Json.parse(str);
+					var mapKey:String = Path.withoutDirectory(Path.withoutExtension(fileWithNoLib));
+					map.set(mapKey, json);
+				}
+			}
+		}
+		#else
+		// On mobile or when mods are disabled, use Assets
+		for (file in Assets.list())
+		{
+			if (file.startsWith(folder) && Path.extension(file) == 'json')
+			{
+				var fileWithNoLib:String = file.contains(':') ? file.split(':')[1] : file;
+				var str:String = Assets.getText(file);
 				var json:TouchButtonsData = cast Json.parse(str);
 				var mapKey:String = Path.withoutDirectory(Path.withoutExtension(fileWithNoLib));
 				map.set(mapKey, json);
 			}
 		}
+		#end
 	}
 
 	static function set_mode(mode:Int = 3)

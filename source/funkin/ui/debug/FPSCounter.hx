@@ -105,8 +105,8 @@ class FPSCounter extends Sprite
 		Last GitHub commit info
 	**/
 	private var lastCommit:String = "Loading...";
-	private var commitTime:String = ""; // Hora del commit
-	private var commitDate:String = ""; // Fecha del commit
+	private var commitTime:String = ""; // Commit time
+	private var commitDate:String = ""; // Commit date
 	
 	/**
 		Script statistics from PlayState
@@ -213,7 +213,7 @@ class FPSCounter extends Sprite
 		prevTime = Lib.getTimer();
 		updateTime = prevTime + 500;
 		
-		// Inicializar medición de frame time
+		// Initialize frame time measurement
 		lastFrameTime = Timer.stamp();
 		frameTimesArray = [];
 
@@ -221,19 +221,19 @@ class FPSCounter extends Sprite
 		bgShape = new Shape();
 		addChildAt(bgShape, 0); // Add background behind text
 
-		// Agregar listener para F2
+		// Add listener for F2
 		if (FlxG.stage != null) {
 			FlxG.stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
 		}
 
-		// Obtener información del último commit
+		// Get latest commit info
 		getLastCommit();
 
-		// Obtener información de rendimiento
+		// Initialize runtime tracking
 		startTime = haxe.Timer.stamp();
 		lastCacheUpdateTime = startTime;
 		
-		// Inicializar cache mínimo
+		// Initialize minimal cache
 		cachedCurrentState = "Unknown";
 	}
 
@@ -313,14 +313,15 @@ class FPSCounter extends Sprite
 				displayText += '\nAvg: ' + formatFloat(avgFrameTimeMs, 1) + ' ms';
 				displayText += '\nGC Memory: ' + currentMemoryStr;
 				displayText += '\nPeak: ' + peakMemoryStr;
-				#if windows
-				displayText += '\nTask Memory: ' + flixel.util.FlxStringUtil.formatBytes(taskMemory);
-				#end
+				if (funkin.util.MemoryUtil.supportsTaskMem())
+				{
+					displayText += '\nTask Memory: ' + flixel.util.FlxStringUtil.formatBytes(taskMemory);
+				}
 				displayText += '\n\n' + os.substring(1);
 				displayText += '\nCommit: ' + lastCommit;
 			
 			case 3:
-				// Modo debug extendido - optimizado para mejor rendimiento
+				// Extended debug mode - optimized for better performance
 				var currentTime = Timer.stamp();
 			
 				// Update static text only every textUpdateInterval seconds
@@ -364,10 +365,11 @@ class FPSCounter extends Sprite
 				displayText += '\nGC Memory: ' + currentMemoryStr;
 				displayText += '\nPeak: ' + peakMemoryStr;
 				
-				// Add Windows-specific Task Memory (formatted automatically)
-				#if windows
-				displayText += '\nTask Memory: ' + flixel.util.FlxStringUtil.formatBytes(taskMemory);
-				#end
+				// Add Task Memory if supported on this platform
+				if (funkin.util.MemoryUtil.supportsTaskMem())
+				{
+					displayText += '\nTask Memory: ' + flixel.util.FlxStringUtil.formatBytes(taskMemory);
+				}
 				
 				displayText += '\n\n' + cachedStaticText;
 				
@@ -397,18 +399,18 @@ class FPSCounter extends Sprite
 	var deltaTimeout:Float = 0.0;
 	private override function __enterFrame(deltaTime:Float):Void
 	{
-		// Calcular frame time (delay)
+		// Compute frame time (delay)
 		var currentFrameTime = Timer.stamp();
-		frameTimeMs = (currentFrameTime - lastFrameTime) * 1000.0; // Convertir a milisegundos
+		frameTimeMs = (currentFrameTime - lastFrameTime) * 1000.0; // Convert to milliseconds
 		lastFrameTime = currentFrameTime;
 		
-		// Mantener un promedio móvil de los últimos 10 frames
+		// Keep a moving average for the last 10 frames
 		frameTimesArray.push(frameTimeMs);
 		if (frameTimesArray.length > 10) {
 			frameTimesArray.shift();
 		}
 		
-		// Calcular promedio
+		// Compute average
 		var sum:Float = 0.0;
 		for (time in frameTimesArray) {
 			sum += time;

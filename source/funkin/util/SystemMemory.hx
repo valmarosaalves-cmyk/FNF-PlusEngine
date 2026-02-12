@@ -91,7 +91,11 @@ class SystemMemory
      */
     private static function getAndroidTotalRAM():Int
     {
-        // Android is Linux-based, read from /proc/meminfo
+        // Prefer Lime helper (robust meminfo parsing)
+        var mb = lime.system.Memory.getTotalRAMMB();
+        if (mb > 0) return mb;
+
+        // Fallback
         return readLinuxMemInfo(true);
     }
 
@@ -100,6 +104,8 @@ class SystemMemory
      */
     private static function getAndroidAvailableRAM():Int
     {
+        var mb = lime.system.Memory.getAvailableRAMMB();
+        if (mb > 0) return mb;
         return readLinuxMemInfo(false);
     }
     #end
@@ -162,48 +168,27 @@ class SystemMemory
         try
         {
             var content = sys.io.File.getContent("/proc/meminfo");
+            if (content == null || content.length == 0) return 0;
             var lines = content.split("\n");
             
             if (total)
             {
-                // Get total RAM (always available)
-                for (line in lines)
+                // Prefer regex over strict prefix matching (some builds may include leading spaces)
+                var reTotal:EReg = ~/^\s*MemTotal:\s+(\d+)\s+kB/im;
+                if (reTotal.match(content))
                 {
-                    if (line.indexOf("MemTotal:") == 0)
-                    {
-                        // Format: MemTotal:       16384000 kB
-                        var parts = line.split(":");
-                        if (parts.length >= 2)
-                        {
-                            var valueStr = StringTools.trim(parts[1]).split(" ")[0];
-                            var kb = Std.parseInt(valueStr);
-                            if (kb != null)
-                            {
-                                // Convert KB to MB
-                                return Std.int(kb / 1024);
-                            }
-                        }
-                    }
+                    var kb = Std.parseInt(reTotal.matched(1));
+                    if (kb != null && kb > 0) return Std.int(kb / 1024);
                 }
             }
             else
             {
-                // Get available RAM - try MemAvailable first (Linux 3.14+)
-                for (line in lines)
+                // Get available RAM - try MemAvailable first
+                var reAvail:EReg = ~/^\s*MemAvailable:\s+(\d+)\s+kB/im;
+                if (reAvail.match(content))
                 {
-                    if (line.indexOf("MemAvailable:") == 0)
-                    {
-                        var parts = line.split(":");
-                        if (parts.length >= 2)
-                        {
-                            var valueStr = StringTools.trim(parts[1]).split(" ")[0];
-                            var kb = Std.parseInt(valueStr);
-                            if (kb != null)
-                            {
-                                return Std.int(kb / 1024);
-                            }
-                        }
-                    }
+                    var kb = Std.parseInt(reAvail.matched(1));
+                    if (kb != null && kb > 0) return Std.int(kb / 1024);
                 }
                 
                 // Fallback for older Android/Linux: MemFree + Buffers + Cached

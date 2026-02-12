@@ -33,7 +33,46 @@ class MemoryUtil
 		return lenin.slushithings.windows.WindowsCPP.getProcessMemoryUsage();
 		#elseif ((ios || macos) && cpp)
 		return funkin.external.apple.MemoryUtil.getCurrentProcessRss();
-		#elseif (linux || android)
+		#elseif android
+		// Prefer Android PSS (kB) via JNI, closer to what Android reports as "app memory".
+		var pssBytes = funkin.util.AndroidMemory.getPssBytes();
+		if (pssBytes > 0) return pssBytes;
+
+		// Fallback: RSS from /proc (not PSS)
+		try
+		{
+			#if cpp
+			final input:sys.io.FileInput = sys.io.File.read('/proc/${cpp.NativeSys.sys_get_pid()}/status', false);
+			#else
+			final input:sys.io.FileInput = sys.io.File.read('/proc/self/status', false);
+			#end
+
+			final regex:EReg = ~/^VmRSS:\s+(\d+)\s+kB/m;
+			var line:String;
+			do
+			{
+				if (input.eof())
+				{
+					input.close();
+					return 0.0;
+				}
+				line = input.readLine();
+			}
+			while (!regex.match(line));
+
+			input.close();
+
+			final kb:Float = Std.parseFloat(regex.matched(1));
+			if (!Math.isNaN(kb))
+			{
+				return kb * 1024.0;
+			}
+		}
+		catch (e:Dynamic)
+		{
+			trace('Error reading memory from /proc/status: ${e}');
+		}
+		#elseif linux
 		try
 		{
 			#if cpp

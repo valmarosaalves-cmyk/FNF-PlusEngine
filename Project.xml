@@ -256,7 +256,7 @@
 			<application android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" />
 		</config:android>
 		<!-- Copy our custom launcher icon resources into the generated Gradle project -->
-		<assets path="templates/android/res" rename="app/src/main/res" type="template" />
+		<assets path="art/icons/android/res" rename="app/src/main/res" type="template" />
 		
 		<!-- Android Permissions -->
 		<config:android permission="android.permission.INTERNET" />

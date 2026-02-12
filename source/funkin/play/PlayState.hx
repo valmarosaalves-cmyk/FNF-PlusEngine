@@ -901,16 +901,16 @@ class PlayState extends MusicBeatState
 		var bf_animatedIcon:Bool = (boyfriend != null && boyfriend.animatedIcon == true) || (SONG.isAnimated == true);
 		var dad_animatedIcon:Bool = (dad != null && dad.animatedIcon == true) || (SONG.isAnimated == true);
 		
-		iconP1 = new HealthIcon(boyfriend != null ? boyfriend.healthIcon : 'bf', true);
-		if(bf_animatedIcon) iconP1.changeIcon(iconP1.getCharacter(), true, true);
+		iconP1 = new HealthIcon(boyfriend != null ? boyfriend.healthIcon : 'bf', true, false);
+		if(bf_animatedIcon) iconP1.changeIcon(iconP1.getCharacter(), false, true);
 		iconP1.y = healthBar.y - 75;
 		// Ocultar iconos en NotITG
 		iconP1.visible = !ClientPrefs.data.hideHud && !isNotITG;
 		iconP1.alpha = ClientPrefs.data.healthBarAlpha;
 		if (!isNotITG) uiGroup.add(iconP1);
 
-		iconP2 = new HealthIcon(dad != null ? dad.healthIcon : 'dad', false);
-		if(dad_animatedIcon) iconP2.changeIcon(iconP2.getCharacter(), true, true);
+		iconP2 = new HealthIcon(dad != null ? dad.healthIcon : 'dad', false, false);
+		if(dad_animatedIcon) iconP2.changeIcon(iconP2.getCharacter(), false, true);
 		iconP2.y = healthBar.y - 75;
 		iconP2.visible = !ClientPrefs.data.hideHud && !isNotITG;
 		iconP2.alpha = ClientPrefs.data.healthBarAlpha;
@@ -918,8 +918,8 @@ class PlayState extends MusicBeatState
 
 		// Initialize GF icon (hidden by default)
 		var gf_animatedIcon:Bool = (gf != null && gf.animatedIcon == true) || (SONG.isAnimated == true);
-		iconGF = new HealthIcon(gf != null ? gf.healthIcon : 'gf', true);
-		if(gf_animatedIcon) iconGF.changeIcon(iconGF.getCharacter(), true, true);
+		iconGF = new HealthIcon(gf != null ? gf.healthIcon : 'gf', true, false);
+		if(gf_animatedIcon) iconGF.changeIcon(iconGF.getCharacter(), false, true);
 		iconGF.y = healthBar.y - 75;
 		iconGF.visible = false; // Hidden by default until event is triggered
 		iconGF.alpha = ClientPrefs.data.healthBarAlpha;

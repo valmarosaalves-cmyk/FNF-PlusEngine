@@ -241,10 +241,7 @@ class FreeplayState extends MusicBeatState
 				characterName = songs[i].isStepMania ? "stepmania" : "bf";
 			}
 			
-			var icon:HealthIcon = new HealthIcon(characterName);
-			icon.scale.set(0.8, 0.8);
-			
-			// too laggy with a lot of songs, so i had to recode the logic for it
+		var icon:HealthIcon = new HealthIcon(characterName, false, false);
 			songText.visible = songText.active = false;
 			icon.visible = icon.active = false;
 		

@@ -362,7 +362,7 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 			if(columns > 0) gridStripes.push(columns);
 			columns += GRID_COLUMNS_PER_PLAYER;
 
-			var icon:HealthIcon = new HealthIcon();
+			var icon:HealthIcon = new HealthIcon('face', false, false);
 			icon.autoAdjustOffset = false;
 			icon.y = iconY;
 			icon.alpha = 0.6;

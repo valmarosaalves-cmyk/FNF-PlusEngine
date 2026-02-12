@@ -584,11 +584,7 @@ class WeekEditorFreeplayState extends MusicBeatState implements PsychUIEventHand
 			songText.scaleX = Math.min(1, 980 / songText.width);
 			songText.snapToPosition();
 
-			var icon:HealthIcon = new HealthIcon(weekFile.songs[i][1]);
-			icon.sprTracker = songText;
-
-			// using a FlxGroup is too much fuss!
-			iconArray.push(icon);
+		var icon:HealthIcon = new HealthIcon(weekFile.songs[i][1], false, false);
 			add(icon);
 
 			// songText.x += 40;

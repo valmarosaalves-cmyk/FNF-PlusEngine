@@ -8,7 +8,7 @@ class LegacySettingsSubState extends BaseOptionsMenu
 		rpcTitle = 'Legacy Settings Menu';
 
 		// SScript Compatibility Option
-		var option:Option = new Option('Use SScript for Psych 0.7.3 Mods',
+		var option:Option = new Option('Use SScript',
 			"If checked, uses SScript instead of hscript-iris for running Haxe code.\nEnable this if you're using mods from Psych Engine 0.6.x - 0.7.3\nthat have compatibility issues with hscript-iris. I can't guarantee that all Psych 0.7.3 mods will run well, sorry.",
 			'useSScriptCompat',
 			BOOL);

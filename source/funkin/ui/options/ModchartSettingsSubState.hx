@@ -23,7 +23,7 @@ class ModchartSettingsSubState extends BaseOptionsMenu
 		addOption(option);
 
 		// Z Scale option
-		var option:Option = new Option('Z-Axis Depth Scale',
+		var option:Option = new Option('Z Axis Depth Scale',
 			'Controls the perceived depth of 3D effects.\nHigher = More dramatic depth\nLower = Flatter appearance',
 			'zScale',
 			FLOAT);
@@ -112,7 +112,7 @@ class ModchartSettingsSubState extends BaseOptionsMenu
 		// ========== PERFORMANCE & MODIFIERS ==========
 		
 		// Column Specific Modifiers option
-		var option:Option = new Option('Column-Specific Modifiers',
+		var option:Option = new Option('Column Specific Modifiers',
 			'Allows modifiers to affect individual note lanes.\nDisabling improves performance by reducing per-lane calculations.',
 			'columnSpecificModifiers',
 			BOOL);

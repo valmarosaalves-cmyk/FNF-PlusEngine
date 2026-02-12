@@ -21,6 +21,7 @@ import funkin.ui.title.TitleState;
 	#end
 	public var hitboxType:String = "Gradient";
 	public var popUpRating:Bool = true;
+	public var hideVersionText:Bool = true;
 	public var gameOverVibration:Bool = false;
 	public var fpsRework:Bool = false;
 	public var fullscreenMode:String = 'Borderless'; // 'Borderless', 'Exclusive'

@@ -37,6 +37,12 @@ class GameplaySettingsSubState extends BaseOptionsMenu
 			'badShitBreakCombo',
 			BOOL);
 		addOption(option);
+
+		var option:Option = new Option('Hide Version Text',
+		    "If checked, the version text will be hided.",
+			'hideVersionText',
+			BOOL);
+		addOption(option);
 		
 		var option:Option = new Option('Auto Pause',
 			"If checked, the game automatically pauses if the screen isn't on focus.",

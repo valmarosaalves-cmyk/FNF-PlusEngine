@@ -25,7 +25,7 @@ package funkin.mobile.options;
 import funkin.ui.options.BaseOptionsMenu;
 import funkin.ui.options.Option;
 
-class MobileOptionsSubState extends BaseOptionsMenu
+class MobileSettingsSubState extends BaseOptionsMenu
 {
 	#if android
 	var storageTypes:Array<String> = ["EXTERNAL_DATA", "EXTERNAL_OBB", "EXTERNAL_MEDIA", "EXTERNAL", "EXTERNAL_GLOBAL"];
@@ -45,8 +45,8 @@ class MobileOptionsSubState extends BaseOptionsMenu
 	{
 		#if android if (!externalPaths.contains('\n'))
 			storageTypes = storageTypes.concat(externalPaths); #end
-		title = Language.getPhrase('mobile_options_menu', 'Mobile Options');
-		rpcTitle = 'Mobile Options Menu'; // for Discord Rich Presence, fuck it
+		title = Language.getPhrase('mobile_menu', 'Mobile Settings');
+		rpcTitle = 'Mobile Settings Menu'; // for Discord Rich Presence
 		#if android
 		initialStorageType = ClientPrefs.data.storageType;
 		pendingStorageType = initialStorageType;
@@ -127,7 +127,7 @@ class MobileOptionsSubState extends BaseOptionsMenu
 	{
 		if (storageTypeChanged)
 		{
-			trace('[MobileOptions] Storage type changing from ' + initialStorageType + ' to ' + pendingStorageType);
+			trace('[MobileSettings] Storage type changing from ' + initialStorageType + ' to ' + pendingStorageType);
 			
 			// Update ClientPrefs.data FIRST
 			ClientPrefs.data.storageType = pendingStorageType;
@@ -135,14 +135,14 @@ class MobileOptionsSubState extends BaseOptionsMenu
 			// Now save settings (this will copy data.storageType to FlxG.save.data.storageType)
 			ClientPrefs.saveSettings();
 			
-			trace('[MobileOptions] Verifying save: ClientPrefs.data.storageType = ' + ClientPrefs.data.storageType);
-			trace('[MobileOptions] Verifying save: FlxG.save.data.storageType = ' + FlxG.save.data.storageType);
+			trace('[MobileSettings] Verifying save: ClientPrefs.data.storageType = ' + ClientPrefs.data.storageType);
+			trace('[MobileSettings] Verifying save: FlxG.save.data.storageType = ' + FlxG.save.data.storageType);
 			
 			var oldPath = StorageUtil.getStoragePathForType(initialStorageType);
 			var newPath = StorageUtil.getStoragePathForType(pendingStorageType);
 
-			trace('[MobileOptions] Old path: ' + oldPath);
-			trace('[MobileOptions] New path: ' + newPath);
+			trace('[MobileSettings] Old path: ' + oldPath);
+			trace('[MobileSettings] New path: ' + newPath);
 
 			// Copy data and delete old directory to free up space
 			StorageUtil.migrateStorage(initialStorageType, pendingStorageType);

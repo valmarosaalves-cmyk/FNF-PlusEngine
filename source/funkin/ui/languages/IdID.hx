@@ -157,22 +157,21 @@ class IdID
 
         // Options
         "options_note_colors" => "Warna Note",
-        "options_controls" => "Controls",
+        "options_controls" => "Kontrol",
         "options_adjust_delay_and_combo" => "Sesuaikan Delay dan Kombo",
         "options_gameplay" => "Gameplay",
         "options_legacy" => "Warisan",
-        "options_visuals" => "Visuals",
+        "options_visuals" => "Visual",
         "options_graphics" => "Grafik",
         "options_modchart" => "Modchart",
         "options_language" => "Bahasa",
-        "options_mobile_options" => "Pengaturan Mobile",
         "graphics_menu" => "Pengaturan Grafik",
-        "visuals_menu" => "Pengaturan Visuals",
+        "visuals_menu" => "Pengaturan Visual",
         "gameplay_menu" => "Pengaturan Gameplay",
         "legacy_menu" => "Pengaturan Warisan",
         "modchart_menu" => "Pengaturan Modchart",
         "language_menu" => "Pengaturan Bahasa",
-        "mobile_options_menu" => "Pengaturan Mobile",
+        "mobile_menu" => "Pengaturan Mobile",
         "mobile_controls_tip" => "Tekan {1} untuk pergi ke Menu Kontrol Ponsel",
 
         // Note Colors Menu
@@ -231,12 +230,6 @@ class IdID
         "setting_no_drop_penalty" => "Tidak Ada Denda",
 
         // Graphics Settings
-        "setting_auto_optimization_tier" => "Tingkat Optimasi Otomatis",
-        "setting_auto_optimization_tier-auto" => "Otomatis (Disarankan)",
-        "setting_auto_optimization_tier-force_low_end" => "Paksa Kelas-Rendah",
-        "setting_auto_optimization_tier-force_mid_range" => "Paksa Kelas-Menengah",
-        "setting_auto_optimization_tier-force_high_end" => "Paksa Kelas-Tinggi",
-        "description_auto_optimization_tier" => "Terdeteksi: $tierName\n\nAnda dapat memaksa secara manual tier di bawahnya untuk menggantikan.\nKelas-Bawah = Kinerja maksimum\nKelas-Tinggi = Kualitas maksimum",
         "setting_low_quality" => "Kualitas Rendah",
         "description_low_quality" => "Jika dicentang, menonaktifkan beberapa detail latar belakang,\nmengurangi waktu pemuatan, dan meningkatkan kinerja.",
         "setting_anti-aliasing" => "Anti-Aliasing",
@@ -301,7 +294,7 @@ class IdID
         "setting_key_viewer_color-white" => "Putih",
         "setting_key_viewer_color-black" => "Hitam",
         "description_key_viewer_color" => "Pilih warna untuk tombol key viewer.",
-        "setting_camera_zooms" => "Kamera Zooms",
+        "setting_camera_zooms" => "Kamera Zoom",
         "description_camera_zooms" => "Jika tidak diaktifkan, kamera tidak akan memperbesar pada saat beat hit.",
         "setting_score_text_grow_on_hit" => "Teks Skor Bertambah Saat Dihit",
         "description_score_text_grow_on_hit" => "Jika tidak dicentang, menonaktifkan teks skor yang bertambah\nsetiap kali Anda menekan sebuah note.",
@@ -349,6 +342,8 @@ class IdID
         "description_ghost_tapping" => "Jika dicentang, Anda tidak akan mendapatkan misses saat menekan tombol\nsaat tidak ada note yang dapat dimainkan.",
         "setting_bad_and_shit_break_combo" => "Buruk dan Jancok Memecah Kombo",
         "description_bad_and_shit_break_combo" => "Jika dicentang, kombo akan pecah saat mendapatkan Buruk atau Jancok.",
+        "setting_hide_version_text" => "Sembunyikan Versi Teks",
+        "description_hide_version_text" => "Jika dicentang, versi teks akan disembunyikan.",
         "setting_auto_pause" => "Jeda Otomatis",
         "description_auto_pause" => "Jika dicentang, game akan otomatis jeda jika layar tidak berada dalam fokus.",
         "setting_pop_up_score" => "Pop-up Kombo",
@@ -364,8 +359,9 @@ class IdID
         "description_hitsound_in_what_way" => "Jika dicentang, note dan keys akan menghasilkan suara saat ditekan!, jika tidak, hanya saat notes ditekan!",
         "setting_hitsound_volume" => "Hitsound Volume",
         "description_hitsound_volume" => "Notes lucu berbunyi \"Tick!\" saat Anda hit.",
-        "setting_hitsound-none" => "Tidak ada",
-        "description_hitsound" => "Note lucu mengeluarkan suara \"Suara Apapun\" saat Anda hit.",
+        "setting_hitsound_sound-none" => "Tidak ada",
+        "setting_hitsound_sound" => "Suara Hitsound",
+        "description_hitsound_sound" => "Note lucu mengeluarkan suara \"Suara Apapun\" saat Anda hit.",
         "setting_rating_offset" => "Penyesuaian Rating",
         "description_rating_offset" => "Mengubah seberapa terlambat/awal Anda harus menekan untuk mendapatkan \"Sick!\"\nNilai yang lebih tinggi berarti Anda harus menekan lebih terlambat.",
         "setting_flawless_hit_window" => "Mulus! Jendela Hit",
@@ -389,8 +385,8 @@ class IdID
         "description_heavy_charts_mode" => "Jika dicentang, mengaktifkan sistem Charts Berat untuk kinerja yang lebih baik\ndengan chart yang memiliki banyak note (1000+).",
 
         // Legacy Settings
-        "setting_use_sscript_for_psych_0_7_3_mods" => "Gunakan SScript untuk Mod Psych 0.7.3",
-        "description_use_sscript_for_psych_0_7_3_mods" => "Jika dicentang, gunakan SScript alih-alih hscript-iris untuk menjalankan kode Haxe\nAktifkan ini jika Anda menggunakan mod dari Psych Engine 0.6.x-0.7.3 yang memiliki masalah kompatibilitas dengan hscript-iris\nSaya tidak dapat menjamin bahwa semua mod Psych 0.7.3 akan berjalan dengan baik, maaf.",
+        "setting_use_sscript" => "Gunakan SScript",
+        "description_use_sscript" => "Jika dicentang, gunakan SScript alih-alih hscript-iris untuk menjalankan kode Haxe\nAktifkan ini jika Anda menggunakan mod dari Psych Engine 0.6.x-0.7.3 yang memiliki masalah kompatibilitas dengan hscript-iris\nSaya tidak dapat menjamin bahwa semua mod Psych 0.7.3 akan berjalan dengan baik, maaf.",
         "setting_legacy_memory_management" => "Manajemen Memori Lama",
         "description_legacy_memory_management" => "Jika dicentang, menggunakan manajemen memori gaya Psych 0.7.3.\nMenonaktifkan pembuangan tekstur GPU dan menggunakan pembersihan yang lebih sederhana.\nAktifkan jika mod lama mengalami kerusakan terkait memori.",
         "setting_legacy_filesystem_access" => "Akses FileSystem Lawas",
@@ -405,8 +401,8 @@ class IdID
         "description_enable_3d_cameras" => "Jika dicentang: Mengaktifkan transformasi kamera 3D dan efek kedalaman.\nJika tidak dicentang: Menonaktifkan fitur 3D untuk kinerja yang lebih baik.",
         "setting_optimize_hold_rendering" => "Optimalkan Rendering Hold",
         "description_optimize_hold_rendering" => "Mengurangi perhitungan hold note untuk kinerja yang ~2x lebih baik.\nTIDAK disarankan untuk digunakan dengan modchart yang kompleks (dapat menyebabkan glitch visual).",
-        "setting_z-axis_depth_scale" => "Skala Kedalaman Sumbu Z",
-        "description_z-axis__depth_scale" => "Mengontrol kedalaman yang dirasakan dari efek 3D.\nLebih tinggi = Kedalaman yang lebih dramatis\nLebih rendah = Tampilan yang lebih datar",
+        "setting_z_axis_depth_scale" => "Skala Kedalaman Sumbu Z",
+        "description_z_axis__depth_scale" => "Mengontrol kedalaman yang dirasakan dari efek 3D.\nLebih tinggi = Kedalaman yang lebih dramatis\nLebih rendah = Tampilan yang lebih datar",
         "setting_render_arrow_paths" => "Render Jalur Panah",
         "description_render_arrow_paths" => "Jika dicentang: Menampilkan garis lintasan panah.\nPERINGATAN: Dapat mempengaruhi kinerja secara signifikan.",
         "setting_styled_arrow_paths" => "Jalur Panah Berdesain",
@@ -434,9 +430,7 @@ class IdID
         "create_directory_error" => "Silakan buat direktori ke\n{1}\nTekan OK untuk menutup game",
         "files_missing" => "Sepertinya Anda memiliki beberapa file yang hilang yang diperlukan untuk menjalankan game\nTekan OK untuk memulai proses penyalinan",
 
-        // Mobile Options
-        "setting_device_performance_info" => "Informasi Kinerja Perangkat",
-        "description_device_performance_info" => "Terdeteksi: $tierName | GPU: $gpuName\n\nPengaturan kualitas telah dikonfigurasi secara otomatis.\nAnda dapat mengonfigurasi ulang secara manual di Pengaturan Grafik.",
+        // Mobile Settings
         "setting_extra_controls" => "Kontrol Ekstra",
         "setting_extra_controls-none" => "TIDAK ADA",
         "setting_extra_controls-single" => "TUNGGAL",
@@ -558,8 +552,8 @@ class IdID
         "images/menudifficulties/easy" => "images/id-ID/menudifficulties/easy",
         "images/menudifficulties/normal" => "images/id-ID/menudifficulties/normal", 
         "images/menudifficulties/hard" => "images/id-ID/menudifficulties/hard",
-        "image/menudifficulties/erect" => "image/id-ID/menudifficulties/erect",
-        "image/menudifficulties/nightmare" => "image/id-ID/menudifficulties/nightmare",
+        "images/menudifficulties/erect" => "images/id-ID/menudifficulties/erect",
+        "images/menudifficulties/nightmare" => "images/id-ID/menudifficulties/nightmare",
 
         // Game UI
         "images/bad" => "images/id-ID/bad",

@@ -18,7 +18,7 @@ class OptionsState extends MusicBeatState
 		opts.push('Legacy');
 		#if MODCHARTS_NOTITG_ALLOWED opts.push('Modchart'); #end
 		#if TRANSLATIONS_ALLOWED opts.push('Language'); #end
-		#if mobile opts.push('Mobile Options'); #end
+		#if mobile opts.push('Mobile'); #end
 		return opts;
 	}
 	
@@ -53,8 +53,8 @@ class OptionsState extends MusicBeatState
 				openSubState(new funkin.ui.options.ModchartSettingsSubState());
 			case 'Adjust Delay and Combo':
 				MusicBeatState.switchState(new funkin.ui.options.NoteOffsetState());
-			case 'Mobile Options':
-				openSubState(new funkin.mobile.options.MobileOptionsSubState());
+			case 'Mobile':
+				openSubState(new funkin.mobile.options.MobileSettingsSubState());
 			case 'Language':
 				openSubState(new funkin.ui.options.LanguageSubState());
 		}

@@ -243,6 +243,9 @@ class MusicBeatState extends FlxState
 		}
 		#end
 		
+		// Call global script update
+		callOnGlobalScript('onUpdate', [elapsed]);
+		
 		stagesFunc(function(stage:BaseStage) {
 			stage.update(elapsed);
 		});

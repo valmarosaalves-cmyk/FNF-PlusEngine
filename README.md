@@ -1,5 +1,11 @@
 ![Logo Off](docs/img/PlusEngineLogo.png)
 
+<div align="center">
+
+**EN-US | [ES-LA](README.es-LA.md)**
+
+</div>
+
 [![Build](https://github.com/LeninAsto/FNF-PlusEngine/actions/workflows/main.yml/badge.svg)](https://github.com/LeninAsto/FNF-PlusEngine/actions/workflows/main.yml)
 [![VirusTotal Scan](https://github.com/LeninAsto/FNF-PlusEngine/actions/workflows/virustotal.yml/badge.svg)](https://github.com/LeninAsto/FNF-PlusEngine/actions/workflows/virustotal.yml)
 ![Security](https://img.shields.io/badge/security-scanned-brightgreen?logo=virustotal)
@@ -20,53 +26,17 @@ Engine based in Psych 1.0.4 with modcharts like NotITG and compatible with hxcod
 
 ## Contributors
 
-<table>
-  <tr>
-    <td align="center">
-      <a href="https://github.com/LeninAsto">
-        <img src="https://github.com/LeninAsto.png" width="100px;" alt="LeninAsto"/>
-        <br />
-        <sub><b>Lenin Asto</b></sub>
-      </a>
-      <br />
-      <sub>Main Developer</sub>
-    </td>
-    <td align="center">
-      <a href="https://github.com/sirthegamercoder">
-        <img src="https://github.com/sirthegamercoder.png" width="100px;" alt="Username2"/>
-        <br />
-        <sub><b>MTGC</b></sub>
-      </a>
-      <br />
-      <sub>Indonesian translation and other PRs</sub>
-    </td>
-  </tr>
-</table>
+<p align="center">
+  <a href="https://github.com/LeninAsto"><img src="https://github.com/LeninAsto.png" width="80px;" style="border-radius: 50%;" alt="LeninAsto"/></a>
+  <a href="https://github.com/sirthegamercoder"><img src="https://github.com/sirthegamercoder.png" width="80px;" style="border-radius: 50%;" alt="MTGC"/></a>
+</p>
 
 ## Special Thanks
 
-<table>
-  <tr>
-    <td align="center">
-      <a href="https://github.com/Slushi-GitHub">
-        <img src="https://github.com/Slushi-Github.png" width="100px;" alt="Slushi-GitHub"/>
-        <br />
-        <sub><b>Slushi GitHub</b></sub>
-      </a>
-      <br />
-      <sub>Creator of several used Slushi Engine codes</sub>
-    </td>
-    <td align="center">
-      <a href="https://www.facebook.com/hansuke.hotaroshi">
-        <img src="https://raw.githubusercontent.com/Psych-Plus-Team/FNF-PlusEngine/d98e506ac8d567d1731e4652bc120887aff4376c/assets/shared/images/credits/hansu.png" width="100px;" alt="Hansu"/>
-        <br />
-        <sub><b>Hansuke H</b></sub>
-      </a>
-      <br />
-      <sub>Vietnamese translation and alphabet sprite</sub>
-    </td>
-  </tr>
-</table>
+<p align="center">
+  <a href="https://github.com/Slushi-GitHub"><img src="https://github.com/Slushi-Github.png" width="80px;" style="border-radius: 50%;" alt="Slushi-GitHub"/></a>
+  <a href="https://www.facebook.com/hansuke.hotaroshi"><img src="https://raw.githubusercontent.com/Psych-Plus-Team/FNF-PlusEngine/d98e506ac8d567d1731e4652bc120887aff4376c/assets/shared/images/credits/hansu.png" width="80px;" style="border-radius: 50%;" alt="Hansuke H"/></a>
+</p>
 
 Contributions are welcome! If you have ideas, improvements, or fixes, feel free to fork the repo and open a pull request.
 

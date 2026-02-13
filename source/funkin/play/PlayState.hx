@@ -775,18 +775,17 @@ class PlayState extends MusicBeatState
 			#end
 			{
 				#if LUA_ALLOWED
+				if(file.toLowerCase() == 'globalscript.lua')
+					continue;
 				if(file.toLowerCase().endsWith('.lua'))
 					new FunkinLua(folder + file);
 				#end
 
 				#if HSCRIPT_ALLOWED
+				if(file.toLowerCase() == 'globalscript.hx')
+					continue;
 				if(file.toLowerCase().endsWith('.hx'))
 					initHScript(folder + file);
-				#end
-
-				#if PY_ALLOWED
-				if(file.toLowerCase().endsWith('.py'))
-					initPython(folder + file);
 				#end
 			}
 		#end
@@ -808,7 +807,6 @@ class PlayState extends MusicBeatState
 		// STAGE SCRIPTS
 		#if LUA_ALLOWED startLuasNamed('stages/' + curStage + '.lua'); #end
 		#if HSCRIPT_ALLOWED startHScriptsNamed('stages/' + curStage + '.hx'); #end
-		#if PY_ALLOWED startPythonsNamed('stages/' + curStage + '.py'); #end
 
 		// CHARACTER SCRIPTS
 		if(gf != null) startCharacterScripts(gf.curCharacter);
@@ -1024,13 +1022,6 @@ class PlayState extends MusicBeatState
 		for (event in eventsPushed)
 			startHScriptsNamed('custom_events/' + event + '.hx');
 		#end
-
-		#if PY_ALLOWED
-		for (notetype in noteTypes)
-			startPythonsNamed('custom_notetypes/' + notetype + '.py');
-		for (event in eventsPushed)
-			startPythonsNamed('custom_events/' + event + '.py');
-		#end
 		noteTypes = null;
 		eventsPushed = null;
 
@@ -1064,14 +1055,6 @@ class PlayState extends MusicBeatState
 						initHScript(smFolder + '/' + file);
 					}
 					#end
-
-					#if PY_ALLOWED
-					if(file.toLowerCase().endsWith('.py'))
-					{
-						trace('Loading SM Python script: $file');
-						initPython(smFolder + '/' + file);
-					}
-					#end
 				}
 			}
 			else
@@ -1090,11 +1073,15 @@ class PlayState extends MusicBeatState
 				#end
 				{
 					#if LUA_ALLOWED
+					if(file.toLowerCase() == 'globalscript.lua')
+						continue;
 					if(file.toLowerCase().endsWith('.lua'))
 						new FunkinLua(folder + file);
 					#end
 
 					#if HSCRIPT_ALLOWED
+					if(file.toLowerCase() == 'globalscript.hx')
+						continue;
 					if(file.toLowerCase().endsWith('.hx'))
 						initHScript(folder + file);
 					#end

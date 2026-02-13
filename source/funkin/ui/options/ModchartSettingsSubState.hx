@@ -64,18 +64,6 @@ class ModchartSettingsSubState extends BaseOptionsMenu
 
 		// ========== HOLD NOTE SETTINGS ==========
 		
-		// Hold Subdivisions option
-		var option:Option = new Option('Hold Subdivisions',
-			'Number of segments per hold note for rendering.\nHigher = Smoother curves | Lower = Better performance\n(Range: 1-32)',
-			'holdSubdivisions',
-			INT);
-		option.scrollSpeed = 1;
-		option.minValue = 1;
-		option.maxValue = 32;
-		option.changeValue = 1;
-		option.decimals = 0;
-		addOption(option);
-		
 		// Optimize Holds option
 		var option:Option = new Option('Optimize Hold Rendering',
 			'Reduces hold note calculations for ~2x better performance.\nNOT recommended with complex modcharts (may cause visual glitches).',

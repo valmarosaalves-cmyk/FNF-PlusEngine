@@ -66,8 +66,6 @@ import funkin.ui.title.TitleState;
 	    public var endCountdownSeconds:Int = 10;  // End countdown seconds (10-30)
 	
 	// ========== Modchart Config Options ==========
-	// Hold Rendering
-	public var holdSubdivisions:Int = 4; // Segments per hold note for rendering (1-32, higher = smoother)
 	// Camera & 3D Settings
 	public var camera3dEnabled:Bool = true; // Enables 3D camera transformations
 	public var zScale:Float = 1.0; // Z-axis depth scale (0.1-5.0)

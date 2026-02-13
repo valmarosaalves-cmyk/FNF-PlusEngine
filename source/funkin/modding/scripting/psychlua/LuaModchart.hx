@@ -311,6 +311,21 @@ class LuaModchart
         Lua_helper.add_callback(lua, "getPlayerCount", function():Int {
             return Adapter.instance.getPlayerCount();
         });
+        
+        // Set hold subdivisions
+        Lua_helper.add_callback(lua, "setHoldSubdivisions", function(value:Int) {
+            if (Adapter.instance != null && Std.isOfType(Adapter.instance, funkin.modding.modchart.backend.standalone.adapters.psych.Psych)) {
+                cast(Adapter.instance, funkin.modding.modchart.backend.standalone.adapters.psych.Psych).setHoldSubdivisions(value);
+            }
+        });
+        
+        // Get hold subdivisions
+        Lua_helper.add_callback(lua, "getHoldSubdivisions", function():Int {
+            if (Adapter.instance != null) {
+                return Adapter.instance.getHoldSubdivisions(null);
+            }
+            return 0;
+        });
     }
     
     // Helper: convert easing name to function

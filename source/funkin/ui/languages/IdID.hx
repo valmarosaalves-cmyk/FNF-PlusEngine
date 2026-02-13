@@ -395,8 +395,6 @@ class IdID
         "description_use_legacy_font" => "Jika dicentang, akan menggunakan font TTF VCR warisan dari Psych Engine 0.7.3 alih-alih Phantom.",
 
         // Modchart Settings
-        "setting_hold_subdivisions" => "Tahan Subdivisi",
-        "description_hold_subdivisions" => "Jumlah segmen per note tahan untuk rendering.\nLebih tinggi = Kurva yang lebih halus | Lebih rendah = Kinerja yang lebih baik\n(Rentang: 1-32)",
         "setting_enable_3d_cameras" => "Aktifkan Kamera 3D",
         "description_enable_3d_cameras" => "Jika dicentang: Mengaktifkan transformasi kamera 3D dan efek kedalaman.\nJika tidak dicentang: Menonaktifkan fitur 3D untuk kinerja yang lebih baik.",
         "setting_optimize_hold_rendering" => "Optimalkan Rendering Hold",

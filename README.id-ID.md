@@ -229,7 +229,7 @@ Anda memerlukan:
 * Beberapa perubahan berdasarkan pembaruan Minggu 7 telah ditambahkan (Warna latar belakang di Freeplay, Note splashes)
 * Anda dapat mereset skor di Freeplay/Cerita Mode dengan menekan tombol Reset.
 * Anda dapat mendengarkan lagu atau menyesuaikan Kecepatan Gulir/Kerusakan yang Diterima/dll. di Freeplay dengan menekan tombol Space.
-* Anda dapat mengaktifkan "Combo Stacking" di Opsi Gameplay. Ini menyebabkan sprite combo menjadi satu sprite dengan animasi daripada sprite yang muncul setiap kali note dipukul.
+* Anda dapat mengaktifkan "Penumpukan Kombo" di Opsi Gameplay. Ini menyebabkan sprite combo menjadi satu sprite dengan animasi dari pada sprite yang muncul setiap kali note dipukul.
 
 
 #### Psych Engine oleh ShadowMario, Friday Night Funkin' oleh ninjamuffin99

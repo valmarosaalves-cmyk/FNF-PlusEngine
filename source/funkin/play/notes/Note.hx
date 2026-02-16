@@ -602,10 +602,6 @@ class Note extends FlxSprite
 	{
 		super.update(elapsed);
 
-		if (ClientPrefs.data.disableHoldAnimations && isSustainNote) {
-			noAnimation = true;
-		}
-
 		if (mustPress)
 		{
 			canBeHit = (strumTime > Conductor.songPosition - (Conductor.safeZoneOffset * lateHitMult) &&

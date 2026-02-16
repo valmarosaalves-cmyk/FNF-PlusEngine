@@ -110,7 +110,6 @@ import funkin.ui.title.TitleState;
 	public var shadedTimeBar:Bool = false;
 	public var scoreZoom:Bool = true;
 	public var noReset:Bool = false;
-	public var disableHoldAnimations:Bool = false;
 	public var healthBarAlpha:Float = 1;
 	public var smoothHealthBar:Bool = true;
 	public var hitsoundVolume:Float = 0;

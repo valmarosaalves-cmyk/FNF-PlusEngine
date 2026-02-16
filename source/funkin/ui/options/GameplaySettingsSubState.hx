@@ -63,13 +63,6 @@ class GameplaySettingsSubState extends BaseOptionsMenu
 			BOOL);
 		addOption(option);
 
-		var option:Option = new Option('Disable Hold Animations',
-			"If checked, hold notes will not trigger character animations,\nallowing for smoother gameplay with sustain-heavy charts.",
-			'disableHoldAnimations',
-			BOOL);
-		addOption(option);
-		option.onChange = onChangeHoldAnimations;
-
 		#if mobile
 		var option:Option = new Option('Game Over Vibration',
 			"If checked, your device will vibrate at game over.",
@@ -236,10 +229,5 @@ class GameplaySettingsSubState extends BaseOptionsMenu
 	function onChangeHeavyCharts()
 	{
 		trace('Heavy Charts Mode: ${ClientPrefs.data.heavyCharts ? "ENABLED" : "DISABLED"}');
-	}
-
-	function onChangeHoldAnimations()
-	{
-		trace('Hold Animations: ${ClientPrefs.data.disableHoldAnimations ? "DISABLED" : "ENABLED"}');
 	}
 }

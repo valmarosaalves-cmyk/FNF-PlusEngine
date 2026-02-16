@@ -347,8 +347,6 @@ class IdID
         "description_pop_up_score" => "Jika tidak diaktifkan, memukul note tidak akan menghasilkan \"sick\", \"baik\".. dan popup combo\n(Berguna untuk perangkat dengan spesifikasi rendah " + Main.platform + ").",
         "setting_disable_reset_button" => "Nonaktifkan Tombol Reset",
         "description_disable_reset_button" => "Jika dicentang, menekan tombol Reset tidak akan melakukan apa-apa.",
-        "setting_disable_hold_animations" => "Nonaktifkan Animasi Hold",
-        "description_disable_hold_animations" => "Jika dicentang, note holds tidak akan memicu animasi karakter,\nmemungkinkan gameplay yang lebih lancar pada note yang banyak menggunakan menyusut.",
         "setting_game_over_vibration" => "Getar Game Over",
         "description_game_over_vibration" => "Jika dicentang, perangkat Anda akan bergetar saat game over.",
         "setting_hitsound_in_what_way" => "Hitsound dalam hal apa",

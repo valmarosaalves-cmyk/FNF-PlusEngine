@@ -581,6 +581,7 @@ class IdID
         "images/storymenu/week6" => "images/id-ID/storymenu/week6",
         "images/storymenu/week7" => "images/id-ID/storymenu/week7",
         "images/storymenu/weekend1" => "images/id-ID/storymenu/weekend1",
+        "images/storymenu/sserafim" => "images/id-ID/storymenu/sserafim",
 
         "editorplaystate_section" => "Bagian: {1}",
         "editorplaystate_tip" => "Tekan ESC untuk kembali ke Editor Chart",

@@ -64,6 +64,9 @@ class Main extends Sprite
 	public static var focused:Bool = true;
 	var oldVol:Float = 1.0;
 	var newVol:Float = 0.2;
+	var focusStateTimer:FlxTimer;
+	var windowHasFocus:Bool = true;
+	var restoringFocusVolume:Bool = false;
 	public static var focusMusicTween:FlxTween;
 
 	// You can pretty much ignore everything from here on - your code should go in your states.
@@ -397,9 +400,21 @@ class Main extends Sprite
 
 	function onWindowFocusOut():Void
 	{
+		if (!windowHasFocus) return;
+		windowHasFocus = false;
 		focused = false;
 
-		oldVol = FlxG.sound.volume;
+		if (focusStateTimer != null)
+		{
+			focusStateTimer.cancel();
+			focusStateTimer = null;
+		}
+
+		if (!restoringFocusVolume)
+		{
+			oldVol = FlxG.sound.volume;
+		}
+		restoringFocusVolume = false;
 		if (oldVol > 0.3)
 		{
 			newVol = 0.3;
@@ -422,14 +437,27 @@ class Main extends Sprite
 
 	function onWindowFocusIn():Void
 	{
-		new FlxTimer().start(0.2, function(tmr:FlxTimer) {
+		if (windowHasFocus) return;
+		windowHasFocus = true;
+		restoringFocusVolume = true;
+
+		if (focusStateTimer != null)
+		{
+			focusStateTimer.cancel();
+		}
+		focusStateTimer = new FlxTimer().start(0.2, function(tmr:FlxTimer) {
 			focused = true;
+			focusStateTimer = null;
 		});
 
 		// Normal global volume when focused
 		if (focusMusicTween != null) focusMusicTween.cancel();
-
-		focusMusicTween = FlxTween.tween(FlxG.sound, {volume: oldVol}, 0.5);
+		focusMusicTween = FlxTween.tween(FlxG.sound, {volume: oldVol}, 0.5, {
+			onComplete: function(_)
+			{
+				restoringFocusVolume = false;
+			}
+		});
 	}
 	#end
 

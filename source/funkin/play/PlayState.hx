@@ -39,6 +39,7 @@ import openfl.filters.ShaderFilter;
 #end
 
 import funkin.graphics.shaders.ErrorHandledShader;
+import funkin.graphics.shaders.WiggleEffect;
 import flixel.util.FlxGradient;
 import openfl.geom.Rectangle;
 
@@ -189,6 +190,10 @@ class PlayState extends MusicBeatState
 	public var dadGroup:FlxSpriteGroup;
 	public var gfGroup:FlxSpriteGroup;
 	public static var curStage:String = '';
+
+	// Stage member tracking for Change Stage Event
+	private var stageStartIdx:Int = 0;
+	private var stageEndIdx:Int = 0;
 	public static var stageUI(default, set):String = "normal";
 	public static var uiPrefix:String = "";
 	public static var uiPostfix:String = "";
@@ -335,6 +340,26 @@ class PlayState extends MusicBeatState
 	var timeTxt:FlxText;
 	var scoreTxtTween:FlxTween;
 	var timeTxtTween:FlxTween;
+
+	// Lyric Event
+	public var lyricText:FlxText;
+	var lyricTween:FlxTween;
+
+	// CnB Screen Event
+	public var cnbOverlay:FlxSprite;
+	public var cnbActive:Bool = false;
+
+	// Destructive HUD Event
+	public var destructiveHUDActive:Bool = false;
+	public var destructiveHUDMode:String = 'zoom'; // 'zoom' or 'note'
+	var _hudOrigPos:Map<String, Array<Float>> = [];
+
+	// Glitchy Notes Event
+	#if !flash
+	public var glitchyNotesTarget:String = ''; // 'opponent', 'player', 'both'
+	var glitchOpponent:WiggleEffect;
+	var glitchPlayer:WiggleEffect;
+	#end
 	var versionTextTween:FlxTween;
 	var judgementCounter:JudCounter;
 	
@@ -676,6 +701,7 @@ class PlayState extends MusicBeatState
 		dadGroup = new FlxSpriteGroup(DAD_X, DAD_Y);
 		gfGroup = new FlxSpriteGroup(GF_X, GF_Y);
 
+		stageStartIdx = members.length; // Track where stage sprites start
 		switch (curStage)
 		{
 			case 'stage': new StageWeek1(); 			//Week 1
@@ -702,9 +728,17 @@ class PlayState extends MusicBeatState
 			case 'tankmanBattlefieldErect': new funkin.play.stage.erect.TankErect();
 			case 'phillyStreetsErect': new funkin.play.stage.erect.PhillyStreetsErect();
 		}
+		stageEndIdx = members.length; // Track where stage sprites end
 		if(isPixelStage) introSoundsSuffix = '-pixel';
 
 		trace("You are in stage " + curStage);
+
+		// CnB overlay - sits between stage bg and characters, invisible by default
+		cnbOverlay = new FlxSprite(0, 0).makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+		cnbOverlay.scrollFactor.set(0, 0);
+		cnbOverlay.cameras = [camGame];
+		cnbOverlay.alpha = 0;
+		add(cnbOverlay);
 
 
 		if (!isNotITG) {
@@ -760,6 +794,8 @@ class PlayState extends MusicBeatState
 				add(boyfriendGroup);
 			}
 		}
+
+		// CnB overlay was already added above (between stage bg and characters)
 		
 		#if (LUA_ALLOWED || HSCRIPT_ALLOWED)
 		// "SCRIPTS FOLDER" SCRIPTS
@@ -850,6 +886,15 @@ class PlayState extends MusicBeatState
 		timeBar.visible = showTime;
 		uiGroup.add(timeBar);
 		uiGroup.add(timeTxt);
+
+		// Lyric text - centered on screen, above everything on HUD
+		lyricText = new FlxText(0, FlxG.height * 0.75, FlxG.width, "", 32);
+		lyricText.setFormat(Paths.font("phantom.ttf"), 32, FlxColor.WHITE, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		lyricText.scrollFactor.set();
+		lyricText.borderSize = 2;
+		lyricText.alpha = 0;
+		lyricText.cameras = [camHUD];
+		add(lyricText);
 
 		noteGroup.add(strumLineNotes);
 
@@ -2603,6 +2648,17 @@ class PlayState extends MusicBeatState
 
 		super.update(elapsed);
 
+		#if !flash
+		// Update Glitchy Notes shaders
+		if (glitchyNotesTarget != '' && ClientPrefs.data.shaders)
+		{
+			if ((glitchyNotesTarget == 'opponent' || glitchyNotesTarget == 'both') && glitchOpponent != null)
+				glitchOpponent.update(elapsed);
+			if ((glitchyNotesTarget == 'player' || glitchyNotesTarget == 'both') && glitchPlayer != null)
+				glitchPlayer.update(elapsed);
+		}
+		#end
+
 		#if VIDEOS_ALLOWED
 		if(videoCutscene != null && videoCutscene.videoSprite != null && videoCutscene.videoSprite.bitmap != null)
 		{
@@ -3614,6 +3670,256 @@ class PlayState extends MusicBeatState
 				cameraBopFrequency = freq;
 				cameraBopIntensity = intensity;
 				cameraBopEnabled = (intensity > 0);
+
+			case 'Glitchy Notes':
+				#if !flash
+				if (ClientPrefs.data.shaders)
+				{
+					var target:String = value2.trim().toLowerCase();
+					var enable:Bool = (value1.trim().toLowerCase() == 'true');
+					if (enable)
+					{
+						glitchyNotesTarget = target;
+						if (target == 'opponent' || target == 'both')
+						{
+							if (glitchOpponent == null)
+							{
+								glitchOpponent = new WiggleEffect();
+								glitchOpponent.effectType = WiggleEffectType.WAVY;
+								glitchOpponent.waveSpeed = 4.0;
+								glitchOpponent.waveFrequency = 12.0;
+								glitchOpponent.waveAmplitude = 0.03;
+							}
+							for (strum in opponentStrums.members)
+								if (strum != null) strum.shader = glitchOpponent.shader;
+						}
+						if (target == 'player' || target == 'both')
+						{
+							if (glitchPlayer == null)
+							{
+								glitchPlayer = new WiggleEffect();
+								glitchPlayer.effectType = WiggleEffectType.WAVY;
+								glitchPlayer.waveSpeed = 4.0;
+								glitchPlayer.waveFrequency = 12.0;
+								glitchPlayer.waveAmplitude = 0.03;
+							}
+							for (strum in playerStrums.members)
+								if (strum != null) strum.shader = glitchPlayer.shader;
+						}
+					}
+					else
+					{
+						// Reset - restore default RGB shaders on strums
+						glitchyNotesTarget = '';
+						for (strum in opponentStrums.members)
+							if (strum != null && strum.rgbShader != null) strum.shader = strum.rgbShader.parent.shader;
+						for (strum in playerStrums.members)
+							if (strum != null && strum.rgbShader != null) strum.shader = strum.rgbShader.parent.shader;
+						glitchOpponent = null;
+						glitchPlayer = null;
+					}
+				}
+				#end
+
+			case 'Destructive HUD':
+				var enable:Bool = (value1.trim().toLowerCase() == 'true');
+				if (enable)
+				{
+					if (!destructiveHUDActive) saveHUDPositions();
+					destructiveHUDActive = true;
+					destructiveHUDMode = (value2.trim().toLowerCase() == 'note') ? 'note' : 'zoom';
+				}
+				else
+				{
+					destructiveHUDActive = false;
+					restoreHUDPositions();
+				}
+
+			case 'CnB Screen':
+				var val1:Bool = (value1.trim().toLowerCase() == 'true');
+				var val2:Bool = (value2.trim().toLowerCase() == 'true');
+
+				if (!val1 && !val2)
+				{
+					// Bad Apple: white bg, black characters
+					cnbActive = true;
+					cnbOverlay.color = FlxColor.WHITE;
+					cnbOverlay.alpha = 1;
+					if (dad != null)       dad.color = FlxColor.BLACK;
+					if (boyfriend != null) boyfriend.color = FlxColor.BLACK;
+					if (gf != null)        gf.color = FlxColor.BLACK;
+				}
+				else if (val1 && !val2)
+				{
+					// Inverted Bad Apple: black bg, characters visible (white-tinted)
+					// True white silhouette would need a shader; this shows normal chars on black bg
+					cnbActive = true;
+					cnbOverlay.color = FlxColor.BLACK;
+					cnbOverlay.alpha = 1;
+					if (dad != null)       dad.color = FlxColor.WHITE;
+					if (boyfriend != null) boyfriend.color = FlxColor.WHITE;
+					if (gf != null)        gf.color = FlxColor.WHITE;
+				}
+				else if (val1 && val2)
+				{
+					// Icon color mode: black bg, characters tinted by health icon colors
+					cnbActive = true;
+					cnbOverlay.color = FlxColor.BLACK;
+					cnbOverlay.alpha = 1;
+					var dadCol:Array<Int>  = dadHealthColor.length > 0 ? dadHealthColor : [255, 0, 0];
+					var bfCol:Array<Int>   = boyfriendHealthColor.length > 0 ? boyfriendHealthColor : [0, 255, 0];
+					var gfCol:Array<Int>   = gfHealthColor.length > 0 ? gfHealthColor : [255, 255, 0];
+					if (dad != null)       dad.color = FlxColor.fromRGB(dadCol[0], dadCol[1], dadCol[2]);
+					if (boyfriend != null) boyfriend.color = FlxColor.fromRGB(bfCol[0], bfCol[1], bfCol[2]);
+					if (gf != null)        gf.color = FlxColor.fromRGB(gfCol[0], gfCol[1], gfCol[2]);
+				}
+				else
+				{
+					// Reset CnB
+					cnbActive = false;
+					cnbOverlay.alpha = 0;
+					if (dad != null)       dad.color = FlxColor.WHITE;
+					if (boyfriend != null) boyfriend.color = FlxColor.WHITE;
+					if (gf != null)        gf.color = FlxColor.WHITE;
+				}
+
+			case 'Change Stage':
+				var newStage:String = value1.trim();
+				if (newStage.length > 0 && newStage != curStage)
+				{
+					// Destroy old stage script instances
+					#if LUA_ALLOWED
+					for (lua in luaArray)
+						if (lua.scriptName != null && lua.scriptName.contains('stages/'))
+							lua.stop();
+					#end
+
+					// Destroy old stage BaseStage instances
+					for (stage in stages) stage.destroy();
+					stages = [];
+
+					// Remove old stage display objects (added to members before character groups)
+					var removeCount:Int = stageEndIdx - stageStartIdx;
+					for (i in 0...removeCount)
+					{
+						var m = members[stageStartIdx];
+						if (m != null) { m.destroy(); members.splice(stageStartIdx, 1); }
+					}
+
+					// Load new stage data
+					curStage = newStage;
+					SONG.stage = newStage;
+					var newStageData:StageFile = StageData.getStageFile(curStage);
+
+					// Update camera defaults
+					defaultCamZoom = newStageData.defaultZoom;
+					defaultStageZoom = newStageData.defaultZoom;
+					FlxG.camera.zoom = defaultCamZoom;
+
+					// Update stageUI
+					if (newStageData.stageUI != null && newStageData.stageUI.trim().length > 0)
+						stageUI = newStageData.stageUI;
+					else if (newStageData.isPixelStage == true)
+						stageUI = "pixel";
+					else
+						stageUI = "normal";
+
+					// Update camera offsets
+					if (newStageData.camera_speed != null) cameraSpeed = newStageData.camera_speed;
+					boyfriendCameraOffset = newStageData.camera_boyfriend != null ? newStageData.camera_boyfriend : [0.0, 0.0];
+					opponentCameraOffset = newStageData.camera_opponent != null ? newStageData.camera_opponent : [0.0, 0.0];
+					girlfriendCameraOffset = newStageData.camera_girlfriend != null ? newStageData.camera_girlfriend : [0.0, 0.0];
+
+					// Update character positions
+					BF_X = newStageData.boyfriend[0]; BF_Y = newStageData.boyfriend[1];
+					GF_X = newStageData.girlfriend[0]; GF_Y = newStageData.girlfriend[1];
+					DAD_X = newStageData.opponent[0]; DAD_Y = newStageData.opponent[1];
+
+					boyfriendGroup.x = BF_X; boyfriendGroup.y = BF_Y;
+					dadGroup.x = DAD_X; dadGroup.y = DAD_Y;
+					gfGroup.x = GF_X; gfGroup.y = GF_Y;
+
+					if (boyfriend != null) startCharacterPos(boyfriend);
+					if (dad != null) startCharacterPos(dad, true);
+					if (gf != null) startCharacterPos(gf);
+
+					// Create new stage objects (inserted at stageStartIdx position)
+					var beforeLen:Int = members.length;
+					switch (curStage)
+					{
+						case 'stage': new StageWeek1();
+						case 'spooky': new Spooky();
+						case 'philly': new Philly();
+						case 'limo': new Limo();
+						case 'mall': new Mall();
+						case 'mallEvil': new MallEvil();
+						case 'school': new School();
+						case 'schoolEvil': new SchoolEvil();
+						case 'tank': new Tank();
+						case 'phillyStreets': new PhillyStreets();
+						case 'phillyBlazin': new PhillyBlazin();
+						case 'sserafim': new Sserafim();
+						case 'mainStageErect': new funkin.play.stage.erect.MainStageErect();
+						case 'spookyMansionErect': new funkin.play.stage.erect.SpookyMansionErect();
+						case 'phillyTrainErect': new funkin.play.stage.erect.PhillyTrainErect();
+						case 'limoRideErect': new funkin.play.stage.erect.LimoRideErect();
+						case 'mallXmasErect': new funkin.play.stage.erect.MallXmasErect();
+						case 'schoolErect': new funkin.play.stage.erect.SchoolErect();
+						case 'schoolEvilErect': new funkin.play.stage.erect.SchoolEvilErect();
+						case 'tankmanBattlefieldErect': new funkin.play.stage.erect.TankErect();
+						case 'phillyStreetsErect': new funkin.play.stage.erect.PhillyStreetsErect();
+					}
+					stageEndIdx = members.length;
+
+					// Move new stage members to correct position (before character groups)
+					var addedCount:Int = members.length - beforeLen;
+					if (addedCount > 0)
+					{
+						var newMembers = members.splice(beforeLen, addedCount);
+						for (i in 0...newMembers.length)
+							members.insert(stageStartIdx + i, newMembers[i]);
+						stageEndIdx = stageStartIdx + addedCount;
+					}
+
+					stagesFunc(function(stage:BaseStage) stage.createPost());
+					#if HSCRIPT_ALLOWED startHScriptsNamed('stages/' + curStage + '.hx'); #end
+					#if LUA_ALLOWED startLuasNamed('stages/' + curStage + '.lua'); #end
+
+					trace('Stage changed to: ' + curStage);
+				}
+
+			case 'Lyric Event':
+				if (lyricText != null)
+				{
+					if (lyricTween != null) { lyricTween.cancel(); lyricTween = null; }
+					var lyricStr:String = value1.trim();
+					if (lyricStr.length > 0)
+					{
+						// Parse color from value2, default to white
+						var lyricColor:FlxColor = FlxColor.WHITE;
+						var colorStr:String = value2.trim().toLowerCase();
+						if (colorStr.length > 0)
+						{
+							try { lyricColor = FlxColor.fromString(colorStr); }
+							catch (e:Dynamic) { lyricColor = FlxColor.WHITE; }
+						}
+						lyricText.text = lyricStr;
+						lyricText.color = lyricColor;
+						lyricText.alpha = 0;
+						lyricTween = FlxTween.tween(lyricText, {alpha: 1}, 0.25, {
+							ease: FlxEase.cubeOut,
+							onComplete: function(t:FlxTween) { lyricTween = null; }
+						});
+					}
+					else
+					{
+						// Empty value1 = fade out
+						lyricTween = FlxTween.tween(lyricText, {alpha: 0}, 0.4, {
+							ease: FlxEase.cubeIn,
+							onComplete: function(t:FlxTween) { lyricText.text = ""; lyricTween = null; }
+						});
+					}
+				}
 
 			case 'Add Secondary Icon':
 				// Value1: Side of Health Bar (Dad, BF)
@@ -4938,6 +5244,8 @@ class PlayState extends MusicBeatState
 		note.hitByOpponent = true;
 		
 		stagesFunc(function(stage:BaseStage) stage.opponentNoteHit(note));
+		if (destructiveHUDActive && destructiveHUDMode == 'note')
+			shuffleHUD();
 		var result:Dynamic = callOnLuas('opponentNoteHit', [notes.members.indexOf(note), Math.abs(note.noteData), note.noteType, note.isSustainNote]);
 		if(result != LuaUtils.Function_Stop && result != LuaUtils.Function_StopHScript && result != LuaUtils.Function_StopAll) callOnHScript('opponentNoteHit', [note]);
 
@@ -5292,10 +5600,59 @@ class PlayState extends MusicBeatState
 			camHUD.zoom += 0.03 * cameraBopIntensity;
 		}
 
+		if (destructiveHUDActive && destructiveHUDMode == 'zoom')
+			shuffleHUD();
+
 		lastBeatHit = curBeat;
 
 		setOnScripts('curBeat', curBeat);
 		callOnScripts('onBeatHit');
+	}
+
+	function shuffleHUD():Void
+	{
+		var elements:Array<FlxObject> = [
+			healthBar, iconP1, iconP2, scoreTxt, timeTxt, timeBar, botplayTxt
+		];
+		for (el in elements)
+		{
+			if (el == null || !el.visible) continue;
+			var tx:Float = FlxG.random.float(0, FlxG.width  - el.width);
+			var ty:Float = FlxG.random.float(0, FlxG.height - el.height);
+			FlxTween.tween(el, {x: tx, y: ty}, 0.12, {ease: FlxEase.quadOut});
+		}
+	}
+
+	function saveHUDPositions():Void
+	{
+		_hudOrigPos = new Map<String, Array<Float>>();
+		inline function save(k:String, o:FlxObject) if (o != null) _hudOrigPos.set(k, [o.x, o.y]);
+		save('healthBar', healthBar);
+		save('iconP1', iconP1);
+		save('iconP2', iconP2);
+		save('scoreTxt', scoreTxt);
+		save('timeTxt', timeTxt);
+		save('timeBar', timeBar);
+		save('botplayTxt', botplayTxt);
+	}
+
+	function restoreHUDPositions():Void
+	{
+		inline function restore(k:String, o:FlxObject)
+		{
+			if (o != null && _hudOrigPos.exists(k))
+			{
+				var p = _hudOrigPos.get(k);
+				FlxTween.tween(o, {x: p[0], y: p[1]}, 0.3, {ease: FlxEase.quadOut});
+			}
+		}
+		restore('healthBar', healthBar);
+		restore('iconP1', iconP1);
+		restore('iconP2', iconP2);
+		restore('scoreTxt', scoreTxt);
+		restore('timeTxt', timeTxt);
+		restore('timeBar', timeBar);
+		restore('botplayTxt', botplayTxt);
 	}
 
 	public function characterBopper(beat:Int):Void

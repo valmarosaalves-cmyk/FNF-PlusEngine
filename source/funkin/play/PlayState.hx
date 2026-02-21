@@ -942,12 +942,11 @@ class PlayState extends MusicBeatState
 		
 		iconP1 = new HealthIcon(boyfriend != null ? boyfriend.healthIcon : 'bf', true, false);
 		if(bf_animatedIcon) iconP1.changeIcon(iconP1.getCharacter(), false, true);
-		if (ClientPrefs.data.iconBounceType = 'Old')
+		if (ClientPrefs.data.iconBounceType == 'Old')
 		{
 			iconP1.y = healthBar.y - (iconP1.height / 2);
 		}
-
-		if (ClientPrefs.data.iconBounceType = 'Default' || 'D&B')
+	   else 
 		{
 			iconP1.y = healthBar.y - 75;
 		}
@@ -958,12 +957,11 @@ class PlayState extends MusicBeatState
 
 		iconP2 = new HealthIcon(dad != null ? dad.healthIcon : 'dad', false, false);
 		if(dad_animatedIcon) iconP2.changeIcon(iconP2.getCharacter(), false, true);
-		if (ClientPrefs.data.iconBounceType = 'Old')
+		if (ClientPrefs.data.iconBounceType == 'Old')
 		{
 			iconP2.y = healthBar.y - (iconP2.height / 2);
 		}
-		
-		if (ClientPrefs.data.iconBounceType = 'Default' || 'D&B')
+	   else
 		{
 			iconP2.y = healthBar.y - 75;
 		}
@@ -975,25 +973,17 @@ class PlayState extends MusicBeatState
 		var gf_animatedIcon:Bool = (gf != null && gf.animatedIcon == true) || (SONG.isAnimated == true);
 		iconGF = new HealthIcon(gf != null ? gf.healthIcon : 'gf', true, false);
 		if(gf_animatedIcon) iconGF.changeIcon(iconGF.getCharacter(), false, true);
-		if (ClientPrefs.data.iconBounceType = 'Old')
+		if (ClientPrefs.data.iconBounceType == 'Old')
 		{
 			iconGF.y = healthBar.y - (iconGF.height / 2);
 		}
-
-		if (ClientPrefs.data.iconBounceType = 'Default' || 'D&B')
+       else
 		{
 			iconGF.y = healthBar.y - 75;
 		}
 		iconGF.visible = false; // Hidden by default until event is triggered
 		iconGF.alpha = ClientPrefs.data.healthBarAlpha;
 		if (!isNotITG) uiGroup.add(iconGF);
-
-		function reloadHealthBarColors() {
-			healthBar.setColors(FlxColor.fromRGB(dad.healthColorArray[0], dad.healthColorArray[1], dad.healthColorArray[2]),
-				FlxColor.fromRGB(boyfriend.healthColorArray[0], boyfriend.healthColorArray[1], boyfriend.healthColorArray[2]));
-
-			reloadGradientColors();
-		}
 		
 		scoreTxt = new FlxText(0, healthBar.y + 40, FlxG.width, "", 20);
 		scoreTxt.setFormat(Paths.font("phantom.ttf"), 20, FlxColor.WHITE, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
@@ -2983,11 +2973,11 @@ class PlayState extends MusicBeatState
 		#end
 
 		// Taken from Psych Engine 0.4.2
-		if (ClientPrefs.data.iconBounceType = 'Old')
+		if (ClientPrefs.data.iconBounceType == 'Old')
 		{
-			iconP1.setGraphicSize(Std.int(FlxMath.lerp(150, iconP1.width, CoolUtil.boundTo(1 - (elapsed * 30), 0, 1))));
-			iconP2.setGraphicSize(Std.int(FlxMath.lerp(150, iconP2.width, CoolUtil.boundTo(1 - (elapsed * 30), 0, 1))));
-			iconGF.setGraphicSize(Std.int(FlxMath.lerp(150, iconGF.width, CoolUtil.boundTo(1 - (elapsed * 30), 0, 1))));
+			iconP1.setGraphicSize(Std.int(FlxMath.lerp(150, iconP1.width, 0.50)));
+			iconP2.setGraphicSize(Std.int(FlxMath.lerp(150, iconP2.width, 0.50)));
+			iconGF.setGraphicSize(Std.int(FlxMath.lerp(150, iconGF.width, 0.50)));
 
 			iconP1.updateHitbox();
 			iconP2.updateHitbox();
@@ -3001,7 +2991,7 @@ class PlayState extends MusicBeatState
 	// Health icon updaters
 	public dynamic function updateIconsScale(elapsed:Float)
 	{
-		if (ClientPrefs.data.iconBounceType = 'NF')
+		if (ClientPrefs.data.iconBounceType == 'NF')
 		{
 			// Taken from NovaFlare Engine
 			var mult:Float = FlxMath.lerp(1, iconP1.scale.x, FlxMath.bound((1 - (elapsed * 9 * playbackRate)) / 1.1, 0, 1));
@@ -3017,7 +3007,7 @@ class PlayState extends MusicBeatState
 			iconGF.updateHitbox();
 		}
 
-		if (ClientPrefs.data.iconBounceType = 'Default' || 'D&B')
+		if (ClientPrefs.data.iconBounceType == 'Default' || ClientPrefs.data.iconBounceType == 'D&B')
 		{
 			if (iconP1 != null) {
 				var mult:Float = FlxMath.lerp(1, iconP1.scale.x, Math.exp(-elapsed * 9 * playbackRate));
@@ -5593,23 +5583,25 @@ class PlayState extends MusicBeatState
 			Main.fpsVar.hscriptsFailed = 0;
 		}
 		
-	// Limpiar botón de pausa
-	if (pauseButton != null) {
-		remove(pauseButton);
-		pauseButton.destroy();
-		pauseButton = null;
-	}
-	
-	instance = null;
-	shutdownThread = true;
-	FlxG.signals.preUpdate.remove(checkForResync);
-	
-	// Limpiar memoria AL FINAL del destroy, después de super.destroy()
-	super.destroy();
-	
-	// Ahora sí es seguro limpiar memoria (todos los objetos ya fueron destruidos)
-	Paths.clearUnusedMemory();
-}	var lastStepHit:Int = -1;
+		// Limpiar botón de pausa
+		if (pauseButton != null) {
+			remove(pauseButton);
+			pauseButton.destroy();
+			pauseButton = null;
+		}
+		
+		instance = null;
+		shutdownThread = true;
+		FlxG.signals.preUpdate.remove(checkForResync);
+		
+		// Limpiar memoria AL FINAL del destroy, después de super.destroy()
+		super.destroy();
+		
+		// Ahora sí es seguro limpiar memoria (todos los objetos ya fueron destruidos)
+		Paths.clearUnusedMemory();
+	}	
+
+	var lastStepHit:Int = -1;
 	override function stepHit()
 	{
 		super.stepHit();
@@ -5618,11 +5610,12 @@ class PlayState extends MusicBeatState
 			return;
 		}
 
-	lastStepHit = curStep;
-	setOnScripts('curStep', curStep);
-	callOnScripts('onStepHit');
-}	var lastBeatHit:Int = -1;
-
+		lastStepHit = curStep;
+		setOnScripts('curStep', curStep);
+		callOnScripts('onStepHit');
+	}	
+	
+	var lastBeatHit:Int = -1;
 	override function beatHit()
 	{
 		if(lastBeatHit >= curBeat) {
@@ -5633,7 +5626,7 @@ class PlayState extends MusicBeatState
 		if (generatedMusic)
 			notes.sort(FlxSort.byY, ClientPrefs.data.downScroll ? FlxSort.ASCENDING : FlxSort.DESCENDING);
 
-		if (ClientPrefs.data.iconBounceType = 'Default')
+		if (ClientPrefs.data.iconBounceType == 'Default')
 		{
             iconP1.scale.set(1.2, 1.2);
 		    iconP2.scale.set(1.2, 1.2);
@@ -5641,7 +5634,7 @@ class PlayState extends MusicBeatState
 		    iconP2.updateHitbox();
 		}
 
-		if (ClientPrefs.data.iconBounceType = 'NF')
+		if (ClientPrefs.data.iconBounceType == 'NF')
 		{
 			// Taken from NovaFlare Engine
 			iconP1.scale.set(1.3, 1.3);
@@ -5650,8 +5643,19 @@ class PlayState extends MusicBeatState
 			iconP1.updateHitbox();
 			iconP2.updateHitbox();
 		}
+
+		// Taken from Kade Engine
+		if (ClientPrefs.data.iconBounceType == 'Old')
+		{
+			iconP1.setGraphicSize(Std.int(iconP1.width + 30));
+			iconP2.setGraphicSize(Std.int(iconP2.width + 30));
+			iconGF.setGraphicSize(Std.int(iconGF.width + 30));
+			iconP1.updateHitbox();
+			iconP2.updateHitbox();
+			iconGF.updateHitbox();
+		}
 		
-		if (ClientPrefs.data.iconBounceType = 'D&B')
+		if (ClientPrefs.data.iconBounceType == 'D&B')
 		{
 			animateIcons(); // Taken from older of Plus Engine
 		}
@@ -5752,7 +5756,7 @@ class PlayState extends MusicBeatState
 	// Taken from older of Plus Engine
 	public function animateIcons():Void
 	{
-		if (ClientPrefs.data.iconBounceType = 'D&B')
+		if (ClientPrefs.data.iconBounceType == 'D&B')
 		{
 			iconTurnValue = -iconTurnValue;
 

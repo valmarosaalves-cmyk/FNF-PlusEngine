@@ -112,7 +112,7 @@ class VisualsSettingsSubState extends BaseOptionsMenu
 		option.onChange = onChangeKeyViewerColor;
 
 		var option:Option = new Option('Icon Bounce',
-		    'Select the type of bounce icon you prefer.',
+		    'Select the type of bounce icon you prefer. NOTE: Scripts using this setting may break with non-default values. It is recommended to leave it as Default.',
 			'iconBounceType',
 			STRING,
 			['Default', 'D&B', 'Old', 'NF']);

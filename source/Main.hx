@@ -476,7 +476,7 @@ class Main extends Sprite
 		}
 		#end
 		
-		var flxGraphic = funkin.Paths.image("marca");
+		var flxGraphic = funkin.Paths.image("watermark");
 		if (flxGraphic != null) {
 			var bmpData:openfl.display.BitmapData = flxGraphic.bitmap;
 			if (watermarkSprite != null && watermarkSprite.parent != null) {
@@ -494,10 +494,10 @@ class Main extends Sprite
 			watermarkSprite.visible = ClientPrefs.data.showWatermark;
 			openfl.Lib.current.stage.addChild(watermarkSprite);
 		} else {
-			trace('No se pudo cargar la marca de agua con funkin.Paths.image("marca").');
+			trace('No se pudo cargar la marca de agua con funkin.Paths.image("watermark").');
 		}
 
-		var imagePath = funkin.Paths.getPath('images/marca.png', IMAGE);
+		var imagePath = funkin.Paths.getPath('images/watermark.png', IMAGE);
 		if (sys.FileSystem.exists(imagePath)) {
 		    if (watermark != null && watermark.parent != null)
 		        removeChild(watermark);

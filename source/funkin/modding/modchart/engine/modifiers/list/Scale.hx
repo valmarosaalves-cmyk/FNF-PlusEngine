@@ -20,6 +20,8 @@ class Scale extends Modifier {
 		// Scale
 		scale *= getPercent('scale' + axis, player) + getPercent('scale' + axis + receptorName, player);
 		scale *= 1 - (getPercent('tiny' + axis, player) + getPercent('tiny' + axis + receptorName, player)) * 0.5;
+		// Mini: uniform sub-percent scale reduction, same formula as tiny
+		scale *= 1 - (getPercent('mini', player) + getPercent('mini' + receptorName, player)) * 0.5;
 
 		switch (realAxis) {
 			case 'x':

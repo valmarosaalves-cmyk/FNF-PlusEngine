@@ -5,6 +5,7 @@ import funkin.modding.modchart.backend.standalone.Adapter;
 import funkin.modding.modchart.engine.modifiers.list.PathModifier;
 import funkin.modding.modchart.engine.modifiers.list.PathModifier.PathNode;
 import funkin.modding.scripting.FunkinLua;
+import funkin.data.song.Song;
 import flixel.tweens.FlxEase;
 
 class LuaModchart
@@ -287,6 +288,54 @@ class LuaModchart
 			cast(mod, PathModifier).setPathBound(bound);
 		});
         
+        // Load a chart and return a flat array of note tables for use in forNoteInChart-style loops.
+        // Each entry is: { step=<Float>, type=<Int 0-3>, time=<Float ms> }
+        // Uses Song.getChart() so it does NOT overwrite PlayState.SONG.
+        // Usage: local notes = getChartNotes("newDrums", "null-and-void")
+        //        for _, n in ipairs(notes) do ... end
+        Lua_helper.add_callback(lua, "getChartNotes", function(chartName:String, ?songName:String):Dynamic {
+            if (songName == null || songName.length == 0)
+                songName = Song.loadedSongName;
+
+            PlayState.instance.addTextToDebug('[getChartNotes] looking for chart="$chartName" song="$songName"', false, false, 0xFFFFFF);
+
+            var swagSong = Song.getChart(chartName, songName);
+            if (swagSong == null) {
+                FunkinLua.luaTrace('[getChartNotes] ERROR: chart "$chartName" not found in song "$songName"', false, false, 0xFFFF0000);
+                return null;
+            }
+
+            FunkinLua.luaTrace('[getChartNotes] chart found, sections=${swagSong.notes != null ? swagSong.notes.length : 0}', false, false, 0xFFFFFF);
+
+            // Build a 1-indexed Lua-compatible array of note tables
+            var result:Array<Dynamic> = [];
+            if (swagSong.notes != null) {
+                for (section in swagSong.notes) {
+                    if (section == null || section.sectionNotes == null) continue;
+                    for (noteData in section.sectionNotes) {
+                        // noteData[0]=time(ms), noteData[1]=column/direction, noteData[2]=hold length
+                        var time:Float = noteData[0];
+                        var rawCol:Int = Std.int(noteData[1]);
+                        var type:Int   = rawCol % 4;
+                        var step:Float = Conductor.getStep(time);
+                        result.push({
+                            step: step,
+                            type: type,
+                            time: time
+                        });
+                    }
+                }
+            }
+
+            // Sort ascending by step so the caller can just iterate in order
+            result.sort(function(a, b) return a.step < b.step ? -1 : (a.step > b.step ? 1 : 0));
+
+            FunkinLua.luaTrace('[getChartNotes] "$chartName" total notes=${result.length}'
+                + (result.length > 0 ? ' | first: step=${result[0].step} type=${result[0].type} time=${result[0].time}ms' : ''), false, false, 0xFFFFFF);
+
+            return result;
+        });
+
         // Get current beat from Conductor
         Lua_helper.add_callback(lua, "getCurrentBeat", function():Float {
             return Conductor.songPosition / Conductor.crochet;

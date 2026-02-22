@@ -1708,7 +1708,8 @@ class FunkinLua {
 		});
 		//
 
-		Lua_helper.add_callback(lua, "debugPrint", function(text:Dynamic = '', color:String = 'WHITE') PlayState.instance.addTextToDebug(text, CoolUtil.colorFromString(color)));
+		Lua_helper.add_callback(lua, "debugPrint", function(text:Dynamic = '', color:String = 'WHITE') 
+			PlayState.instance.addTextToDebug(text, CoolUtil.colorFromString(color)));
 
 		Lua_helper.add_callback(lua, "setModAutor", function(text:String = '') {
 			if (Main.fpsVar != null) {

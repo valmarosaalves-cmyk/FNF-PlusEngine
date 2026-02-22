@@ -58,6 +58,10 @@ class MusicBeatSubstate extends FlxSubState
 	public function addMobileControls(defaultDrawTarget:Bool = false):Void
 	{
 		var extraMode = MobileData.extraActions.get(ClientPrefs.data.extraButtons);
+		
+		// Fallback to NONE if extraMode is null
+		if (extraMode == null)
+			extraMode = NONE;
 
 		switch (MobileData.mode)
 		{
@@ -69,16 +73,26 @@ class MusicBeatSubstate extends FlxSubState
 				mobileControls = MobileData.getTouchPadCustom(new TouchPad('RIGHT_FULL', 'NONE', extraMode));
 			case 3: // HITBOX
 				mobileControls = new Hitbox(extraMode);
+			case 4: // HITBOX_ARROWS
+				mobileControls = new Hitbox(NONE, true);
 		}
 
-		mobileControls.instance = MobileData.setButtonsColors(mobileControls.instance);
-		mobileControlsCam = new FlxCamera();
-		mobileControlsCam.bgColor.alpha = 0;
-		FlxG.cameras.add(mobileControlsCam, defaultDrawTarget);
+		// Ensure instance is set before using it
+		if (mobileControls != null && mobileControls.instance != null)
+		{
+			mobileControls.instance = MobileData.setButtonsColors(mobileControls.instance);
+			mobileControlsCam = new FlxCamera();
+			mobileControlsCam.bgColor.alpha = 0;
+			FlxG.cameras.add(mobileControlsCam, defaultDrawTarget);
 
-		mobileControls.instance.cameras = [mobileControlsCam];
-		mobileControls.instance.visible = false;
-		add(mobileControls.instance);
+			mobileControls.instance.cameras = [mobileControlsCam];
+			mobileControls.instance.visible = false;
+			add(mobileControls.instance);
+		}
+		else
+		{
+			trace('Warning: Failed to create mobile controls! extraButtons: ${ClientPrefs.data.extraButtons}, mode: ${MobileData.mode}');
+		}
 	}
 
 	public function removeMobileControls()

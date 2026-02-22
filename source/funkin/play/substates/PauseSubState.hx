@@ -523,22 +523,123 @@ class PauseSubState extends MusicBeatSubstate
 					if (cantUnpause <= 0)
 					{
 						var daSelected:String = menuItems[curSelected];
+						
+						// Handle difficulty selection
+						if (menuItems == difficultyChoices)
+						{
+							var songLowercase:String = Paths.formatToSongPath(PlayState.SONG.song);
+							var poop:String = Highscore.formatSong(songLowercase, curSelected);
+							try
+							{
+								if(menuItems.length - 1 != curSelected && difficultyChoices.contains(daSelected))
+								{
+									Song.loadFromJson(poop, songLowercase);
+									PlayState.storyDifficulty = curSelected;
+									MusicBeatState.resetState();
+									FlxG.sound.music.volume = 0;
+									PlayState.changedDifficulty = true;
+									PlayState.chartingMode = false;
+									return;
+								}
+							}
+							catch(e:haxe.Exception)
+							{
+								trace('ERROR! ${e.message}');
+								
+								var errorStr:String = e.message;
+								if(errorStr.startsWith('[lime.utils.Assets] ERROR:')) errorStr = 'Missing file: ' + errorStr.substring(errorStr.indexOf(songLowercase), errorStr.length-1);
+								else errorStr += '\n\n' + e.stack;
+
+								missingText.text = 'ERROR WHILE LOADING CHART:\n$errorStr';
+								missingText.screenCenter(Y);
+								missingText.visible = true;
+								missingTextBG.visible = true;
+								FlxG.sound.play(Paths.sound('cancelMenu'));
+								return;
+							}
+
+							menuItems = menuItemsOG;
+							regenMenu();
+						}
+						
+						// Handle main menu selections
 						switch (daSelected)
 						{
 							case "Resume":
 								Paths.clearUnusedMemory();
 								close();
+							#if VIDEOS_ALLOWED
+							case 'Skip Video':
+								if(PlayState.instance.videoCutscene != null && PlayState.instance.videoCutscene.onSkip != null)
+									PlayState.instance.videoCutscene.onSkip();
+								close();
+							#end
+							case 'Change Difficulty':
+								menuItems = difficultyChoices;
+								deleteSkipTimeText();
+								regenMenu();
+							case 'Toggle Practice Mode':
+								PlayState.instance.practiceMode = !PlayState.instance.practiceMode;
+								PlayState.changedDifficulty = true;
+								practiceText.visible = PlayState.instance.practiceMode;
 							case "Restart Song":
-								MusicBeatState.resetState();
+								restartSong();
+							case 'Chart Editor':
+								PlayState.instance.openChartEditor();
+							case "Leave Charting Mode":
+								restartSong();
+								PlayState.chartingMode = false;
+							case 'Skip Time':
+								if(curTime < Conductor.songPosition)
+								{
+									PlayState.startOnTime = curTime;
+									restartSong(true);
+								}
+								else
+								{
+									if (curTime != Conductor.songPosition)
+									{
+										PlayState.instance.clearNotesBefore(curTime);
+										PlayState.instance.setSongTime(curTime);
+									}
+									close();
+								}
+							case 'End Song':
+								close();
+								PlayState.instance.notes.clear();
+								PlayState.instance.unspawnNotes = [];
+								PlayState.instance.preloadedNotes = [];
+								PlayState.instance.finishSong(true);
+							case 'Toggle Botplay':
+								PlayState.instance.cpuControlled = !PlayState.instance.cpuControlled;
+								PlayState.changedDifficulty = true;
+								PlayState.instance.botplayTxt.visible = PlayState.instance.cpuControlled;
+								PlayState.instance.botplayTxt.alpha = 1;
+								PlayState.instance.botplaySine = 0;
+							case 'Options':
+								PlayState.instance.paused = true;
+								PlayState.instance.vocals.volume = 0;
+								PlayState.instance.canResync = false;
+								MusicBeatState.switchState(new OptionsState());
+								if(ClientPrefs.data.pauseMusic != 'None')
+								{
+									FlxG.sound.playMusic(Paths.music(Paths.formatToSongPath(ClientPrefs.data.pauseMusic)), pauseMusic.volume);
+									FlxTween.tween(FlxG.sound.music, {volume: 1}, 0.8);
+									FlxG.sound.music.time = pauseMusic.time;
+								}
+								OptionsState.onPlayState = true;
 							case "Exit to menu":
 								#if DISCORD_ALLOWED DiscordClient.resetClientID(); #end
 								PlayState.deathCounter = 0;
 								PlayState.seenCutscene = false;
-							Mods.loadTopMod();
+								PlayState.instance.canResync = false;
+								
+								Mods.loadTopMod();
 								if(PlayState.isStoryMode)
-									MusicBeatState.switchState(new funkin.ui.story.StoryMenuState());
+									MusicBeatState.switchState(new StoryMenuState());
 								else
-									MusicBeatState.switchState(new funkin.ui.freeplay.FreeplayState());
+									MusicBeatState.switchState(new FreeplayState());
+									
 								FlxG.sound.playMusic(Paths.music('freakyMenu'));
 								PlayState.changedDifficulty = false;
 								PlayState.chartingMode = false;

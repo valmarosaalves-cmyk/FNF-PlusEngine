@@ -67,6 +67,7 @@ import funkin.modding.scripting.HScript;
 
 #if mobile
 import funkin.mobile.backend.StorageUtil;
+import funkin.mobile.backend.MobileData;
 #end
 
 #if LUA_ALLOWED
@@ -1145,9 +1146,12 @@ class PlayState extends MusicBeatState
 		#end
 		
 		addMobileControls();
-		mobileControls.instance.visible = true;
-		mobileControls.onButtonDown.add(onButtonPress);
-		mobileControls.onButtonUp.add(onButtonRelease);
+		if (mobileControls != null && mobileControls.instance != null)
+		{
+			mobileControls.instance.visible = true;
+			mobileControls.onButtonDown.add(onButtonPress);
+			mobileControls.onButtonUp.add(onButtonRelease);
+		}
 		
 		// Crear botón de pausa en la esquina superior derecha (color amarillo y semi-transparente)
 		pauseButton = TouchPad.createStandaloneButton(FlxG.width - 132, 10, "PAUSE", 0xFFFF00, [MobileInputID.PAUSE]);
@@ -2269,6 +2273,15 @@ class PlayState extends MusicBeatState
 				swagNote.noteType = noteType;
 	
 				swagNote.scrollFactor.set();
+				
+				// Mobile Receptor Alignment: Make opponent notes invisible (so opponent can still dance)
+				#if mobile
+				if (ClientPrefs.data.mobileReceptorAlign && MobileData.mode == 4 && !swagNote.mustPress)
+				{
+					swagNote.visible = false; // Invisible but still processed for animations
+				}
+				#end
+				
 				unspawnNotes.push(swagNote);
 
 				var curStepCrochet:Float = 60 / daBpm * 1000 / 4.0;
@@ -2287,6 +2300,15 @@ class PlayState extends MusicBeatState
 						sustainNote.isOpponentMode = swagNote.isOpponentMode;
 						sustainNote.scrollFactor.set();
 						sustainNote.parent = swagNote;
+						
+						// Mobile Receptor Alignment: Make opponent sustains invisible too
+						#if mobile
+						if (ClientPrefs.data.mobileReceptorAlign && MobileData.mode == 4 && !sustainNote.mustPress)
+						{
+							sustainNote.visible = false; // Invisible but still processed
+						}
+						#end
+						
 						unspawnNotes.push(sustainNote);
 						swagNote.tail.push(sustainNote);
 
@@ -2437,6 +2459,13 @@ class PlayState extends MusicBeatState
 	public var skipArrowStartTween:Bool = false; //for lua
 	private function generateStaticArrows(player:Int):Void
 	{
+		// Check if using Mobile Receptor Alignment mode (Hitbox-Arrows only)
+		#if mobile
+		var useMobileReceptorAlign:Bool = ClientPrefs.data.mobileReceptorAlign && MobileData.mode == 4;
+		#else
+		var useMobileReceptorAlign:Bool = false;
+		#end
+		
 		// Para charts de StepMania, centrar strums del jugador y ocultar del oponente
 		var strumLineX:Float = ClientPrefs.data.middleScroll ? STRUM_X_MIDDLESCROLL : STRUM_X;
 		var strumLineY:Float = ClientPrefs.data.downScroll ? (FlxG.height - 150) : 50;
@@ -2462,9 +2491,56 @@ class PlayState extends MusicBeatState
 				else if(!ClientPrefs.data.opponentStrums) targetAlpha = 0;
 				else if(ClientPrefs.data.middleScroll) targetAlpha = 0.35;
 			}
+			
+			// Mobile Receptor Alignment: Calculate special positions
+			var customStrumX:Float = strumLineX;
+			var customStrumY:Float = strumLineY;
+			var customScale:Float = 1.0;
+			
+			if (useMobileReceptorAlign)
+			{
+				// V-Slice Hitbox layout parameters
+				final SCREEN_MIDDLE = (FlxG.width / 2) - 30;
+				final ARROW_DISTANCE = 220;
+				final ARROW_SPREAD = 30;
+				
+				if (isPlayerStrum)
+				{
+					// Player receptors: align with hitbox lanes
+					switch (i)
+					{
+						case 0: // Left
+							customStrumX = SCREEN_MIDDLE - (ARROW_DISTANCE * 1.5) - ARROW_SPREAD;
+						case 1: // Down
+							customStrumX = SCREEN_MIDDLE - (ARROW_DISTANCE * 0.5) - ARROW_SPREAD;
+						case 2: // Up
+							customStrumX = SCREEN_MIDDLE + (ARROW_DISTANCE * 0.5) + ARROW_SPREAD;
+						case 3: // Right
+							customStrumX = SCREEN_MIDDLE + (ARROW_DISTANCE * 1.5) + ARROW_SPREAD;
+					}
+					// Force downscroll position for player
+					customStrumY = FlxG.height - 150;
+				}
+				else
+				{
+					// Opponent receptors: top-left corner, smaller size
+					customStrumX = 10 + (i * 65); // Compact spacing between arrows
+					customStrumY = 50;
+					customScale = 0.45;
+					targetAlpha = 1; // Always visible
+				}
+			}
 
-			var babyArrow:StrumNote = new StrumNote(strumLineX, strumLineY, i, player);
-			babyArrow.downScroll = ClientPrefs.data.downScroll;
+			var babyArrow:StrumNote = new StrumNote(customStrumX, customStrumY, i, player);
+			babyArrow.downScroll = useMobileReceptorAlign ? (isPlayerStrum ? true : false) : ClientPrefs.data.downScroll;
+			
+			// Apply custom scale for opponent in mobile mode
+			if (useMobileReceptorAlign && !isPlayerStrum)
+			{
+				babyArrow.scale.set(customScale, customScale);
+				babyArrow.updateHitbox();
+			}
+			
 			if (!isStoryMode && !skipArrowStartTween)
 			{
 				//babyArrow.y -= 10;
@@ -2483,7 +2559,8 @@ class PlayState extends MusicBeatState
 			else
 			{
 				// En StepMania, no ajustar posición de strums del oponente (ya están ocultas)
-				if(!isStepManiaChart && ClientPrefs.data.middleScroll)
+				// Skip position adjustment if using mobile receptor align mode
+				if(!isStepManiaChart && ClientPrefs.data.middleScroll && !useMobileReceptorAlign)
 				{
 					babyArrow.x += 310;
 					if(i > 1) { //Up and Right
@@ -2498,7 +2575,9 @@ class PlayState extends MusicBeatState
 			// Usar el player correcto para calcular la posición considerando opponent mode
 			// En opponent mode, el player visual es el inverso del original
 			var visualPlayer:Int = isPlayerStrum ? 1 : 0;
-			babyArrow.playerPosition(visualPlayer);
+			// Skip playerPosition() if using custom mobile alignment
+			if (!useMobileReceptorAlign)
+				babyArrow.playerPosition(visualPlayer);
 		}
 	}
 
@@ -4102,7 +4181,8 @@ class PlayState extends MusicBeatState
 	public var transitioning = false;
 	public function endSong()
 	{
-		mobileControls.instance.visible = #if !android touchPad.visible = #end false;
+		if (mobileControls != null && mobileControls.instance != null)
+			mobileControls.instance.visible = #if !android touchPad.visible = #end false;
 		//Should kill you if you tried to cheat
 		if(!startingSong)
 		{

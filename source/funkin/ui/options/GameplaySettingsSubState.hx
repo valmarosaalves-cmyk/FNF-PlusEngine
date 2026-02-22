@@ -13,18 +13,33 @@ class GameplaySettingsSubState extends BaseOptionsMenu
 			'downScroll', //Save data variable name
 			BOOL); //Variable type
 		addOption(option);
+		#if mobile
+		option.onChange = onChangeDownscroll;
+		#end
 
 		var option:Option = new Option('Middlescroll',
 			'If checked, your notes get centered.',
 			'middleScroll',
 			BOOL);
 		addOption(option);
+		#if mobile
+		option.onChange = onChangeMiddlescroll;
+		#end
 
 		var option:Option = new Option('Opponent Notes',
 			'If unchecked, opponent notes get hidden.',
 			'opponentStrums',
 			BOOL);
 		addOption(option);
+
+		#if mobile
+		var option:Option = new Option('Aligned Receptors (Mobile)',
+			"ONLY FOR HITBOX-ARROWS MODE!\nAligns player receptors with hitbox lanes,\nopponent receptors in top-left corner.\n\nWARNING: May break scripts!",
+			'mobileReceptorAlign',
+			BOOL);
+		addOption(option);
+		option.onChange = onChangeMobileReceptorAlign;
+		#end
 
 		var option:Option = new Option('Ghost Tapping',
 			"If checked, you won't get misses from pressing keys\nwhile there are no notes able to be hit.",
@@ -230,4 +245,42 @@ class GameplaySettingsSubState extends BaseOptionsMenu
 	{
 		trace('Heavy Charts Mode: ${ClientPrefs.data.heavyCharts ? "ENABLED" : "DISABLED"}');
 	}
+
+	#if mobile
+	function onChangeMobileReceptorAlign()
+	{
+		if (ClientPrefs.data.mobileReceptorAlign)
+		{
+			// Auto-disable conflicting settings and auto-enable required ones
+			if (ClientPrefs.data.middleScroll)
+			{
+				ClientPrefs.data.middleScroll = false;
+				trace('Mobile Receptor Align: Auto-disabled Middlescroll');
+			}
+			if (!ClientPrefs.data.downScroll)
+			{
+				ClientPrefs.data.downScroll = true;
+				trace('Mobile Receptor Align: Auto-enabled Downscroll');
+			}
+		}
+	}
+
+	function onChangeDownscroll()
+	{
+		if (ClientPrefs.data.downScroll && ClientPrefs.data.mobileReceptorAlign)
+		{
+			ClientPrefs.data.mobileReceptorAlign = false;
+			trace('Downscroll enabled: Auto-disabled Mobile Receptor Align');
+		}
+	}
+
+	function onChangeMiddlescroll()
+	{
+		if (ClientPrefs.data.middleScroll && ClientPrefs.data.mobileReceptorAlign)
+		{
+			ClientPrefs.data.mobileReceptorAlign = false;
+			trace('Middlescroll enabled: Auto-disabled Mobile Receptor Align');
+		}
+	}
+	#end
 }

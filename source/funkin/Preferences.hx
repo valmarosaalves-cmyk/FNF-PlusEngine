@@ -16,7 +16,7 @@ import funkin.ui.title.TitleState;
 	public var showTouchPointer:Bool = true; // show touch pointer indicator (like Android dev option)
 	public var showMobileDebugButtons:Bool = true; // show T and D debug buttons on mobile
 	public var screensaver:Bool = false;
-	public var wideScreen:Bool = false;
+	public var infinityDisplay:Bool = false; // Extend viewport vertically for modern screens while keeping game at 16:9
 	#if android
 	public var storageType:String = "EXTERNAL";
 	public var androidOptimizationsApplied:Bool = false; // One-time optimization flag
@@ -26,6 +26,7 @@ import funkin.ui.title.TitleState;
 	public var versionTextOnGameplay:Bool = false;
 	public var gameOverVibration:Bool = false;
 	public var fpsRework:Bool = false;
+	public var mobileReceptorAlign:Bool = false; // Align receptors with hitbox lanes (mobile only, may break scripts)
 	#if windows
 	public var fullscreenMode:String = 'Borderless'; // 'Borderless', 'Exclusive'
 	#end

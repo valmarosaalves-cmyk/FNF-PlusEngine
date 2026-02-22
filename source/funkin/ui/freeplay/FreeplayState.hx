@@ -81,6 +81,7 @@ class FreeplayState extends MusicBeatState
 	#if mobile
 	var touchScroll:funkin.mobile.backend.TouchScroll;
 	var difficultyScroll:funkin.mobile.backend.TouchScroll;
+	var touchScrollAccumulator:Float = 0; // Accumulator for discrete scroll
 	#end
 
 
@@ -464,23 +465,34 @@ class FreeplayState extends MusicBeatState
 					}
 
 					#if mobile
-					// Touch scroll with swipe detection
+					// Touch scroll with discrete selection (like mouse wheel)
 					if (touchScroll != null)
 					{
 						var scrollDelta = touchScroll.update();
 						
-						// Apply scroll delta to selection with smooth scrolling
+						// Accumulate scroll delta
 						if (Math.abs(scrollDelta) > 0.5)
 						{
-							lerpSelected += -scrollDelta / 250;
-							lerpSelected = FlxMath.bound(lerpSelected, 0, songs.length - 1);
+							touchScrollAccumulator += -scrollDelta;
 							
-							var newSelected = Math.round(lerpSelected);
-							if (newSelected != curSelected)
+							// Threshold for one song change (similar to mouse wheel sensitivity)
+							final SCROLL_THRESHOLD = 50.0;
+							
+							// Change selection when threshold is crossed
+							if (Math.abs(touchScrollAccumulator) >= SCROLL_THRESHOLD)
 							{
-								changeSelection(newSelected - curSelected, false);
-								// Keep lerp smooth, don't force snap
+								var direction = touchScrollAccumulator > 0 ? 1 : -1;
+								FlxG.sound.play(Paths.sound('scrollMenu'), 0.2);
+								changeSelection(direction, false);
+								
+								// Reset accumulator (keep remainder for smooth continuous scrolling)
+								touchScrollAccumulator = touchScrollAccumulator % SCROLL_THRESHOLD;
 							}
+						}
+						else if (!touchScroll.isScrolling)
+						{
+							// Reset accumulator when not scrolling
+							touchScrollAccumulator = 0;
 						}
 						
 						// Handle tap on cards (only if not scrolling)

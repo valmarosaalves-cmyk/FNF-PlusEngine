@@ -83,9 +83,9 @@ class MobileSettingsSubState extends BaseOptionsMenu
 		option.onChange = () -> lime.system.System.allowScreenTimeout = curOption.getValue();
 		addOption(option);
 
-		option = new Option('Wide Screen Mode',
-			'If checked, The game will stetch to fill your whole screen. (WARNING: Can result in bad visuals & break some mods that resizes the game/cameras)',
-			'wideScreen', BOOL);
+		option = new Option('Infinity Display',
+			'Extends the viewport vertically for modern screens\nwhile keeping the game in 16:9 for mod compatibility.\nTouchpad controls will adjust automatically.',
+			'infinityDisplay', BOOL);
 		option.onChange = () -> FlxG.scaleMode = new funkin.mobile.backend.MobileScaleMode();
 		addOption(option);
 		#end

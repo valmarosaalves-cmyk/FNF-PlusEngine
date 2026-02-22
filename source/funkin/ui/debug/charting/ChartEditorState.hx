@@ -95,7 +95,7 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 		['Change Stage', "Changes the current stage during gameplay.\nValue 1: Stage name (e.g. limo, mall, stage).\nCharacter positions update based on the stage JSON."],
 		['CnB Screen', "Color and Black screen effect.\nValue 1: true/false - black bg (true) or white bg (false).\nValue 2: true/false - icon colors (true) or monochrome (false).\n(both false = Bad Apple, true+false = inverted Bad Apple,\ntrue+true = icon color mode)\nLeave both false to reset."],
 		['Destructive HUD', "Randomly shuffles all HUD elements positions.\nValue 1: true = enable, false = disable and restore positions.\nValue 2: zoom = trigger on camera zoom (beat), note = trigger on opponent note hit."],
-		['Glitchy Notes', "Applies a glitch (wavy) shader to the note strums.\nValue 1: true = enable, false = disable.\nValue 2: opponent, player, or both.\nRequires Shaders enabled in settings."]
+		['Glitchy Notes', "Applies a glitch shader to the note strums.\nValue 1: true = enable, false = disable.\nValue 2: opponent, player, or both.\nRequires Shaders enabled in settings."]
 	];
 	
 	public static var keysArray:Array<FlxKey> = [ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT]; //Used for Vortex Editor

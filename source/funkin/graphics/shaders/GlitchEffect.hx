@@ -1,0 +1,72 @@
+package funkin.graphics.shaders;
+
+class GlitchEffect extends FlxShader
+{
+	@:glFragmentSource('
+		#pragma header
+		uniform float binaryIntensity;
+		uniform float negativity;
+		
+		#define iChannel0 bitmap
+		#define iChannel1 bitmap
+		#define texture flixel_texture2D
+		#define fragColor gl_FragColor
+		#define mainImage main
+		
+		void main() {
+			#pragma body
+			vec2 fragCoord = openfl_TextureCoordv * openfl_TextureSize;
+			vec2 iResolution = openfl_TextureSize;
+			
+			vec2 uv = fragCoord.xy / iResolution.xy;
+			
+			// get snapped position
+			float psize = 0.04 * binaryIntensity;
+			float psq = 1.0 / psize;
+			
+			float px = floor(uv.x * psq + 0.5) * psize;
+			float py = floor(uv.y * psq + 0.5) * psize;
+			
+			vec4 colSnap = texture2D(bitmap, vec2(px, py));
+			
+			float lum = pow(1.0 - (colSnap.r + colSnap.g + colSnap.b) / 3.0, binaryIntensity);
+			
+			float qsize = psize * lum;
+			float qsq = 1.0 / qsize;
+			
+			float qx = floor(uv.x * qsq + 0.5) * qsize;
+			float qy = floor(uv.y * qsq + 0.5) * qsize;
+			
+			float rx = (px - qx) * lum + uv.x;
+			float ry = (py - qy) * lum + uv.y;
+			
+			vec4 mierdaColor = texture(iChannel0, vec2(rx, ry));
+			
+			fragColor = mix(mierdaColor, vec4(1.0 - mierdaColor.r, 1.0 - mierdaColor.g, 1.0 - mierdaColor.b, mierdaColor.a) * mierdaColor.a, negativity);
+		}
+	')
+	
+	public function new(binaryIntensity:Float = 0.0, negativity:Float = 0.0)
+	{
+		super();
+		this.binaryIntensity.value = [binaryIntensity];
+		this.negativity.value = [negativity];
+	}
+	
+	public var binaryIntensity(default, set):Float = 0.0;
+	public var negativity(default, set):Float = 0.0;
+	
+	function set_binaryIntensity(v:Float):Float
+	{
+		binaryIntensity = v;
+		this.binaryIntensity.value = [v];
+		return v;
+	}
+	
+	function set_negativity(v:Float):Float
+	{
+		negativity = v;
+		this.negativity.value = [v];
+		return v;
+	}
+}

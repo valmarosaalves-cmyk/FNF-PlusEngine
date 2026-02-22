@@ -504,7 +504,7 @@ class Sserafim extends BaseStage
 		if(!videoEnded)
 		{
 			#if VIDEOS_ALLOWED
-			game.startVideo('sserafim-cutscene');
+			game.startVideo('sserafimCutscene');
 			game.videoCutscene.finishCallback = game.videoCutscene.onSkip = function()
 			{
 				videoEnded = true;

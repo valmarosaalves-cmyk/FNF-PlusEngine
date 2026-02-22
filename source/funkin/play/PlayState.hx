@@ -39,7 +39,7 @@ import openfl.filters.ShaderFilter;
 #end
 
 import funkin.graphics.shaders.ErrorHandledShader;
-import funkin.graphics.shaders.WiggleEffect;
+import funkin.graphics.shaders.GlitchEffect;
 import flixel.util.FlxGradient;
 import openfl.geom.Rectangle;
 
@@ -357,8 +357,8 @@ class PlayState extends MusicBeatState
 	// Glitchy Notes Event
 	#if !flash
 	public var glitchyNotesTarget:String = ''; // 'opponent', 'player', 'both'
-	var glitchOpponent:WiggleEffect;
-	var glitchPlayer:WiggleEffect;
+	var glitchOpponent:GlitchEffect;
+	var glitchPlayer:GlitchEffect;
 	#end
 	var versionTextTween:FlxTween;
 	var judgementCounter:JudCounter;
@@ -3729,11 +3729,7 @@ class PlayState extends MusicBeatState
 						{
 							if (glitchOpponent == null)
 							{
-								glitchOpponent = new WiggleEffect();
-								glitchOpponent.effectType = WiggleEffectType.WAVY;
-								glitchOpponent.waveSpeed = 4.0;
-								glitchOpponent.waveFrequency = 12.0;
-								glitchOpponent.waveAmplitude = 0.03;
+								glitchOpponent = new GlitchEffect(0.0, 0.0);
 							}
 							for (strum in opponentStrums.members)
 								if (strum != null) strum.shader = glitchOpponent.shader;
@@ -3742,11 +3738,7 @@ class PlayState extends MusicBeatState
 						{
 							if (glitchPlayer == null)
 							{
-								glitchPlayer = new WiggleEffect();
-								glitchPlayer.effectType = WiggleEffectType.WAVY;
-								glitchPlayer.waveSpeed = 4.0;
-								glitchPlayer.waveFrequency = 12.0;
-								glitchPlayer.waveAmplitude = 0.03;
+								glitchPlayer = new GlitchEffect(0.0, 0.0);
 							}
 							for (strum in playerStrums.members)
 								if (strum != null) strum.shader = glitchPlayer.shader;

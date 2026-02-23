@@ -33,7 +33,7 @@ class GameplaySettingsSubState extends BaseOptionsMenu
 		addOption(option);
 
 		#if mobile
-		var option:Option = new Option('Aligned Receptors (Mobile)',
+		var option:Option = new Option('Aligned Receptors',
 			"ONLY FOR HITBOX-ARROWS MODE!\nAligns player receptors with hitbox lanes,\nopponent receptors in top-left corner.\n\nWARNING: May break scripts!",
 			'mobileReceptorAlign',
 			BOOL);

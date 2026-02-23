@@ -2,7 +2,7 @@
 <project>
 	<!-- _________________________ Application Settings _________________________ -->
 
-	<app title="Friday Night Funkin': Plus Engine" file="PlusEngine" packageName="com.leninasto.plusengine" package="com.leninasto.plusengine" main="Main" version="1.0" company="LeninAsto" />
+	<app title="Friday Night Funkin': Plus Engine" file="PlusEngine" packageName="com.leninasto.plusengine" package="com.leninasto.plusengine" main="Main" version="1.2.5" company="LeninAsto" />
 	<app title="FNF: Plus Engine" if="android" />
 
 	<!--Switch Export with Unique ApplicationID and Icon-->

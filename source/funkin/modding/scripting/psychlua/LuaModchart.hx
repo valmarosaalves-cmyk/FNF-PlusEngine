@@ -293,7 +293,7 @@ class LuaModchart
             if (songName == null || songName.length == 0)
                 songName = Song.loadedSongName;
 
-            PlayState.instance.addTextToDebug('Looking for chart="$chartName" song="$songName"', 0xFFFFFF);
+            trace('Looking for chart="$chartName" song="$songName"');
 
             var swagSong = Song.getChart(chartName, songName);
             if (swagSong == null) {
@@ -301,7 +301,7 @@ class LuaModchart
                 return null;
             }
 
-            PlayState.instance.addTextToDebug('Chart found, sections=${swagSong.notes != null ? swagSong.notes.length : 0}', 0xFFFFFF);
+            trace('Chart found, sections=${swagSong.notes != null ? swagSong.notes.length : 0}');
 
             // Build a 1-indexed Lua-compatible array of note tables
             var result:Array<Dynamic> = [];
@@ -326,8 +326,8 @@ class LuaModchart
             // Sort ascending by step so the caller can just iterate in order
             result.sort(function(a, b) return a.step < b.step ? -1 : (a.step > b.step ? 1 : 0));
 
-            PlayState.instance.addTextToDebug('"$chartName" total notes=${result.length}'
-                + (result.length > 0 ? ' | first: step=${result[0].step} type=${result[0].type} time=${result[0].time}ms' : ''), 0xFFFFFF);
+            trace('"$chartName" total notes=${result.length}'
+                + (result.length > 0 ? ' | first: step=${result[0].step} type=${result[0].type} time=${result[0].time}ms' : ''));
 
             return result;
         });

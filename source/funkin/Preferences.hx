@@ -14,7 +14,7 @@ import funkin.ui.title.TitleState;
 	public var dynamicColors:Bool = true; // yes cause its cool -Karim
 	public var controlsAlpha:Float = FlxG.onMobile ? 0.6 : 0;
 	public var showTouchPointer:Bool = true; // show touch pointer indicator (like Android dev option)
-	public var showMobileDebugButtons:Bool = true; // show T and D debug buttons on mobile
+	public var showMobileDebugButtons:Bool = false; // show T and D debug buttons on mobile
 	public var screensaver:Bool = false;
 	public var infinityDisplay:Bool = false; // Extend viewport vertically for modern screens while keeping game at 16:9
 	#if android
@@ -167,14 +167,14 @@ import funkin.ui.title.TitleState;
 	public var useSScriptCompat:Bool = false; // Use SScript instead of hscript-iris for Psych 0.7.3 mods compatibility
 	public var legacyMemoryManagement:Bool = false; // Use Psych 0.7.3 memory management style (no GPU disposal)
 	public var legacyFileSystemAccess:Bool = false; // Allow direct FileSystem.readDirectory access like in Psych 0.7.3
-	public var useLegacyFont:Bool = false; // Use legacy VCR font instead of Phantom font
+	public var useLegacyFont:Bool = true; // Use legacy VCR font instead of Phantom font
 	public var legacyShaderInit:Bool = false; // Use Psych 0.7.3 shader initialization (glslVersion parameter, direct FlxRuntimeShader)
 }
 
 class Preferences {
 	public static var data:SaveVariables = {};
 	public static var defaultData:SaveVariables = {};
-	public static var judgementCounter:Bool = true;
+	public static var judgementCounter:Bool = false;
 
 	//Every key has two binds, add your key bind down here and then add your control on options/ControlsSubState.hx and Controls.hx
 	public static var keyBinds:Map<String, Array<FlxKey>> = [

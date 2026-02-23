@@ -81,7 +81,6 @@ class FreeplayState extends MusicBeatState
 	#if mobile
 	var touchScroll:funkin.mobile.backend.TouchScroll;
 	var difficultyScroll:funkin.mobile.backend.TouchScroll;
-	var touchScrollAccumulator:Float = 0; // Accumulator for discrete scroll
 	#end
 
 
@@ -458,41 +457,34 @@ class FreeplayState extends MusicBeatState
 						var isUp:Bool = controls.UI_UP || (touchPad != null && touchPad.buttonUp.pressed);
 						changeSelection((checkNewHold - checkLastHold) * (isUp ? -shiftMult : shiftMult));
 					}
-				}					if(FlxG.mouse.wheel != 0)
+				}					
+
+				if(FlxG.mouse.wheel != 0)
 					{
 						FlxG.sound.play(Paths.sound('scrollMenu'), 0.2);
 						changeSelection(-shiftMult * FlxG.mouse.wheel, false);
 					}
 
 					#if mobile
-					// Touch scroll with discrete selection (like mouse wheel)
+					// Touch scroll with smooth selection (like mouse scroll)
 					if (touchScroll != null)
 					{
 						var scrollDelta = touchScroll.update();
 						
-						// Accumulate scroll delta
+						// Smooth scroll using lerpSelected
 						if (Math.abs(scrollDelta) > 0.5)
 						{
-							touchScrollAccumulator += -scrollDelta;
+							lerpSelected += -scrollDelta / 150;
+							lerpSelected = FlxMath.bound(lerpSelected, 0, songs.length - 1);
 							
-							// Threshold for one song change (similar to mouse wheel sensitivity)
-							final SCROLL_THRESHOLD = 50.0;
-							
-							// Change selection when threshold is crossed
-							if (Math.abs(touchScrollAccumulator) >= SCROLL_THRESHOLD)
+							// Snap to nearest song
+							var newSelected = Math.round(lerpSelected);
+							if (newSelected != curSelected)
 							{
-								var direction = touchScrollAccumulator > 0 ? 1 : -1;
 								FlxG.sound.play(Paths.sound('scrollMenu'), 0.2);
-								changeSelection(direction, false);
-								
-								// Reset accumulator (keep remainder for smooth continuous scrolling)
-								touchScrollAccumulator = touchScrollAccumulator % SCROLL_THRESHOLD;
+								curSelected = newSelected;
+								changeSelection(0, false); // Update UI without changing selection
 							}
-						}
-						else if (!touchScroll.isScrolling)
-						{
-							// Reset accumulator when not scrolling
-							touchScrollAccumulator = 0;
 						}
 						
 						// Handle tap on cards (only if not scrolling)
@@ -797,11 +789,11 @@ class FreeplayState extends MusicBeatState
 		}
 		else if((controls.RESET || (touchPad != null && touchPad.buttonY.justPressed)) && !player.playingMusic)
 		{
-		persistentUpdate = false;
-		removeTouchPad();
-		openSubState(new ResetScoreSubState(songs[curSelected].songName, curDifficulty, songs[curSelected].songCharacter));
-		FlxG.sound.play(Paths.sound('scrollMenu'));
-	}
+			persistentUpdate = false;
+			removeTouchPad();
+			openSubState(new ResetScoreSubState(songs[curSelected].songName, curDifficulty, songs[curSelected].songCharacter));
+			FlxG.sound.play(Paths.sound('scrollMenu'));
+		}
 
 		updateTexts(elapsed);
 	}

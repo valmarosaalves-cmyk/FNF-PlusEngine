@@ -808,14 +808,14 @@ class PlayState extends MusicBeatState
 			#end
 			{
 				#if LUA_ALLOWED
-				if(file.toLowerCase() == 'globalscript.lua')
+				if(file.toLowerCase() == 'globalscript.lua' || file.toLowerCase() == 'musicbeatstate.lua' || file.toLowerCase() == 'musicbeatsubstate.lua' || file.toLowerCase() == 'customfadetransition.lua')
 					continue;
 				if(file.toLowerCase().endsWith('.lua'))
 					new FunkinLua(folder + file);
 				#end
 
 				#if HSCRIPT_ALLOWED
-				if(file.toLowerCase() == 'globalscript.hx')
+				if(file.toLowerCase() == 'globalscript.hx' || file.toLowerCase() == 'musicbeatstate.hx' || file.toLowerCase() == 'musicbeatsubstate.hx' || file.toLowerCase() == 'customfadetransition.hx')
 					continue;
 				if(file.toLowerCase().endsWith('.hx'))
 					initHScript(folder + file);
@@ -2500,7 +2500,7 @@ class PlayState extends MusicBeatState
 			if (useMobileReceptorAlign)
 			{
 				// V-Slice Hitbox layout parameters
-				final SCREEN_MIDDLE = (FlxG.width / 2) - 30;
+				final SCREEN_MIDDLE = (FlxG.width / 2) - 40;
 				final ARROW_DISTANCE = 220;
 				final ARROW_SPREAD = 30;
 				

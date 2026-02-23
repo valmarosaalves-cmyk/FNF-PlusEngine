@@ -162,7 +162,13 @@ class Bar extends FlxSpriteGroup
 		if(value != percent) doUpdate = true;
 		percent = value;
 
-		if(doUpdate && !ClientPrefs.data.smoothHealthBar) updateBar();
+		if(doUpdate) {
+			if(ClientPrefs.data.smoothHealthBar) {
+				smoothPercent = value; // Update smoothPercent immediately to sync with percent
+				updateBarSmooth();
+			}
+			else updateBar();
+		}
 		return value;
 	}
 

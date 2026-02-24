@@ -155,6 +155,7 @@ class HScript extends Iris
 		Iris.proxyImports.set("objects.Note", funkin.play.notes.Note);
 		Iris.proxyImports.set("objects.StrumNote", funkin.play.notes.StrumNote);
 		Iris.proxyImports.set("objects.NoteSplash", funkin.play.notes.NoteSplash);
+		Iris.proxyImports.set("objects.BGSprite", funkin.play.stage.BGSprite);
 		
 		// States compatibility (old 0.7.3 paths)
 		Iris.proxyImports.set("states.PlayState", PlayState);
@@ -188,6 +189,9 @@ class HScript extends Iris
 		Iris.proxyImports.set("options.VisualsSettingsSubState", funkin.ui.options.VisualsSettingsSubState);
 		Iris.proxyImports.set("options.GraphicsSettingsSubState", funkin.ui.options.GraphicsSettingsSubState);
 		Iris.proxyImports.set("options.GameplaySettingsSubState", funkin.ui.options.GameplaySettingsSubState);
+
+		Iris.proxyImports.set("flixel.Math.FlxPoint", CustomFlxPoint);
+		Iris.proxyImports.set("flash.filters.ShaderFilter", flash.filters.ShaderFilter);
 		
 		true;
 	};
@@ -331,6 +335,7 @@ class HScript extends Iris
 		set('FlxSpriteGroup', flixel.group.FlxSpriteGroup);
 		set('FlxTypedGroup', flixel.group.FlxTypedGroup);
 		set('FlxGroup', flixel.group.FlxGroup);
+		set('FlxPoint', CustomFlxPoint);
 		set('Capabilities', openfl.system.Capabilities);
 		set('RatioScaleMode', flixel.system.scaleModes.RatioScaleMode);
 		set('Lib', openfl.Lib);
@@ -404,7 +409,8 @@ class HScript extends Iris
 			Alphabet: funkin.ui.Alphabet,
 			Note: funkin.play.notes.Note,
 			StrumNote: StrumNote,
-			NoteSplash: NoteSplash
+			NoteSplash: NoteSplash,
+			BGSprite: funkin.play.stage.BGSprite
 		};
 		set('objects', objectsCompat);
 		
@@ -422,12 +428,14 @@ class HScript extends Iris
 		set('FlxRuntimeShader', flixel.addons.display.FlxRuntimeShader);
 		set('ErrorHandledRuntimeShader', funkin.graphics.shaders.ErrorHandledShader.ErrorHandledRuntimeShader);
 		#end
-		set('ShaderFilter', openfl.filters.ShaderFilter);
+		set('ShaderFilter', flash.filters.ShaderFilter);
+		set('flash.filters.ShaderFilter', flash.filters.ShaderFilter);
 		set('RGBPalette', funkin.graphics.shaders.RGBPalette);
 		set('shaders', {
 			RGBPalette: funkin.graphics.shaders.RGBPalette
 		});
 		set('shaders.RGBPalette', funkin.graphics.shaders.RGBPalette);
+		set('BGSprite', funkin.play.stage.BGSprite);
 		set('StringTools', StringTools);
 		#if flxanimate
 		set('FlxAnimate', FlxAnimate);
@@ -829,6 +837,7 @@ class CustomFlxG {
 	public static var autoPause(get, set):Bool;
 	public static var signals(get, never):Dynamic;
 	public static var random(get, never):Dynamic;
+	public static var log(get, never):Dynamic;
 	// Exposes FlxG.scaleMode so scripts can access FlxG.scaleMode.scale.x / .y
 	public static var scaleMode(get, never):Dynamic;
 	// Exposes FlxG.elapsed so scripts can use frame-rate independent lerp calculations
@@ -850,6 +859,7 @@ class CustomFlxG {
 	static function set_autoPause(value:Bool):Bool return FlxG.autoPause = value;
 	static function get_signals():Dynamic return FlxG.signals;
 	static function get_random():Dynamic return FlxG.random;
+	static function get_log():Dynamic return FlxG.log;
 	static function get_scaleMode():Dynamic return FlxG.scaleMode;
 	static function get_elapsed():Float return FlxG.elapsed;
 
@@ -994,6 +1004,24 @@ class CustomFlxTextBorderStyle {
 	public static var SHADOW(default, null):flixel.text.FlxText.FlxTextBorderStyle = flixel.text.FlxText.FlxTextBorderStyle.SHADOW;
 	public static var OUTLINE(default, null):flixel.text.FlxText.FlxTextBorderStyle = flixel.text.FlxText.FlxTextBorderStyle.OUTLINE;
 	public static var OUTLINE_FAST(default, null):flixel.text.FlxText.FlxTextBorderStyle = flixel.text.FlxText.FlxTextBorderStyle.OUTLINE_FAST;
+}
+
+class CustomFlxPoint {
+	/**
+	 * Recycle or create new FlxPoint.
+	 * Be sure to put() them back into the pool after you're done with them!
+	 */
+	public static inline function get(x:Float = 0, y:Float = 0):flixel.math.FlxBasePoint {
+		return flixel.math.FlxPoint.get(x, y);
+	}
+
+	/**
+	 * Recycle or create a new FlxPoint which will automatically be released
+	 * to the pool when passed into a flixel function.
+	 */
+	public static inline function weak(x:Float = 0, y:Float = 0):flixel.math.FlxBasePoint {
+		return flixel.math.FlxPoint.weak(x, y);
+	}
 }
 
 class CustomInterp extends crowplexus.hscript.Interp

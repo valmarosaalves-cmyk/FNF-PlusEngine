@@ -265,16 +265,38 @@
 		<!-- Android Permissions -->
 		<config:android permission="android.permission.INTERNET" />
 		<config:android permission="android.permission.ACCESS_NETWORK_STATE" />
+		
+		<!-- Storage Permissions - Legacy (Android 12 and below) -->
 		<config:android permission="android.permission.READ_EXTERNAL_STORAGE" />
 		<config:android permission="android.permission.WRITE_EXTERNAL_STORAGE" />
+		
+		<!-- Storage Permissions - Modern (Android 13+) -->
 		<config:android permission="android.permission.MANAGE_EXTERNAL_STORAGE" />
 		<config:android permission="android.permission.READ_MEDIA_IMAGES" />
 		<config:android permission="android.permission.READ_MEDIA_VIDEO" />
 		<config:android permission="android.permission.READ_MEDIA_AUDIO" />
+		<config:android permission="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
 		
 		<!-- Android SDK versions (updated to 35 for androidx.core compatibility) -->
 		<config:android target-sdk-version="35" />
+		<config:android min-sdk-version="21" />
 		<android target-sdk-version="35" />
+		
+		<!-- Scoped Storage Configuration -->
+		<!-- Android 10 (API 29): Use legacy external storage for compatibility -->
+		<config:android>
+			<application android:requestLegacyExternalStorage="true" />
+		</config:android>
+		
+		<!-- Android 11+ (API 30+): Enable preserveLegacyExternalStorage for app updates -->
+		<config:android>
+			<application android:preserveLegacyExternalStorage="true" />
+		</config:android>
+		
+		<!-- Android 14+ (API 34+): Use app-specific directories and MediaStore API -->
+		<config:android>
+			<application android:localeConfig="@xml/locales_config" />
+		</config:android>
 	</section>
 
 	<section if="ios">

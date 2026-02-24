@@ -292,11 +292,6 @@
 		<config:android>
 			<application android:preserveLegacyExternalStorage="true" />
 		</config:android>
-		
-		<!-- Android 14+ (API 34+): Use app-specific directories and MediaStore API -->
-		<config:android>
-			<application android:localeConfig="@xml/locales_config" />
-		</config:android>
 	</section>
 
 	<section if="ios">

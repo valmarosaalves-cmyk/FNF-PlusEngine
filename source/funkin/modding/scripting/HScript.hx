@@ -125,6 +125,16 @@ class HScript extends Iris
 		// Register old Psych Engine paths as proxy imports for backwards compatibility
 		// This makes "import psychlua.LuaUtils" work by redirecting to the new Plus Engine path
 		Iris.proxyImports.set("shaders.RGBPalette", funkin.graphics.shaders.RGBPalette); // menos mal eh
+		Iris.proxyImports.set("shaders.WiggleEffect", funkin.graphics.shaders.WiggleEffect);
+		Iris.proxyImports.set("shaders.WiggleEffectType", funkin.graphics.shaders.WiggleEffect.WiggleEffectType);
+		Iris.proxyImports.set("shaders.ColorSwap", funkin.graphics.shaders.ColorSwap);
+		Iris.proxyImports.set("shaders.OverlayShader", funkin.graphics.shaders.OverlayShader);
+		// Root level shader imports for old mods
+		Iris.proxyImports.set("WiggleEffect", funkin.graphics.shaders.WiggleEffect);
+		Iris.proxyImports.set("WiggleEffectType", funkin.graphics.shaders.WiggleEffect.WiggleEffectType);
+		Iris.proxyImports.set("ColorSwap", funkin.graphics.shaders.ColorSwap);
+		Iris.proxyImports.set("OverlayShader", funkin.graphics.shaders.OverlayShader);
+		
 		Iris.proxyImports.set("psychlua.LuaUtils", funkin.modding.scripting.psychlua.LuaUtils);
 		Iris.proxyImports.set("psychlua.ReflectionFunctions", funkin.modding.scripting.psychlua.ReflectionFunctions);
 		Iris.proxyImports.set("psychlua.CustomSubstate", funkin.modding.scripting.psychlua.CustomSubstate);
@@ -326,8 +336,12 @@ class HScript extends Iris
 		// scripts access the same map across the game (matches legacy behaviour).
 		#if LUA_ALLOWED
 		set('modchartTweens', PlayState.instance != null ? PlayState.instance.modchartTweens : null);
+		set('modchartSprites', PlayState.instance != null ? PlayState.instance.modchartSprites : null);
+		set('modchartTexts', PlayState.instance != null ? PlayState.instance.modchartTexts : null);
 		#else
 		set('modchartTweens', null);
+		set('modchartSprites', null);
+		set('modchartTexts', null);
 		#end
 		set('FlxFlicker', flixel.effects.FlxFlicker);
 		set('FlxColor', CustomFlxColor);
@@ -431,8 +445,10 @@ class HScript extends Iris
 		set('ShaderFilter', flash.filters.ShaderFilter);
 		set('flash.filters.ShaderFilter', flash.filters.ShaderFilter);
 		set('RGBPalette', funkin.graphics.shaders.RGBPalette);
+		set('WiggleEffect', funkin.graphics.shaders.WiggleEffect);
 		set('shaders', {
-			RGBPalette: funkin.graphics.shaders.RGBPalette
+			RGBPalette: funkin.graphics.shaders.RGBPalette,
+			WiggleEffect: funkin.graphics.shaders.WiggleEffect
 		});
 		set('shaders.RGBPalette', funkin.graphics.shaders.RGBPalette);
 		set('BGSprite', funkin.play.stage.BGSprite);
@@ -458,9 +474,13 @@ class HScript extends Iris
 		set('parentLua', parentLua);
 		// Backwards compatibility: older mods expect a global `modchartTweens` map
 		set('modchartTweens', PlayState.instance != null ? PlayState.instance.modchartTweens : null);
+		set('modchartSprites', PlayState.instance != null ? PlayState.instance.modchartSprites : null);
+		set('modchartTexts', PlayState.instance != null ? PlayState.instance.modchartTexts : null);
 		#else
 		set('parentLua', null);
 		set('modchartTweens', null);
+		set('modchartSprites', null);
+		set('modchartTexts', null);
 		#end
 		set('customSubstate', CustomSubstate.instance);
 		set('customSubstateName', CustomSubstate.name);
@@ -842,6 +862,8 @@ class CustomFlxG {
 	public static var scaleMode(get, never):Dynamic;
 	// Exposes FlxG.elapsed so scripts can use frame-rate independent lerp calculations
 	public static var elapsed(get, never):Float;
+	// Exposes FlxG.bitmap for direct access to bitmap cache and _cache field
+	public static var bitmap(get, never):Dynamic;
 	
 	// Getters
 	static function get_state():Dynamic return FlxG.state;
@@ -862,6 +884,10 @@ class CustomFlxG {
 	static function get_log():Dynamic return FlxG.log;
 	static function get_scaleMode():Dynamic return FlxG.scaleMode;
 	static function get_elapsed():Float return FlxG.elapsed;
+	static function get_bitmap():Dynamic {
+		// Return a wrapper that exposes both BitmapFrontEnd methods and _cache
+		return BitmapFrontEndWrapper.instance;
+	}
 
 	// Compatibility functions for old mods
 	public static function addChildBelowMouse(object:Dynamic, ?IndexModifier:Int = 0):Void {
@@ -1021,6 +1047,122 @@ class CustomFlxPoint {
 	 */
 	public static inline function weak(x:Float = 0, y:Float = 0):flixel.math.FlxBasePoint {
 		return flixel.math.FlxPoint.weak(x, y);
+	}
+}
+
+@:privateAccess(flixel.system.frontEnds.BitmapFrontEnd)
+class BitmapFrontEndWrapper {
+	public static var instance(get, never):BitmapFrontEndWrapper;
+	private static var _instance:BitmapFrontEndWrapper;
+	
+	static function get_instance():BitmapFrontEndWrapper {
+		if (_instance == null)
+			_instance = new BitmapFrontEndWrapper();
+		return _instance;
+	}
+	
+	/**
+	 * Exposes the private _cache field from FlxG.bitmap
+	 */
+	public var _cache(get, never):CacheWrapper;
+	
+	private function new() {}
+	
+	function get__cache():CacheWrapper {
+		return new CacheWrapper(@:privateAccess FlxG.bitmap._cache);
+	}
+	
+	// Delegate common BitmapFrontEnd methods
+	public function add(graphic:flixel.graphics.FlxGraphic, ?persistent:Bool = false, ?key:String):flixel.graphics.FlxGraphic {
+		return FlxG.bitmap.add(graphic, persistent, key);
+	}
+	
+	public function removeByKey(key:String):Void {
+		FlxG.bitmap.removeByKey(key);
+	}
+	
+	public function remove(graphic:flixel.graphics.FlxGraphic):Void {
+		FlxG.bitmap.remove(graphic);
+	}
+	
+	public function get(key:String):flixel.graphics.FlxGraphic {
+		return FlxG.bitmap.get(key);
+	}
+	
+	public function checkCache(key:String):Bool {
+		return FlxG.bitmap.checkCache(key);
+	}
+	
+	public function create(width:Int, height:Int, color:Int, ?unique:Bool = false, ?key:String):flixel.graphics.FlxGraphic {
+		return FlxG.bitmap.create(width, height, color, unique, key);
+	}
+	
+	public function reset():Void {
+		FlxG.bitmap.reset();
+	}
+	
+	public function clearCache():Void {
+		FlxG.bitmap.clearCache();
+	}
+	
+	public function clearUnused():Void {
+		FlxG.bitmap.clearUnused();
+	}
+}
+
+/**
+ * Wrapper class that exposes Map methods for bitmap cache access in scripts.
+ * Allows scripts to use FlxG.bitmap._cache.exists() and FlxG.bitmap._cache.get()
+ */
+class CacheWrapper {
+	private var cache:Map<String, flixel.graphics.FlxGraphic>;
+	
+	public function new(cache:Map<String, flixel.graphics.FlxGraphic>) {
+		this.cache = cache;
+	}
+	
+	/**
+	 * Check if a bitmap with the given key exists in the cache
+	 */
+	public function exists(key:String):Bool {
+		return cache.exists(key);
+	}
+	
+	/**
+	 * Get a bitmap from the cache by its key
+	 */
+	public function get(key:String):flixel.graphics.FlxGraphic {
+		return cache.get(key);
+	}
+	
+	/**
+	 * Remove a bitmap from the cache by its key
+	 */
+	public function remove(key:String):Bool {
+		return cache.remove(key);
+	}
+	
+	/**
+	 * Set a bitmap in the cache with the given key
+	 */
+	public function set(key:String, value:flixel.graphics.FlxGraphic):Void {
+		cache.set(key, value);
+	}
+	
+	/**
+	 * Get all keys in the cache
+	 */
+	public function keys():Iterator<String> {
+		return cache.keys();
+	}
+	
+	/**
+	 * Get the number of items in the cache
+	 */
+	public function count():Int {
+		var count = 0;
+		for (key in cache.keys()) count++;
+		return count;
 	}
 }
 

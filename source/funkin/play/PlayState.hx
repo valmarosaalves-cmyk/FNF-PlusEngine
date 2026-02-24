@@ -162,6 +162,8 @@ class PlayState extends MusicBeatState
 
 	#if LUA_ALLOWED
 	public var modchartTweens:Map<String, FlxTween> = new Map<String, FlxTween>();
+	public var modchartSprites:Map<String, FlxSprite> = new Map<String, FlxSprite>();
+	public var modchartTexts:Map<String, FlxText> = new Map<String, FlxText>();
 	#end
 
 	public var BF_X:Float = 770;
@@ -285,6 +287,18 @@ class PlayState extends MusicBeatState
 	public var healthBar:Bar;
 	public var timeBar:Bar;
 	var songPercent:Float = 0;
+	
+	// Backwards compatibility: Psych 0.7.3 scripts expect healthBarBG and timeBarBG
+	public var healthBarBG(get, never):FlxSprite;
+	public var timeBarBG(get, never):FlxSprite;
+	
+	function get_healthBarBG():FlxSprite {
+		return healthBar != null ? healthBar.bg : null;
+	}
+	
+	function get_timeBarBG():FlxSprite {
+		return timeBar != null ? timeBar.bg : null;
+	}
 
 	public var ratingsData:Array<Rating> = Rating.loadDefault();
 
@@ -338,7 +352,7 @@ class PlayState extends MusicBeatState
 	private var lastScoreTxtContent:String = ""; // Último texto conocido del motor
 	public var maxCombo:Int = 0;
 	public var totalNotes:Int = 0;
-	var timeTxt:FlxText;
+	public var timeTxt:FlxText;
 	var scoreTxtTween:FlxTween;
 	var timeTxtTween:FlxTween;
 
@@ -5341,7 +5355,7 @@ class PlayState extends MusicBeatState
 			var animToPlay:String = singAnimations[Std.int(Math.abs(Math.min(singAnimations.length-1, note.noteData)))] + note.animSuffix;
 			if(note.gfNote) char = gf;
 
-			if(char != null)
+			if(char != null && char.animation != null)
 			{
 				var canPlay:Bool = true;
 				if(note.isSustainNote)
@@ -5410,7 +5424,7 @@ class PlayState extends MusicBeatState
 					animCheck = 'cheer';
 				}
 
-				if(char != null)
+				if(char != null && char.animation != null)
 				{
 					var canPlay:Bool = true;
 					if(note.isSustainNote)
@@ -5719,9 +5733,9 @@ class PlayState extends MusicBeatState
 		// Taken from Kade Engine
 		if (ClientPrefs.data.iconBounceType == 'Old')
 		{
-			iconP1.setGraphicSize(Std.int(iconP1.width + 30));
-			iconP2.setGraphicSize(Std.int(iconP2.width + 30));
-			iconGF.setGraphicSize(Std.int(iconGF.width + 30));
+			iconP1.setGraphicSize(Std.int(iconP1.width + 40));
+			iconP2.setGraphicSize(Std.int(iconP2.width + 40));
+			iconGF.setGraphicSize(Std.int(iconGF.width + 40));
 			iconP1.updateHitbox();
 			iconP2.updateHitbox();
 			iconGF.updateHitbox();

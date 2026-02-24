@@ -2,7 +2,7 @@
 <project>
 	<!-- _________________________ Application Settings _________________________ -->
 
-	<app title="Friday Night Funkin': Plus Engine" file="PlusEngine" packageName="com.leninasto.plusengine" package="com.leninasto.plusengine" main="Main" version="1.0" company="LeninAsto" />
+	<app title="Friday Night Funkin': Plus Engine" file="PlusEngine" packageName="com.leninasto.plusengine" package="com.leninasto.plusengine" main="Main" version="1.2.5" company="LeninAsto" />
 	<app title="FNF: Plus Engine" if="android" />
 
 	<!--Switch Export with Unique ApplicationID and Icon-->
@@ -44,6 +44,10 @@
 		<define name="BASE_GAME_FILES" />
 	</section>
 
+	<section if="dev">
+		<define name="DEV_BUILD"/>
+	</section>
+
 	<!-- ____________________________ Window Settings ___________________________ -->
 
 	<!--These window settings apply to all targets-->
@@ -56,7 +60,7 @@
 	<window if="desktop" orientation="landscape" fullscreen="false" resizable="true" vsync="false"/>
 
 	<!--Mobile-specific-->
-	<window if="mobile" orientation="landscape" fullscreen="true" resizable="false" allow-shaders="true" require-shaders="true" />
+	<window if="mobile" orientation="landscape" fullscreen="true" resizable="false" vsync="true" allow-shaders="true" require-shaders="true" />
 
 	<!--Switch-specific-->
 	<window if="switch" orientation="landscape" fullscreen="true" width="0" height="0" resizable="true" />
@@ -251,6 +255,13 @@
 	<icon path="art/icons/iconOG.png" unless="android"/>
 	
 	<section if="android">
+		<!-- Force adaptive launcher icon from our Android res template -->
+		<config:android>
+			<application android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" />
+		</config:android>
+		<!-- Copy our custom launcher icon resources into the generated Gradle project -->
+		<assets path="art/icons/android/res" rename="app/src/main/res" type="template" />
+		
 		<!-- Android Permissions -->
 		<config:android permission="android.permission.INTERNET" />
 		<config:android permission="android.permission.ACCESS_NETWORK_STATE" />
@@ -264,9 +275,6 @@
 		<!-- Android SDK versions (updated to 35 for androidx.core compatibility) -->
 		<config:android target-sdk-version="35" />
 		<android target-sdk-version="35" />
-		
-		<!-- Android templates for adaptive icons with Material Design 3 support -->
-		<template path="templates/android" />
 	</section>
 
 	<section if="ios">

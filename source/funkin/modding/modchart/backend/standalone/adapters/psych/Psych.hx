@@ -12,6 +12,7 @@ import funkin.modding.modchart.backend.standalone.IAdapter;
 
 class Psych implements IAdapter {
 	private var __fCrochet:Float = 0;
+	private var __holdSubdivisions:Int = 0;
 
 	public function new() {
 		try {
@@ -25,6 +26,7 @@ class Psych implements IAdapter {
 
 	public function onModchartingInitialization() {
 		__fCrochet = (Conductor.crochet + 8) / 4;
+		__holdSubdivisions = 4;
 	}
 
 	private function setupLuaFunctions() {
@@ -107,7 +109,11 @@ class Psych implements IAdapter {
 	}
 
 	public function getHoldSubdivisions(hold:FlxSprite):Int {
-		return ClientPrefs.data.holdSubdivisions;
+		return __holdSubdivisions;
+	}
+
+	public function setHoldSubdivisions(value:Int):Void {
+		__holdSubdivisions = value;
 	}
 
 	public function getHoldLength(item:FlxSprite):Float

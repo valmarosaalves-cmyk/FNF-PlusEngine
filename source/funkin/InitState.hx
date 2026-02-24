@@ -24,6 +24,9 @@ class InitialState extends MusicBeatState
 		// This is the first state created, so FlxG.state now exists
 		#if HSCRIPT_ALLOWED
 		funkin.ui.MusicBeatState.initGlobalScript();
+		funkin.ui.MusicBeatState.initMusicBeatStateScript();
+		funkin.ui.MusicBeatSubstate.initMusicBeatSubstateScript();
+		funkin.ui.transition.CustomFadeTransition.initCustomTransitionScript();
 		#end
 		
 		super.create();

@@ -13,18 +13,33 @@ class GameplaySettingsSubState extends BaseOptionsMenu
 			'downScroll', //Save data variable name
 			BOOL); //Variable type
 		addOption(option);
+		#if mobile
+		option.onChange = onChangeDownscroll;
+		#end
 
 		var option:Option = new Option('Middlescroll',
 			'If checked, your notes get centered.',
 			'middleScroll',
 			BOOL);
 		addOption(option);
+		#if mobile
+		option.onChange = onChangeMiddlescroll;
+		#end
 
 		var option:Option = new Option('Opponent Notes',
 			'If unchecked, opponent notes get hidden.',
 			'opponentStrums',
 			BOOL);
 		addOption(option);
+
+		#if mobile
+		var option:Option = new Option('Aligned Receptors',
+			"ONLY FOR HITBOX-ARROWS MODE!\nAligns player receptors with hitbox lanes,\nopponent receptors in top-left corner.\n\nWARNING: May break scripts!",
+			'mobileReceptorAlign',
+			BOOL);
+		addOption(option);
+		option.onChange = onChangeMobileReceptorAlign;
+		#end
 
 		var option:Option = new Option('Ghost Tapping',
 			"If checked, you won't get misses from pressing keys\nwhile there are no notes able to be hit.",
@@ -37,6 +52,12 @@ class GameplaySettingsSubState extends BaseOptionsMenu
 			'badShitBreakCombo',
 			BOOL);
 		addOption(option);
+
+		var option:Option = new Option('Version Text on Gameplay',
+		    "If checked, the version text will be shown.",
+			'versionTextOnGameplay',
+			BOOL);
+		addOption(option);
 		
 		var option:Option = new Option('Auto Pause',
 			"If checked, the game automatically pauses if the screen isn't on focus.",
@@ -46,7 +67,7 @@ class GameplaySettingsSubState extends BaseOptionsMenu
 		option.onChange = onChangeAutoPause;
 
 		var option:Option = new Option('Pop Up Score',
-			"If unchecked, hitting notes won't make \"sick\", \"good\".. and combo popups\n(Useful for low end " + Main.platform + ").",
+			"If unchecked, hitting notes won't make \"sick\", \"good\".. and combo popups\n(Useful for low end device)",
 			'popUpRating',
 			BOOL);
 		addOption(option);
@@ -56,13 +77,6 @@ class GameplaySettingsSubState extends BaseOptionsMenu
 			'noReset',
 			BOOL);
 		addOption(option);
-
-		var option:Option = new Option('Disable Hold Animations',
-			"If checked, hold notes will not trigger character animations,\nallowing for smoother gameplay with sustain-heavy charts.",
-			'disableHoldAnimations',
-			BOOL);
-		addOption(option);
-		option.onChange = onChangeHoldAnimations;
 
 		#if mobile
 		var option:Option = new Option('Game Over Vibration',
@@ -232,8 +246,41 @@ class GameplaySettingsSubState extends BaseOptionsMenu
 		trace('Heavy Charts Mode: ${ClientPrefs.data.heavyCharts ? "ENABLED" : "DISABLED"}');
 	}
 
-	function onChangeHoldAnimations()
+	#if mobile
+	function onChangeMobileReceptorAlign()
 	{
-		trace('Hold Animations: ${ClientPrefs.data.disableHoldAnimations ? "DISABLED" : "ENABLED"}');
+		if (ClientPrefs.data.mobileReceptorAlign)
+		{
+			// Auto-disable conflicting settings and auto-enable required ones
+			if (ClientPrefs.data.middleScroll)
+			{
+				ClientPrefs.data.middleScroll = false;
+				trace('Mobile Receptor Align: Auto-disabled Middlescroll');
+			}
+			if (!ClientPrefs.data.downScroll)
+			{
+				ClientPrefs.data.downScroll = true;
+				trace('Mobile Receptor Align: Auto-enabled Downscroll');
+			}
+		}
 	}
+
+	function onChangeDownscroll()
+	{
+		if (ClientPrefs.data.downScroll && ClientPrefs.data.mobileReceptorAlign)
+		{
+			ClientPrefs.data.mobileReceptorAlign = false;
+			trace('Downscroll enabled: Auto-disabled Mobile Receptor Align');
+		}
+	}
+
+	function onChangeMiddlescroll()
+	{
+		if (ClientPrefs.data.middleScroll && ClientPrefs.data.mobileReceptorAlign)
+		{
+			ClientPrefs.data.mobileReceptorAlign = false;
+			trace('Middlescroll enabled: Auto-disabled Mobile Receptor Align');
+		}
+	}
+	#end
 }

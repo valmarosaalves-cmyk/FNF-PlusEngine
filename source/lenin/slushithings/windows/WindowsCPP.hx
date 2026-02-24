@@ -800,23 +800,17 @@ class WindowsCPP
 
 	/**
 	 * Gets the total physical RAM installed in the system (in MB)
+	 * NOW USES: GetPhysicallyInstalledSystemMemory for more accurate detection
 	 * @return Total RAM in megabytes
+	 * @deprecated Use lenin.slushithings.cpp.CPPInterface.getRAM() instead
 	 */
-	@:functionCode('
-		MEMORYSTATUSEX memInfo;
-		memInfo.dwLength = sizeof(MEMORYSTATUSEX);
-		
-		if (GlobalMemoryStatusEx(&memInfo)) {
-			DWORDLONG totalPhysMem = memInfo.ullTotalPhys;
-			// Convert bytes to MB
-			return (int)(totalPhysMem / 1024 / 1024);
-		}
-		
-		return 0;
-	')
 	public static function getTotalSystemRAM():Int
 	{
+		#if cpp
+		return Std.int(lenin.slushithings.cpp.CPPInterface.getRAM());
+		#else
 		return 0;
+		#end
 	}
 
 	/**
@@ -895,6 +889,165 @@ class WindowsCPP
 	public static function getProcessMemoryUsage():Float
 	{
 		return 0.0;
+	}
+
+	// === Dynamic Library Loading Functions (for LuaJIT FFI support) ===
+
+	/**
+	 * Loads a dynamic library (DLL) into the process address space.
+	 * This can be used with LuaJIT FFI to load native libraries.
+	 * @param libraryPath Path to the DLL file (absolute or relative)
+	 * @return Handle to the loaded library (as Float/double for precision), or 0.0 if failed
+	 */
+	@:functionCode('
+		HMODULE hModule = LoadLibraryA(libraryPath);
+		return (double)(uintptr_t)hModule;
+	')
+	public static function loadLibrary(libraryPath:String):Float
+	{
+		return 0.0;
+	}
+
+	/**
+	 * Gets the address of an exported function from a loaded library.
+	 * Use with loadLibrary to call native functions.
+	 * @param libraryHandle Handle returned by loadLibrary
+	 * @param functionName Name of the exported function
+	 * @return Address of the function (as Float/double), or 0.0 if not found
+	 */
+	@:functionCode('
+		HMODULE hModule = (HMODULE)(uintptr_t)libraryHandle;
+		FARPROC funcAddr = GetProcAddress(hModule, functionName);
+		return (double)(uintptr_t)funcAddr;
+	')
+	public static function getProcAddress(libraryHandle:Float, functionName:String):Float
+	{
+		return 0.0;
+	}
+
+	/**
+	 * Frees a loaded library from memory.
+	 * @param libraryHandle Handle returned by loadLibrary
+	 * @return True if successfully freed, false otherwise
+	 */
+	@:functionCode('
+		HMODULE hModule = (HMODULE)(uintptr_t)libraryHandle;
+		return FreeLibrary(hModule) != 0;
+	')
+	public static function freeLibrary(libraryHandle:Float):Bool
+	{
+		return false;
+	}
+
+	/**
+	 * Gets the handle of an already loaded module by name.
+	 * @param moduleName Name of the module (e.g., "kernel32.dll"), or NULL for current executable
+	 * @return Handle to the module (as Float/double), or 0.0 if not found
+	 */
+	@:functionCode('
+		const char* name = (moduleName != null() && moduleName.length > 0) ? moduleName : NULL;
+		HMODULE hModule = GetModuleHandleA(name);
+		return (double)(uintptr_t)hModule;
+	')
+	public static function getModuleHandle(moduleName:String = null):Float
+	{
+		return 0.0;
+	}
+
+	/**
+	 * Gets the full path of a loaded module.
+	 * @param moduleHandle Handle of the module (from loadLibrary or getModuleHandle), or 0.0 for current exe
+	 * @return Full path to the module file, or empty string if failed
+	 */
+	@:functionCode('
+		HMODULE hModule = (HMODULE)(uintptr_t)moduleHandle;
+		char path[MAX_PATH];
+		
+		if (GetModuleFileNameA(hModule, path, MAX_PATH) > 0) {
+			return String(path);
+		}
+		
+		return String("");
+	')
+	public static function getModulePath(moduleHandle:Float = 0.0):String
+	{
+		return "";
+	}
+
+	/**
+	 * Sets the window opacity/alpha
+	 * @param alpha Opacity value (0.0 = fully transparent, 1.0 = fully opaque)
+	 */
+	@:functionCode('
+		HWND hwnd = GET_ENGINE_WINDOW();
+		if (!hwnd) return;
+		
+		// Get current window style
+		LONG_PTR exStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
+		
+		// Add WS_EX_LAYERED if not already set
+		if (!(exStyle & WS_EX_LAYERED)) {
+			SetWindowLongPtr(hwnd, GWL_EXSTYLE, exStyle | WS_EX_LAYERED);
+		}
+		
+		// Convert alpha (0.0-1.0) to byte (0-255)
+		BYTE alphaValue = (BYTE)(alpha * 255.0);
+		
+		// Set the layered window attributes
+		SetLayeredWindowAttributes(hwnd, 0, alphaValue, LWA_ALPHA);
+	')
+	public static function setWindowOpacity(alpha:Float):Void
+	{
+	}
+
+	/**
+	 * Gets the current window opacity/alpha
+	 * @return Current opacity value (0.0 - 1.0)
+	 */
+	@:functionCode('
+		HWND hwnd = GET_ENGINE_WINDOW();
+		if (!hwnd) return 1.0;
+		
+		BYTE alphaValue = 255;
+		DWORD flags = 0;
+		COLORREF colorKey = 0;
+		
+		// Try to get the current alpha value
+		if (GetLayeredWindowAttributes(hwnd, &colorKey, &alphaValue, &flags)) {
+			// Convert byte (0-255) to float (0.0-1.0)
+			return (double)alphaValue / 255.0;
+		}
+		
+		// Default to fully opaque if we can\'t get the value
+		return 1.0;
+	')
+	public static function getWindowOpacity():Float
+	{
+		return 1.0;
+	}
+
+	/**
+	 * Makes the window fully transparent (click-through)
+	 * @param transparent True to enable transparency, false to disable
+	 */
+	@:functionCode('
+		HWND hwnd = GET_ENGINE_WINDOW();
+		if (!hwnd) return;
+		
+		LONG_PTR exStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
+		
+		if (transparent) {
+			// Enable layered window with transparency
+			SetWindowLongPtr(hwnd, GWL_EXSTYLE, exStyle | WS_EX_LAYERED | WS_EX_TRANSPARENT);
+			SetLayeredWindowAttributes(hwnd, RGB(0, 0, 0), 0, LWA_COLORKEY);
+		} else {
+			// Disable transparency
+			SetWindowLongPtr(hwnd, GWL_EXSTYLE, exStyle & ~WS_EX_TRANSPARENT);
+			SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA);
+		}
+	')
+	public static function setWindowTransparent(transparent:Bool):Void
+	{
 	}
 	#end
 }

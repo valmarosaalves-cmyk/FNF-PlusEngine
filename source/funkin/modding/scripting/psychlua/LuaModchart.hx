@@ -5,6 +5,7 @@ import funkin.modding.modchart.backend.standalone.Adapter;
 import funkin.modding.modchart.engine.modifiers.list.PathModifier;
 import funkin.modding.modchart.engine.modifiers.list.PathModifier.PathNode;
 import funkin.modding.scripting.FunkinLua;
+import funkin.data.song.Song;
 import flixel.tweens.FlxEase;
 
 class LuaModchart
@@ -227,17 +228,17 @@ class LuaModchart
 				return;
 			final pf = Manager.instance.playfields[field];
 			if (pf == null) {
-				FunkinLua.luaTrace('setModifierPath: invalid playfield index: ' + field, false, false);
+				PlayState.instance.addTextToDebug('setModifierPath: invalid playfield index: ' + field, 0xFFFF0000);
 				return;
 			}
 
 			final mod = pf.modifiers.modifiers.get(modName.toLowerCase());
 			if (mod == null) {
-				FunkinLua.luaTrace('setModifierPath: modifier not found: ' + modName, false, false);
+				PlayState.instance.addTextToDebug('setModifierPath: modifier not found: ' + modName, 0xFFFF0000);
 				return;
 			}
 			if (!Std.isOfType(mod, PathModifier)) {
-				FunkinLua.luaTrace('setModifierPath: modifier is not a PathModifier: ' + modName, false, false);
+				PlayState.instance.addTextToDebug('setModifierPath: modifier is not a PathModifier: ' + modName, 0xFFFF0000);
 				return;
 			}
 
@@ -256,13 +257,13 @@ class LuaModchart
 				return;
 			final pf = Manager.instance.playfields[field];
 	 		if (pf == null) {
-				FunkinLua.luaTrace('setModifierPathOffset: invalid playfield index: ' + field, false, false);
+				PlayState.instance.addTextToDebug('setModifierPathOffset: invalid playfield index: ' + field, 0xFFFF0000);
 				return;
 			}
 
 			final mod = pf.modifiers.modifiers.get(modName.toLowerCase());
 			if (mod == null || !Std.isOfType(mod, PathModifier)) {
-				FunkinLua.luaTrace('setModifierPathOffset: PathModifier not found: ' + modName, false, false);
+				PlayState.instance.addTextToDebug('setModifierPathOffset: PathModifier not found: ' + modName, 0xFFFF0000);
 				return;
 			}
 
@@ -274,19 +275,63 @@ class LuaModchart
 				return;
 			final pf = Manager.instance.playfields[field];
 			if (pf == null) {
-				FunkinLua.luaTrace('setModifierPathBound: invalid playfield index: ' + field, false, false);
+				PlayState.instance.addTextToDebug('setModifierPathBound: invalid playfield index: ' + field, 0xFFFF0000);
 				return;
 			}
 
 			final mod = pf.modifiers.modifiers.get(modName.toLowerCase());
 			if (mod == null || !Std.isOfType(mod, PathModifier)) {
-				FunkinLua.luaTrace('setModifierPathBound: PathModifier not found: ' + modName, false, false);
+				PlayState.instance.addTextToDebug('setModifierPathBound: PathModifier not found: ' + modName, 0xFFFF0000);
 				return;
 			}
 
 			cast(mod, PathModifier).setPathBound(bound);
 		});
         
+        // Inspired by Troll Engine's forNoteInChart =P
+        Lua_helper.add_callback(lua, "getChartNotes", function(chartName:String, ?songName:String):Dynamic {
+            if (songName == null || songName.length == 0)
+                songName = Song.loadedSongName;
+
+            trace('Looking for chart="$chartName" song="$songName"');
+
+            var swagSong = Song.getChart(chartName, songName);
+            if (swagSong == null) {
+                PlayState.instance.addTextToDebug('ERROR: chart "$chartName" not found in song "$songName"', 0xFFFF0000);
+                return null;
+            }
+
+            trace('Chart found, sections=${swagSong.notes != null ? swagSong.notes.length : 0}');
+
+            // Build a 1-indexed Lua-compatible array of note tables
+            var result:Array<Dynamic> = [];
+            if (swagSong.notes != null) {
+                for (section in swagSong.notes) {
+                    if (section == null || section.sectionNotes == null) continue;
+                    for (noteData in section.sectionNotes) {
+                        // noteData[0]=time(ms), noteData[1]=column/direction, noteData[2]=hold length
+                        var time:Float = noteData[0];
+                        var rawCol:Int = Std.int(noteData[1]);
+                        var type:Int   = rawCol % 4;
+                        var step:Float = Conductor.getStep(time);
+                        result.push({
+                            step: step,
+                            type: type,
+                            time: time
+                        });
+                    }
+                }
+            }
+
+            // Sort ascending by step so the caller can just iterate in order
+            result.sort(function(a, b) return a.step < b.step ? -1 : (a.step > b.step ? 1 : 0));
+
+            trace('"$chartName" total notes=${result.length}'
+                + (result.length > 0 ? ' | first: step=${result[0].step} type=${result[0].type} time=${result[0].time}ms' : ''));
+
+            return result;
+        });
+
         // Get current beat from Conductor
         Lua_helper.add_callback(lua, "getCurrentBeat", function():Float {
             return Conductor.songPosition / Conductor.crochet;
@@ -310,6 +355,21 @@ class LuaModchart
         // Get player/playfield count
         Lua_helper.add_callback(lua, "getPlayerCount", function():Int {
             return Adapter.instance.getPlayerCount();
+        });
+        
+        // Set hold subdivisions
+        Lua_helper.add_callback(lua, "setHoldSubdivisions", function(value:Int) {
+            if (Adapter.instance != null && Std.isOfType(Adapter.instance, funkin.modding.modchart.backend.standalone.adapters.psych.Psych)) {
+                cast(Adapter.instance, funkin.modding.modchart.backend.standalone.adapters.psych.Psych).setHoldSubdivisions(value);
+            }
+        });
+        
+        // Get hold subdivisions
+        Lua_helper.add_callback(lua, "getHoldSubdivisions", function():Int {
+            if (Adapter.instance != null) {
+                return Adapter.instance.getHoldSubdivisions(null);
+            }
+            return 0;
         });
     }
     

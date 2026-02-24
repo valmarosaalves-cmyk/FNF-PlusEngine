@@ -734,14 +734,21 @@ class WeekEditorFreeplayState extends MusicBeatState implements PsychUIEventHand
 		curSelected = FlxMath.wrap(curSelected + change, 0, weekFile.songs.length - 1);
 		for (num => item in grpSongs.members)
 		{
-			var icon:HealthIcon = iconArray[num];
 			item.targetY = num - curSelected;
 			item.alpha = 0.6;
-			icon.alpha = 0.6;
+			
+			if(num < iconArray.length && iconArray[num] != null) {
+				var icon:HealthIcon = iconArray[num];
+				icon.alpha = 0.6;
+				if (item.targetY == 0)
+				{
+					icon.alpha = 1;
+				}
+			}
+			
 			if (item.targetY == 0)
 			{
 				item.alpha = 1;
-				icon.alpha = 1;
 			}
 		}
 		//trace(weekFile.songs[curSelected]);

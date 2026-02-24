@@ -3,10 +3,15 @@ package funkin.util;
 #if windows
 import lenin.slushithings.windows.WindowsCPP;
 #end
+#if cpp
+import lenin.slushithings.cpp.CPPInterface;
+#end
 
 /**
  * Cross-platform system memory detection
  * Supports Windows, Mac, Linux, iOS, and Android
+ * 
+ * Enhanced with Slushi Engine's accurate RAM detection
  */
 @:buildXml('
 <target id="haxe">
@@ -16,8 +21,10 @@ import lenin.slushithings.windows.WindowsCPP;
 #if (cpp && !windows)
 @:cppInclude("unistd.h")
 #end
-#if (linux && !android)
-@:cppInclude("sys/sysinfo.h")
+#if cpp
+@:cppInclude("stdio.h")
+@:cppInclude("stdlib.h")
+@:cppInclude("string.h")
 #end
 #if (mac || ios)
 @:cppInclude("sys/types.h")
@@ -34,6 +41,14 @@ class SystemMemory
      */
     public static function getTotalRAM():Int
     {
+        #if cpp
+        // Use the new accurate CPPInterface for all CPP platforms
+        var ramMB:Float = CPPInterface.getRAM();
+        if (ramMB > 0)
+            return Std.int(ramMB);
+        #end
+        
+        // Fallback to platform-specific detection
         #if windows
         return WindowsCPP.getTotalSystemRAM();
         #elseif android
@@ -83,24 +98,47 @@ class SystemMemory
         #end
     }
 
+    /**
+     * Gets a human-readable string representation of total system RAM
+     * @return String like "16.0 GB" or "8.0 GB"
+     */
+    public static function getTotalRAMString():String
+    {
+        var ramMB:Int = getTotalRAM();
+        if (ramMB <= 0)
+        {
+            #if android
+            return "W.I.P.";
+            #else
+            return "Unknown";
+            #end
+        }
+        
+        var ramGB:Float = Math.round((ramMB / 1024) * 100) / 100;
+        return ramGB + " GB";
+    }
+
     // === Platform-specific implementations ===
 
     #if android
     /**
-     * Gets total RAM on Android by reading /proc/meminfo
+     * Gets total RAM on Android
+     * Note: RAM detection on Android is currently Work In Progress
      */
     private static function getAndroidTotalRAM():Int
     {
-        // Android is Linux-based, read from /proc/meminfo
-        return readLinuxMemInfo(true);
+        // W.I.P. - RAM detection on Android needs more testing
+        return 0;
     }
 
     /**
-     * Gets available RAM on Android by reading /proc/meminfo
+     * Gets available RAM on Android
+     * Note: RAM detection on Android is currently Work In Progress
      */
     private static function getAndroidAvailableRAM():Int
     {
-        return readLinuxMemInfo(false);
+        // W.I.P. - RAM detection on Android needs more testing
+        return 0;
     }
     #end
 
@@ -150,62 +188,81 @@ class SystemMemory
     }
     #end
 
-    #if (linux || android)
+    #if (linux && !android)
     /**
-     * Reads memory info from /proc/meminfo
-     * Works on both Linux and Android (Android is Linux-based)
-     * @param total If true, returns total RAM; if false, returns available RAM
+     * Gets total RAM on Linux by reading /proc/meminfo using C++
      */
-    private static function readLinuxMemInfo(total:Bool):Int
-    {
-        #if sys
-        try
-        {
-            var content = sys.io.File.getContent("/proc/meminfo");
-            var lines = content.split("\n");
-            var searchKey = total ? "MemTotal:" : "MemAvailable:";
-            
-            for (line in lines)
-            {
-                if (line.indexOf(searchKey) == 0)
-                {
-                    // Format: MemTotal:       16384000 kB
-                    var parts = line.split(":");
-                    if (parts.length >= 2)
-                    {
-                        var valueStr = StringTools.trim(parts[1]).split(" ")[0];
-                        var kb = Std.parseInt(valueStr);
-                        if (kb != null)
-                        {
-                            // Convert KB to MB
-                            return Std.int(kb / 1024);
-                        }
-                    }
-                }
+    @:functionCode('
+        FILE* file = fopen("/proc/meminfo", "r");
+        if (file == NULL) return 0;
+        
+        char line[256];
+        long totalKB = 0;
+        
+        while (fgets(line, sizeof(line), file)) {
+            if (sscanf(line, "MemTotal: %ld kB", &totalKB) == 1) {
+                fclose(file);
+                // Convert KB to MB
+                return (int)(totalKB / 1024);
             }
         }
-        catch (e:Dynamic)
-        {
-            trace('[SystemMemory] Failed to read /proc/meminfo: $e');
-        }
-        #end
+        
+        fclose(file);
         return 0;
-    }
-    
-    /**
-     * Gets total RAM on Linux by reading /proc/meminfo
-     */
+    ')
     private static function getLinuxTotalRAM():Int
     {
-        return readLinuxMemInfo(true);
+        #if cpp
+        return 0; // The C++ code above will be executed
+        #else
+        return 0;
+        #end
     }
 
     /**
-     * Gets available RAM on Linux by reading /proc/meminfo
+     * Gets available RAM on Linux by reading /proc/meminfo using C++
      */
+    @:functionCode('
+        FILE* file = fopen("/proc/meminfo", "r");
+        if (file == NULL) return 0;
+        
+        char line[256];
+        long availableKB = 0;
+        long memFreeKB = 0;
+        long buffersKB = 0;
+        long cachedKB = 0;
+        
+        while (fgets(line, sizeof(line), file)) {
+            // Try MemAvailable first (available on newer kernels)
+            if (sscanf(line, "MemAvailable: %ld kB", &availableKB) == 1) {
+                fclose(file);
+                return (int)(availableKB / 1024);
+            }
+            // Fallback for older kernels: calculate from MemFree + Buffers + Cached
+            sscanf(line, "MemFree: %ld kB", &memFreeKB);
+            sscanf(line, "Buffers: %ld kB", &buffersKB);
+            if (strncmp(line, "Cached:", 7) == 0) { // Avoid SwapCached
+                sscanf(line, "Cached: %ld kB", &cachedKB);
+            }
+        }
+        
+        fclose(file);
+        
+        // Calculate available memory manually if MemAvailable wasn\'t found
+        if (memFreeKB > 0) {
+            long totalAvail = memFreeKB + buffersKB + cachedKB;
+            return (int)(totalAvail / 1024);
+        }
+        
+        return 0;
+    ')
     private static function getLinuxAvailableRAM():Int
     {
-        return readLinuxMemInfo(false);
+        #if cpp
+        return 0; // The C++ code above will be executed
+        #else
+        return 0;
+        #end
     }
     #end
 
@@ -223,23 +280,5 @@ class SystemMemory
             return false;
         }
         return totalRAM < threshold;
-    }
-
-    /**
-     * Gets a human-readable string of total RAM
-     * @return String like "8192 MB" or "8 GB"
-     */
-    public static function getTotalRAMString():String
-    {
-        var totalMB = getTotalRAM();
-        if (totalMB <= 0)
-            return "Unknown";
-        
-        if (totalMB >= 1024)
-        {
-            var gb = Math.round(totalMB / 1024 * 10) / 10;
-            return gb + " GB";
-        }
-        return totalMB + " MB";
     }
 }

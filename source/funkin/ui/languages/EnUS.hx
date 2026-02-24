@@ -133,7 +133,7 @@ class EnUS
         "options_graphics" => "Graphics",
         "options_modchart" => "Modchart",
         "options_language" => "Language",
-        "options_mobile" => "Mobile Options",
+        "options_mobile" => "Mobile",
         "graphics_menu" => "Graphics Settings",
         "visuals_menu" => "Visuals Settings",
         "gameplay_menu" => "Gameplay Settings",

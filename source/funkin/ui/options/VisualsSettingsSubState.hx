@@ -110,7 +110,14 @@ class VisualsSettingsSubState extends BaseOptionsMenu
 			['Gray', 'Red', 'Blue', 'Green', 'Purple', 'Orange', 'Pink', 'Cyan', 'White', 'Black']);
 		addOption(option);
 		option.onChange = onChangeKeyViewerColor;
-		
+
+		var option:Option = new Option('Icon Bounce',
+		    'Select the type of bounce icon you prefer. NOTE: Scripts using this setting may break with non-default values. It is recommended to leave it as Default.',
+			'iconBounceType',
+			STRING,
+			['Default', 'D&B', 'Old', 'NF']);
+		addOption(option);
+
 		var option:Option = new Option('Time Bar:',
 			"What should the Time Bar display?",
 			'timeBarType',
@@ -166,7 +173,6 @@ class VisualsSettingsSubState extends BaseOptionsMenu
 			BOOL);
 		addOption(option);
 		
-
 		var option:Option = new Option('Show Watermark',
 			'If checked, shows the watermark on screen.',
 			'showWatermark',
@@ -174,7 +180,7 @@ class VisualsSettingsSubState extends BaseOptionsMenu
 		addOption(option);
 		option.onChange = onChangeWatermark;
 
-		#if native
+		#if windows
 		var option:Option = new Option('Fullscreen Mode:',
 			'Choose the fullscreen mode.\nBorderless: Windowed fullscreen (recommended for alt-tabbing).\nExclusive: Traditional fullscreen (may minimize on alt-tab).',
 			'fullscreenMode',
@@ -402,7 +408,7 @@ class VisualsSettingsSubState extends BaseOptionsMenu
 		super.destroy();
 	}
 
-	   // function onChangeFPSCounter() eliminado: FPSCounter ahora siempre visible, control solo por F2
+	// FPS Counter option has been moved to GraphicsSettingsSubState
 
 	function onChangeWatermark()
 	{

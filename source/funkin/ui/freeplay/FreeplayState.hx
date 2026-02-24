@@ -77,14 +77,11 @@ class FreeplayState extends MusicBeatState
 	var bgZoom:Float = 1;
 	var defaultBgZoom:Float = 1;
 	
-	// Variables para swipe/touch gestures
-	var touchStartY:Float = 0;
-	var isSwiping:Bool = false;
-	var lastTouchY:Float = 0;
-	var swipeVelocity:Float = 0;
-	var swipeMomentum:Float = 0; // velocity after release for inertia
-	var isDeccelerating:Bool = false;
-	var swipeSensitivity:Float = 100; // pixels needed to change selection
+	// Touch scroll handler for song list
+	#if mobile
+	var touchScroll:funkin.mobile.backend.TouchScroll;
+	var difficultyScroll:funkin.mobile.backend.TouchScroll;
+	#end
 
 
 	override function create()
@@ -241,10 +238,7 @@ class FreeplayState extends MusicBeatState
 				characterName = songs[i].isStepMania ? "stepmania" : "bf";
 			}
 			
-			var icon:HealthIcon = new HealthIcon(characterName);
-			icon.scale.set(0.8, 0.8);
-			
-			// too laggy with a lot of songs, so i had to recode the logic for it
+		var icon:HealthIcon = new HealthIcon(characterName, false, false);
 			songText.visible = songText.active = false;
 			icon.visible = icon.active = false;
 		
@@ -333,9 +327,15 @@ class FreeplayState extends MusicBeatState
 		changeSelection();
 		updateTexts();
 
+		#if mobile
+		// Initialize touch scroll for song list
+		touchScroll = new funkin.mobile.backend.TouchScroll(true);
+		funkin.mobile.backend.TouchUtil.setScrollHandler(touchScroll);
+		#end
+
 		super.create();
 		
-		addTouchPad('UP_DOWN', 'A_B_C_X_Y_Z');
+		addTouchPad('NONE', 'B_C_X_Y_Z');
 		addTouchPadCamera();
 		if(touchPad != null) {
 			touchPad.visible = true;
@@ -349,7 +349,7 @@ class FreeplayState extends MusicBeatState
 		persistentUpdate = true;
 		super.closeSubState();
 		removeTouchPad();
-		addTouchPad('UP_DOWN', 'A_B_C_X_Y_Z');
+		addTouchPad('NONE', 'B_C_X_Y_Z');
 		addTouchPadCamera();
 		if(touchPad != null) {
 			touchPad.visible = true;
@@ -457,116 +457,67 @@ class FreeplayState extends MusicBeatState
 						var isUp:Bool = controls.UI_UP || (touchPad != null && touchPad.buttonUp.pressed);
 						changeSelection((checkNewHold - checkLastHold) * (isUp ? -shiftMult : shiftMult));
 					}
-				}					if(FlxG.mouse.wheel != 0)
+				}					
+
+				if(FlxG.mouse.wheel != 0)
 					{
 						FlxG.sound.play(Paths.sound('scrollMenu'), 0.2);
 						changeSelection(-shiftMult * FlxG.mouse.wheel, false);
 					}
 
 					#if mobile
-					// Touch/swipe gesture detection - continuous scrolling withccccc momentum
-					for (touch in FlxG.touches.list)
+					// Touch scroll with smooth selection (like mouse scroll)
+					if (touchScroll != null)
 					{
-						if (touch.justPressed)
+						var scrollDelta = touchScroll.update();
+						
+						// Smooth scroll using lerpSelected
+						if (Math.abs(scrollDelta) > 0.5)
 						{
-							touchStartY = touch.screenY;
-							lastTouchY = touch.screenY;
-							isSwiping = false;
-							swipeVelocity = 0;
-							swipeMomentum = 0;
-							isDeccelerating = false;
+							lerpSelected += -scrollDelta / 150;
+							lerpSelected = FlxMath.bound(lerpSelected, 0, songs.length - 1);
 							
-							// Check if tapped on a visible card
-							for (i in 0...cardArray.length)
+							// Snap to nearest song
+							var newSelected = Math.round(lerpSelected);
+							if (newSelected != curSelected)
 							{
-								var card = cardArray[i];
-								if (card != null && card.visible && card.overlapsPoint(touch.getWorldPosition()))
+								FlxG.sound.play(Paths.sound('scrollMenu'), 0.2);
+								curSelected = newSelected;
+								changeSelection(0, false); // Update UI without changing selection
+							}
+						}
+						
+						// Handle tap on cards (only if not scrolling)
+						if (touchScroll.wasTapped())
+						{
+							var tapPos = touchScroll.getTapPosition();
+							if (tapPos != null)
+							{
+								// Check if tapped on a visible card
+								for (i in 0...cardArray.length)
 								{
-									// Calculate difference from current selection
-									var difference = i - curSelected;
-									if (difference != 0)
+									var card = cardArray[i];
+									if (card != null && card.visible && card.overlapsPoint(new FlxPoint(tapPos.x, tapPos.y)))
 									{
-										// Select different card
-										changeSelection(difference);
-									}
-									else
-									{
-										// Tapped on currently selected card - enter difficulty select
-										if (!inDifficultySelect)
+										// Calculate difference from current selection
+										var difference = i - curSelected;
+										if (difference != 0)
 										{
-											enterDifficultySelect();
+											// Select different card
+											changeSelection(difference);
 										}
+										else
+										{
+											// Tapped on currently selected card - enter difficulty select
+											if (!inDifficultySelect)
+											{
+												enterDifficultySelect();
+											}
+										}
+										break;
 									}
-									break;
 								}
 							}
-						}
-						
-						if (touch.pressed)
-						{
-							var deltaY = touch.screenY - lastTouchY;
-							
-							// Detect if user is swiping (moved more than a small threshold)
-							if (Math.abs(touch.screenY - touchStartY) > 10)
-							{
-								isSwiping = true;
-							}
-							
-							if (isSwiping)
-							{
-								// Continuous scrolling while dragging
-								lerpSelected += -deltaY / 120; // Adjust sensitivity as needed
-								lerpSelected = FlxMath.bound(lerpSelected, 0, songs.length - 1);
-								
-								// Update curSelected when it changes, but don't play sound while dragging
-								var newSelected = Math.round(lerpSelected);
-								if (newSelected != curSelected)
-								{
-									curSelected = newSelected;
-									changeSelection(0, false);
-								}
-								
-								swipeVelocity = deltaY;
-								lastTouchY = touch.screenY;
-							}
-						}
-						
-						if (touch.justReleased && isSwiping)
-						{
-							// Start deceleration with momentum
-							swipeMomentum = -swipeVelocity / 30; // Convert velocity to momentum
-							isDeccelerating = true;
-							isSwiping = false;
-						}
-					}
-					
-					// Apply momentum/inertia after release
-					if (isDeccelerating && !isSwiping)
-					{
-						// Apply momentum to lerpSelected
-						lerpSelected += swipeMomentum * elapsed * 60;
-						lerpSelected = FlxMath.bound(lerpSelected, 0, songs.length - 1);
-						
-						// Decelerate momentum (friction)
-						swipeMomentum *= Math.pow(0.92, elapsed * 60); // Exponential decay
-						
-						// Update curSelected when it changes
-						var newSelected = Math.round(lerpSelected);
-						if (newSelected != curSelected)
-						{
-							curSelected = newSelected;
-							changeSelection(0, false);
-						}
-						
-						// Stop deceleration when momentum is very small
-						if (Math.abs(swipeMomentum) < 0.01)
-						{
-							isDeccelerating = false;
-							swipeMomentum = 0;
-							
-							// Snap to nearest card
-							curSelected = Math.round(lerpSelected);
-							changeSelection(0, true); // Play sound
 						}
 					}
 					#end
@@ -582,6 +533,11 @@ class FreeplayState extends MusicBeatState
 				{
 					changeDifficultySelection(1);
 				}
+				
+				#if mobile
+				// Touch support for difficulty cards
+				handleTouchDifficultyCards();
+				#end
 			}
 		}
 		
@@ -833,11 +789,11 @@ class FreeplayState extends MusicBeatState
 		}
 		else if((controls.RESET || (touchPad != null && touchPad.buttonY.justPressed)) && !player.playingMusic)
 		{
-		persistentUpdate = false;
-		removeTouchPad();
-		openSubState(new ResetScoreSubState(songs[curSelected].songName, curDifficulty, songs[curSelected].songCharacter));
-		FlxG.sound.play(Paths.sound('scrollMenu'));
-	}
+			persistentUpdate = false;
+			removeTouchPad();
+			openSubState(new ResetScoreSubState(songs[curSelected].songName, curDifficulty, songs[curSelected].songCharacter));
+			FlxG.sound.play(Paths.sound('scrollMenu'));
+		}
 
 		updateTexts(elapsed);
 	}
@@ -865,6 +821,147 @@ class FreeplayState extends MusicBeatState
 		opponentVocals = FlxDestroyUtil.destroy(opponentVocals);
 	}
 
+	#if mobile
+	function handleTouchDifficultyCards():Void
+	{
+		if (!inDifficultySelect || difficultySelector == null || difficultyScroll == null) return;
+		
+		var scrollDelta = difficultyScroll.update();
+		
+		// Apply continuous scroll to difficulty selection
+		if (Math.abs(scrollDelta) > 0.5)
+		{
+			// Smooth continuous scrolling (inverted for natural direction)
+			difficultySelector.lerpSelected += -scrollDelta / 150;
+			difficultySelector.lerpSelected = FlxMath.bound(difficultySelector.lerpSelected, 0, Difficulty.list.length - 1);
+			
+			// Update curSelected when crossing integer boundaries
+			var newSelected = Math.round(difficultySelector.lerpSelected);
+			if (newSelected != difficultySelector.curSelected)
+			{
+				changeDifficultySelection(newSelected - difficultySelector.curSelected);
+				// Keep lerp smooth, don't force snap
+			}
+		}
+		
+		// Handle tap on difficulty cards (only if not scrolling)
+		if (difficultyScroll.wasTapped())
+		{
+			var tapPos = difficultyScroll.getTapPosition();
+			if (tapPos != null)
+			{
+				// Check for tap on difficulty cards
+				for (i in 0...difficultySelector.cards.members.length)
+				{
+					var card = difficultySelector.cards.members[i];
+					if (card != null && card.visible && card.alpha > 0.3)
+					{
+						if (card.overlapsPoint(new FlxPoint(tapPos.x, tapPos.y)))
+						{
+							var difference = i - difficultySelector.curSelected;
+							if (difference != 0)
+							{
+								changeDifficultySelection(difference);
+							}
+							else
+							{
+								// Tapped on current difficulty - start game
+								// Simulate ACCEPT key press logic
+								if (!player.playingMusic)
+								{
+									persistentUpdate = false;
+									var songLowercase:String = Paths.formatToSongPath(songs[curSelected].songName);
+									var poop:String = Highscore.formatSong(songLowercase, difficultySelector.curSelected);
+				
+									try
+									{
+										if (songs[curSelected].isStepMania)
+										{
+											#if MODS_ALLOWED
+											var smDiffIndex:Int = difficultySelector.curSelected;
+											if (smDiffIndex < 0 || smDiffIndex >= songs[curSelected].smDifficulties.length) {
+												throw 'Invalid difficulty index: $smDiffIndex';
+											}
+											
+											var smDiffName:String = Paths.formatToSongPath(songs[curSelected].smDifficulties[smDiffIndex]);
+											#if mobile
+											var smDir = StorageUtil.getSMDirectory();
+											#else
+											var smDir = './sm/';
+											#end
+											var smPath:String = smDir + songs[curSelected].smFolder + '/' + smDiffName + '.json';
+											
+											if (sys.FileSystem.exists(smPath))
+											{
+												var rawJson:String = sys.io.File.getContent(smPath);
+												PlayState.SONG = Song.parseJSON(rawJson, songLowercase);
+												Song.loadedSongName = songLowercase;
+												Song.chartPath = smPath;
+												#if mobile
+												PlayState.customAudioPath = StorageUtil.getSMDirectory() + songs[curSelected].smFolder + '/';
+												#else
+												PlayState.customAudioPath = './sm/' + songs[curSelected].smFolder + '/';
+												#end
+												StageData.loadDirectory(PlayState.SONG);
+											}
+											else
+											{
+												throw 'SM chart file not found: $smPath';
+											}
+											#else
+											throw 'StepMania support requires MODS_ALLOWED';
+											#end
+										}
+										else
+										{
+											PlayState.customAudioPath = null;
+											Song.loadFromJson(poop, songLowercase);
+										}
+				
+										PlayState.isStoryMode = false;
+										PlayState.storyDifficulty = difficultySelector.curSelected;
+				
+										@:privateAccess
+										if(PlayState._lastLoadedModDirectory != Mods.currentModDirectory)
+										{
+											trace('CHANGED MOD DIRECTORY, RELOADING STUFF');
+											Paths.freeGraphicsFromMemory();
+										}
+										LoadingState.prepareToSong();
+										LoadingState.returnState = new FreeplayState();
+										LoadingState.loadAndSwitchState(new PlayState());
+										#if !SHOW_LOADING_SCREEN FlxG.sound.music.stop(); #end
+										stopMusicPlay = true;
+										destroyFreeplayVocals();
+										#if (MODS_ALLOWED && DISCORD_ALLOWED)
+										DiscordClient.loadModRPC();
+										#end
+									}
+									catch(e:Dynamic)
+									{
+										var errorStr:String = e.message;
+										if (errorStr == null || errorStr.length < 1) errorStr = e.toString();
+										if (e.stack != null && e.stack.length > 0)
+											errorStr += '\n\n' + e.stack;
+				
+										missingText.text = 'ERROR WHILE LOADING CHART:\n$errorStr';
+										missingText.screenCenter(Y);
+										missingText.visible = true;
+										missingTextBG.visible = true;
+										FlxG.sound.play(Paths.sound('cancelMenu'));
+										return;
+									}
+								}
+							}
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+	#end
+	
 	function changeDiff(change:Int = 0)
 	{
 		if (player.playingMusic)
@@ -894,16 +991,35 @@ class FreeplayState extends MusicBeatState
 		FlxTween.tween(this, {songsOffsetX: -1000}, 0.3, {ease: FlxEase.expoOut});
 		FlxTween.tween(blackOverlay, {alpha: 0.6}, 1.0, {ease: FlxEase.sineInOut});
 		FlxTween.tween(difficultySelector, {enterProgress: 1}, 0.4, {ease: FlxEase.expoOut, startDelay: 0.1});
+		
+		#if mobile
+		// Initialize difficulty scroll
+		difficultyScroll = new funkin.mobile.backend.TouchScroll(true);
+		#end
 	}
 
 	function exitDifficultySelect()
 	{
 		FlxG.sound.play(Paths.sound('cancelMenu'));
+	
+		// Set this immediately to prevent re-entering during tween
+		inDifficultySelect = false;
+
+		#if mobile
+		// Reset touch scroll to clear any pending tap state
+		if (touchScroll != null) touchScroll.reset();
+		
+		// Clean up difficulty scroll
+		if (difficultyScroll != null)
+		{
+			difficultyScroll.destroy();
+			difficultyScroll = null;
+		}
+		#end
 
 		FlxTween.tween(difficultySelector, {enterProgress: 0}, 0.25, {
 			ease: FlxEase.expoIn,
 			onComplete: function(twn:FlxTween) {
-				inDifficultySelect = false;
 				difficultySelector.items.clear();
 				difficultySelector.cards.clear();
 			}
@@ -933,6 +1049,12 @@ class FreeplayState extends MusicBeatState
 			return;
 
 		curSelected = FlxMath.wrap(curSelected + change, 0, songs.length-1);
+		
+		#if mobile
+		// Sync lerpSelected to prevent conflict with lerp in updateTexts()
+		lerpSelected = curSelected;
+		#end
+		
 		_updateSongLastDifficulty();
 		if(playSound) FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
 
@@ -1280,6 +1402,21 @@ class FreeplayState extends MusicBeatState
 	
 	override function destroy():Void
 	{
+		#if mobile
+		if (difficultyScroll != null)
+		{
+			difficultyScroll.destroy();
+			difficultyScroll = null;
+		}
+		
+		if (touchScroll != null)
+		{
+			touchScroll.destroy();
+			touchScroll = null;
+		}
+		funkin.mobile.backend.TouchUtil.clearScrollHandler();
+		#end
+		
 		super.destroy();
 
 		FlxG.autoPause = ClientPrefs.data.autoPause;

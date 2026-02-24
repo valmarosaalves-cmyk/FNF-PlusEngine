@@ -31,7 +31,7 @@ import flixel.ui.FlxButton as UIButton;
 
 class MobileControlSelectSubState extends MusicBeatSubstate
 {
-	var options:Array<String> = ['Pad-Right', 'Pad-Left', 'Pad-Custom', 'Hitbox'];
+	var options:Array<String> = ['Pad-Right', 'Pad-Left', 'Pad-Custom', 'Hitbox', 'Hitbox-Arrows'];
 	var control:MobileControls;
 	var leftArrow:FlxSprite;
 	var rightArrow:FlxSprite;
@@ -49,6 +49,7 @@ class MobileControlSelectSubState extends MusicBeatSubstate
 	public function new()
 	{
 		super();
+		
 		if (ClientPrefs.data.extraButtons != 'NONE')
 			options.push('Pad-Extra');
 
@@ -129,7 +130,17 @@ class MobileControlSelectSubState extends MusicBeatSubstate
 				});
 				return;
 			}
-			MobileData.mode = curOption;
+			
+			// Handle Hitbox-Arrows mode specially
+			if (options[curOption] == 'Hitbox-Arrows')
+			{
+				MobileData.mode = 4; // Hitbox-Arrows mode
+			}
+			else
+			{
+				MobileData.mode = curOption;
+			}
+			
 			if (options[curOption] == 'Pad-Custom')
 				MobileData.setTouchPadCustom(control.touchPad);
 			controls.isInSubstate = FlxG.mouse.visible = false;
@@ -270,13 +281,16 @@ class MobileControlSelectSubState extends MusicBeatSubstate
 
 		switch (curOption)
 		{
-			case 0 | 1 | 3:
+			case 0 | 1 | 3: // Pad-Right, Pad-Left, Hitbox
 				reset.visible = false;
 				changeControls();
-			case 2:
+			case 2: // Pad-Custom
 				reset.visible = true;
 				changeControls();
-			case 5:
+			case 4: // Hitbox-Arrows
+				reset.visible = false;
+				changeControls(4, false); // Use mode 4 directly
+			case 5: // Pad-Extra
 				reset.visible = true;
 				changeControls(0, true);
 				control.touchPad.forEachAlive((button:TouchButton) ->

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 Mobile Porting Team
+ * Copyright (C) 2026 Mobile Porting Team
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -23,6 +23,7 @@
 package funkin.mobile.objects;
 
 import flixel.util.FlxSignal.FlxTypedSignal;
+import funkin.mobile.backend.MobileScaleMode;
 
 /**
  * ...
@@ -126,8 +127,31 @@ class TouchPad extends MobileInputManager implements IMobileControls
 		alpha = ClientPrefs.data.controlsAlpha;
 		scrollFactor.set();
 		updateTrackedButtons();
+		
+		// Apply infinity display offset to all buttons
+		applyInfinityDisplayOffset();
 
 		instance = this;
+	}
+	
+	/**
+	 * Apply vertical offset for infinity display mode
+	 */
+	function applyInfinityDisplayOffset():Void
+	{
+		var offset:Float = MobileScaleMode.getVerticalOffset();
+		if (offset == 0) return;
+		
+		// Apply offset to all buttons
+		for (fieldName in Reflect.fields(this))
+		{
+			var field = Reflect.field(this, fieldName);
+			if (Std.isOfType(field, TouchButton))
+			{
+				var button:TouchButton = cast field;
+				button.y += offset;
+			}
+		}
 	}
 
 	override public function destroy()

@@ -8,7 +8,7 @@ class LegacySettingsSubState extends BaseOptionsMenu
 		rpcTitle = 'Legacy Settings Menu';
 
 		// SScript Compatibility Option
-		var option:Option = new Option('Use SScript for Psych 0.7.3 Mods',
+		var option:Option = new Option('Use SScript',
 			"If checked, uses SScript instead of hscript-iris for running Haxe code.\nEnable this if you're using mods from Psych Engine 0.6.x - 0.7.3\nthat have compatibility issues with hscript-iris. I can't guarantee that all Psych 0.7.3 mods will run well, sorry.",
 			'useSScriptCompat',
 			BOOL);
@@ -32,6 +32,13 @@ class LegacySettingsSubState extends BaseOptionsMenu
 		option = new Option('Use Legacy Font',
 			"If checked, uses the legacy VCR TTF font from Psych Engine 0.7.3 instead of Phantom.",
 			'useLegacyFont',
+			BOOL);
+		addOption(option);
+
+		// Legacy Shader Init Option
+		option = new Option('Legacy Shader Init',
+			"If checked, uses Psych 0.7.3 shader initialization system.\nUses glslVersion parameter and direct FlxRuntimeShader instead of\nErrorHandledRuntimeShader. Enable if old shader mods don't work.",
+			'legacyShaderInit',
 			BOOL);
 		addOption(option);
 

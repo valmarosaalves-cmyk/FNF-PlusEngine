@@ -14,16 +14,22 @@ import funkin.ui.title.TitleState;
 	public var dynamicColors:Bool = true; // yes cause its cool -Karim
 	public var controlsAlpha:Float = FlxG.onMobile ? 0.6 : 0;
 	public var showTouchPointer:Bool = true; // show touch pointer indicator (like Android dev option)
+	public var showMobileDebugButtons:Bool = false; // show T and D debug buttons on mobile
 	public var screensaver:Bool = false;
-	public var wideScreen:Bool = false;
+	public var infinityDisplay:Bool = false; // Extend viewport vertically for modern screens while keeping game at 16:9
 	#if android
-	public var storageType:String = "EXTERNAL_DATA";
+	public var storageType:String = "EXTERNAL";
+	public var androidOptimizationsApplied:Bool = false; // One-time optimization flag
 	#end
 	public var hitboxType:String = "Gradient";
 	public var popUpRating:Bool = true;
+	public var versionTextOnGameplay:Bool = false;
 	public var gameOverVibration:Bool = false;
 	public var fpsRework:Bool = false;
+	public var mobileReceptorAlign:Bool = false; // Align receptors with hitbox lanes (mobile only, may break scripts)
+	#if windows
 	public var fullscreenMode:String = 'Borderless'; // 'Borderless', 'Exclusive'
+	#end
 	
 	// Accuracy/Rating system
 	public var accuracySystem:String = 'Wife3'; // 'Wife3', 'Psych', 'Simple', 'osu!mania', 'DJMAX', 'ITG'
@@ -42,7 +48,9 @@ import funkin.ui.title.TitleState;
 	public var flashing:Bool = true;
 	public var autoPause:Bool = true;
 	public var antialiasing:Bool = true;
+	#if windows
 	public var changeWindowBorderColorWithNoteHit:Bool = false; // Changes window border color on note hit (Windows 11 only)
+	#end
 	public var noteSkin:String = 'Default';
 	public var splashSkin:String = 'Psych';
 	public var splashAlpha:Float = 0.6;
@@ -56,17 +64,16 @@ import funkin.ui.title.TitleState;
 	public var hideHud:Bool = false;
 	public var hideSustainSplash:Bool = false;
 	public var showKeyViewer:Bool = false;
+	public var iconBounceType:String = 'Default';
 	public var judgementCounter:Bool = true;
 	public var showCombo:Bool = true;
 	public var comboInGame:Bool = false;
 	public var useFreakyFont:Bool = false;
 	public var showStateInFPS:Bool = true;
 	public var showEndCountdown:Bool = false; // Enables/disables the end countdown
-	    public var endCountdownSeconds:Int = 10;  // End countdown seconds (10-30)
+	public var endCountdownSeconds:Int = 10;  // End countdown seconds (10-30)
 	
 	// ========== Modchart Config Options ==========
-	// Hold Rendering
-	public var holdSubdivisions:Int = 4; // Segments per hold note for rendering (1-32, higher = smoother)
 	// Camera & 3D Settings
 	public var camera3dEnabled:Bool = true; // Enables 3D camera transformations
 	public var zScale:Float = 1.0; // Z-axis depth scale (0.1-5.0)
@@ -106,7 +113,6 @@ import funkin.ui.title.TitleState;
 	public var shadedTimeBar:Bool = false;
 	public var scoreZoom:Bool = true;
 	public var noReset:Bool = false;
-	public var disableHoldAnimations:Bool = false;
 	public var healthBarAlpha:Float = 1;
 	public var smoothHealthBar:Bool = true;
 	public var hitsoundVolume:Float = 0;
@@ -149,7 +155,7 @@ import funkin.ui.title.TitleState;
 	public var goodWindow:Float = 90.0;
 	public var badWindow:Float = 135.0;
 	public var safeFrames:Float = 10.0;
-	public var guitarHeroSustains:Bool = true;
+	public var guitarHeroSustains:Bool = false;
 	public var discordRPC:Bool = true;
 	public var loadingScreen:Bool = true;
 	public var language:String = 'en-US';
@@ -161,13 +167,14 @@ import funkin.ui.title.TitleState;
 	public var useSScriptCompat:Bool = false; // Use SScript instead of hscript-iris for Psych 0.7.3 mods compatibility
 	public var legacyMemoryManagement:Bool = false; // Use Psych 0.7.3 memory management style (no GPU disposal)
 	public var legacyFileSystemAccess:Bool = false; // Allow direct FileSystem.readDirectory access like in Psych 0.7.3
-	public var useLegacyFont:Bool = false; // Use legacy VCR font instead of Phantom font
+	public var useLegacyFont:Bool = true; // Use legacy VCR font instead of Phantom font
+	public var legacyShaderInit:Bool = false; // Use Psych 0.7.3 shader initialization (glslVersion parameter, direct FlxRuntimeShader)
 }
 
 class Preferences {
 	public static var data:SaveVariables = {};
 	public static var defaultData:SaveVariables = {};
-	public static var judgementCounter:Bool = true;
+	public static var judgementCounter:Bool = false;
 
 	//Every key has two binds, add your key bind down here and then add your control on options/ControlsSubState.hx and Controls.hx
 	public static var keyBinds:Map<String, Array<FlxKey>> = [

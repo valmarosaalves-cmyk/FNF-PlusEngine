@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 Mobile Porting Team
+ * Copyright (C) 2026 Mobile Porting Team
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -47,6 +47,8 @@ class MobileControls extends FlxTypedSpriteGroup<MobileInputManager>
 				initControler(2, extra);
 			case 3: // HITBOX
 				initControler(3, extra);
+			case 4: // HITBOX_ARROWS
+				initControler(4, extra);
 		}
 		alpha = ClientPrefs.data.controlsAlpha;
 	}
@@ -72,6 +74,10 @@ class MobileControls extends FlxTypedSpriteGroup<MobileInputManager>
 				add(touchPad);
 			case 3:
 				hitbox = new Hitbox(extraAction);
+				hitbox = MobileData.setButtonsColors(hitbox);
+				add(hitbox);
+			case 4: // HITBOX_ARROWS
+				hitbox = new Hitbox(NONE, true); // arrowsLayout = true
 				hitbox = MobileData.setButtonsColors(hitbox);
 				add(hitbox);
 		}

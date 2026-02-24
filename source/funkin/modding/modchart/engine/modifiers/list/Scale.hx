@@ -10,6 +10,7 @@ class Scale extends Modifier {
 		setPercent('scale', 1, -1);
 		setPercent('scaleX', 1, -1);
 		setPercent('scaleY', 1, -1);
+		setPercent('stretch', 0, -1);
 	}
 
 	private inline function applyScale(vis:VisualParameters, params:ModifierParameters, axis:String, realAxis:String) {
@@ -20,6 +21,8 @@ class Scale extends Modifier {
 		// Scale
 		scale *= getPercent('scale' + axis, player) + getPercent('scale' + axis + receptorName, player);
 		scale *= 1 - (getPercent('tiny' + axis, player) + getPercent('tiny' + axis + receptorName, player)) * 0.5;
+		// Mini: uniform sub-percent scale reduction, same formula as tiny
+		scale *= 1 - (getPercent('mini', player) + getPercent('mini' + receptorName, player)) * 0.5;
 
 		switch (realAxis) {
 			case 'x':
@@ -40,8 +43,12 @@ class Scale extends Modifier {
 		applyScale(data, params, 'x', 'x');
 		applyScale(data, params, 'y', 'y');
 
-		data.scaleX *= 1;
-		data.scaleY *= 1;
+		// stretch sub-mod: compress X and elongate Y (same formula as Troll Engine)
+		var stretchV = getPercent('stretch', player) + getPercent('stretch' + receptorName, player);
+		if (stretchV != 0) {
+			data.scaleX *= 1.0 - 0.5 * stretchV;
+			data.scaleY *= 1.0 + stretchV;
+		}
 
 		return data;
 	}

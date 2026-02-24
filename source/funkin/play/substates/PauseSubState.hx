@@ -3,6 +3,8 @@ package funkin.play.substates;
 import funkin.save.Highscore;
 import funkin.data.song.Song;
 import funkin.data.Difficulty;
+import funkin.data.story.level.WeekData;
+import funkin.modding.Mods;
 import funkin.ui.LocaleUtils;
 import flixel.FlxG;
 import flixel.FlxSprite;
@@ -13,6 +15,7 @@ import flixel.tweens.FlxEase;
 import flixel.util.FlxColor;
 import flixel.util.FlxStringUtil;
 import flixel.math.FlxMath;
+import flixel.math.FlxPoint;
 import flixel.sound.FlxSound;
 import funkin.ui.story.StoryMenuState;
 import funkin.ui.freeplay.FreeplayState;
@@ -29,6 +32,12 @@ class PauseSubState extends MusicBeatSubstate
     var menuItemsOG:Array<String> = ['Resume', 'Restart Song', 'Chart Editor', 'Change Difficulty', 'Options', 'Exit to menu'];
     var difficultyChoices = [];
     var curSelected:Int = 0;
+    var lerpSelected:Float = 0;
+
+    #if mobile
+    var touchScroll:funkin.mobile.backend.TouchScroll;
+    #end
+
     var pauseMusic:FlxSound;
     var practiceText:FlxText;
     var skipTimeText:FlxText;
@@ -162,8 +171,14 @@ class PauseSubState extends MusicBeatSubstate
 		regenMenu();
 		cameras = [FlxG.cameras.list[FlxG.cameras.list.length - 1]];
 
-		addTouchPad(menuItems.contains('Skip Time') ? 'LEFT_FULL' : 'UP_DOWN', 'A');
+		addTouchPad('NONE', 'NONE');
 		addTouchPadCamera();
+
+		#if mobile
+		// Initialize touch scroll
+		touchScroll = new funkin.mobile.backend.TouchScroll(true);
+		funkin.mobile.backend.TouchUtil.setScrollHandler(touchScroll);
+		#end
 
 		super.create();
 	}
@@ -225,6 +240,36 @@ class PauseSubState extends MusicBeatSubstate
 		{
 			changeSelection(1);
 		}
+
+		#if mobile
+		// Touch scroll handling with smooth scrolling
+		if (touchScroll != null)
+		{
+			var scrollDelta = touchScroll.update();
+			
+			// Apply continuous scroll
+			if (Math.abs(scrollDelta) > 0.5)
+			{
+				// Smooth continuous scrolling (inverted for natural direction)
+				lerpSelected += -scrollDelta / 300;
+				lerpSelected = FlxMath.bound(lerpSelected, 0, menuItems.length - 1);
+				
+				// Update curSelected when crossing integer boundaries
+				var newSelected = Math.round(lerpSelected);
+				if (newSelected != curSelected)
+				{
+					changeSelection(newSelected - curSelected);
+					// Keep lerp smooth, don't force snap
+				}
+			}
+			
+			// Handle tap on menu items (only if not scrolling)
+			if (touchScroll.wasTapped())
+			{
+				handleTapPause();
+			}
+		}
+		#end
 
 		var daSelected:String = menuItems[curSelected];
 		switch (daSelected)
@@ -306,7 +351,7 @@ class PauseSubState extends MusicBeatSubstate
 					close();
 				#if VIDEOS_ALLOWED
 				case 'Skip Video':
-					if(PlayState.instance.videoCutscene != null)
+					if(PlayState.instance.videoCutscene != null && PlayState.instance.videoCutscene.onSkip != null)
 						PlayState.instance.videoCutscene.onSkip();
 					close();
 				#end
@@ -386,7 +431,7 @@ class PauseSubState extends MusicBeatSubstate
 
 		if (touchPad == null) //sometimes it dosent add the tpad, hopefully this fixes it
 		{
-			addTouchPad(PlayState.chartingMode ? 'LEFT_FULL' : 'UP_DOWN', 'A');
+			addTouchPad('NONE', 'NONE');
 			addTouchPadCamera();
 		}
 	}
@@ -419,6 +464,15 @@ class PauseSubState extends MusicBeatSubstate
 
 	override function destroy()
 	{
+		#if mobile
+		if (touchScroll != null)
+		{
+			touchScroll.destroy();
+			touchScroll = null;
+		}
+		funkin.mobile.backend.TouchUtil.clearScrollHandler();
+		#end
+		
 		pauseMusic.destroy();
 		super.destroy();
 	}
@@ -426,6 +480,12 @@ class PauseSubState extends MusicBeatSubstate
 	function changeSelection(change:Int = 0):Void
 	{
 		curSelected = FlxMath.wrap(curSelected + change, 0, menuItems.length - 1);
+		
+		#if mobile
+		// Sync lerpSelected to prevent ping-pong effect
+		lerpSelected = curSelected;
+		#end
+		
 		for (num => item in grpMenuShit.members)
 		{
 			item.targetY = num - curSelected;
@@ -444,6 +504,159 @@ class PauseSubState extends MusicBeatSubstate
 		missingTextBG.visible = false;
 		FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
 	}
+	
+	#if mobile
+	function handleTapPause():Void
+	{
+		var tapPos = touchScroll.getTapPosition();
+		if (tapPos == null) return;
+		
+		// Check if tapped on any menu item
+		for (i in 0...grpMenuShit.members.length)
+		{
+			var item = grpMenuShit.members[i];
+			if (item != null && item.visible && item.overlapsPoint(new FlxPoint(tapPos.x, tapPos.y)))
+			{
+				if (i == curSelected)
+				{
+					// Tapped on selected item - activate it (simulate ACCEPT)
+					if (cantUnpause <= 0)
+					{
+						var daSelected:String = menuItems[curSelected];
+						
+						// Handle difficulty selection
+						if (menuItems == difficultyChoices)
+						{
+							var songLowercase:String = Paths.formatToSongPath(PlayState.SONG.song);
+							var poop:String = Highscore.formatSong(songLowercase, curSelected);
+							try
+							{
+								if(menuItems.length - 1 != curSelected && difficultyChoices.contains(daSelected))
+								{
+									Song.loadFromJson(poop, songLowercase);
+									PlayState.storyDifficulty = curSelected;
+									MusicBeatState.resetState();
+									FlxG.sound.music.volume = 0;
+									PlayState.changedDifficulty = true;
+									PlayState.chartingMode = false;
+									return;
+								}
+							}
+							catch(e:haxe.Exception)
+							{
+								trace('ERROR! ${e.message}');
+								
+								var errorStr:String = e.message;
+								if(errorStr.startsWith('[lime.utils.Assets] ERROR:')) errorStr = 'Missing file: ' + errorStr.substring(errorStr.indexOf(songLowercase), errorStr.length-1);
+								else errorStr += '\n\n' + e.stack;
+
+								missingText.text = 'ERROR WHILE LOADING CHART:\n$errorStr';
+								missingText.screenCenter(Y);
+								missingText.visible = true;
+								missingTextBG.visible = true;
+								FlxG.sound.play(Paths.sound('cancelMenu'));
+								return;
+							}
+
+							menuItems = menuItemsOG;
+							regenMenu();
+						}
+						
+						// Handle main menu selections
+						switch (daSelected)
+						{
+							case "Resume":
+								Paths.clearUnusedMemory();
+								close();
+							#if VIDEOS_ALLOWED
+							case 'Skip Video':
+								if(PlayState.instance.videoCutscene != null && PlayState.instance.videoCutscene.onSkip != null)
+									PlayState.instance.videoCutscene.onSkip();
+								close();
+							#end
+							case 'Change Difficulty':
+								menuItems = difficultyChoices;
+								deleteSkipTimeText();
+								regenMenu();
+							case 'Toggle Practice Mode':
+								PlayState.instance.practiceMode = !PlayState.instance.practiceMode;
+								PlayState.changedDifficulty = true;
+								practiceText.visible = PlayState.instance.practiceMode;
+							case "Restart Song":
+								restartSong();
+							case 'Chart Editor':
+								PlayState.instance.openChartEditor();
+							case "Leave Charting Mode":
+								restartSong();
+								PlayState.chartingMode = false;
+							case 'Skip Time':
+								if(curTime < Conductor.songPosition)
+								{
+									PlayState.startOnTime = curTime;
+									restartSong(true);
+								}
+								else
+								{
+									if (curTime != Conductor.songPosition)
+									{
+										PlayState.instance.clearNotesBefore(curTime);
+										PlayState.instance.setSongTime(curTime);
+									}
+									close();
+								}
+							case 'End Song':
+								close();
+								PlayState.instance.notes.clear();
+								PlayState.instance.unspawnNotes = [];
+								PlayState.instance.preloadedNotes = [];
+								PlayState.instance.finishSong(true);
+							case 'Toggle Botplay':
+								PlayState.instance.cpuControlled = !PlayState.instance.cpuControlled;
+								PlayState.changedDifficulty = true;
+								PlayState.instance.botplayTxt.visible = PlayState.instance.cpuControlled;
+								PlayState.instance.botplayTxt.alpha = 1;
+								PlayState.instance.botplaySine = 0;
+							case 'Options':
+								PlayState.instance.paused = true;
+								PlayState.instance.vocals.volume = 0;
+								PlayState.instance.canResync = false;
+								MusicBeatState.switchState(new OptionsState());
+								if(ClientPrefs.data.pauseMusic != 'None')
+								{
+									FlxG.sound.playMusic(Paths.music(Paths.formatToSongPath(ClientPrefs.data.pauseMusic)), pauseMusic.volume);
+									FlxTween.tween(FlxG.sound.music, {volume: 1}, 0.8);
+									FlxG.sound.music.time = pauseMusic.time;
+								}
+								OptionsState.onPlayState = true;
+							case "Exit to menu":
+								#if DISCORD_ALLOWED DiscordClient.resetClientID(); #end
+								PlayState.deathCounter = 0;
+								PlayState.seenCutscene = false;
+								PlayState.instance.canResync = false;
+								
+								Mods.loadTopMod();
+								if(PlayState.isStoryMode)
+									MusicBeatState.switchState(new StoryMenuState());
+								else
+									MusicBeatState.switchState(new FreeplayState());
+									
+								FlxG.sound.playMusic(Paths.music('freakyMenu'));
+								PlayState.changedDifficulty = false;
+								PlayState.chartingMode = false;
+								FlxG.camera.followLerp = 0;
+						}
+					}
+				}
+				else
+				{
+					// Tapped on different item - select it
+					changeSelection(i - curSelected);
+				}
+				return;
+			}
+		}
+	}
+	#end
 
 	function regenMenu():Void {
 		for (i in 0...grpMenuShit.members.length)

@@ -64,6 +64,9 @@ class Main extends Sprite
 	public static var focused:Bool = true;
 	var oldVol:Float = 1.0;
 	var newVol:Float = 0.2;
+	var focusStateTimer:FlxTimer;
+	var windowHasFocus:Bool = true;
+	var restoringFocusVolume:Bool = false;
 	public static var focusMusicTween:FlxTween;
 
 	// You can pretty much ignore everything from here on - your code should go in your states.
@@ -207,11 +210,32 @@ class Main extends Sprite
 		// Determine initial state. InitialState will load mods and redirect accordingly.
 		var initialState:Class<FlxState> = InitialState;
 		#if COPYSTATE_ALLOWED
+		// For Android < 11 with EXTERNAL storage, we need to check if permissions were granted
+		// before we can properly check existing files
+		#if android
+		var needsPermissions:Bool = false;
+		if (AndroidVersion.SDK_INT < AndroidVersionCode.TIRAMISU && ClientPrefs.data.storageType == "EXTERNAL") {
+			// Check if we have the necessary permissions for external storage
+			needsPermissions = !AndroidPermissions.getGrantedPermissions().contains('android.permission.WRITE_EXTERNAL_STORAGE');
+		}
+		
+		// If we need permissions and don't have them yet, always go to CopyState
+		// CopyState will handle the file checking after permissions are granted
+		if (needsPermissions || !CopyState.checkExistingFiles()) {
+			initialState = CopyState;
+			if (needsPermissions) {
+				trace('[Main] Permissions not granted yet for EXTERNAL storage, going to CopyState');
+			}
+		} else {
+			trace('[Main] All files exist, skipping CopyState');
+		}
+		#else
 		if (!CopyState.checkExistingFiles()) {
 			initialState = CopyState;
 		} else {
 			trace('[Main] All files exist, skipping CopyState');
 		}
+		#end
 		#else
 		// Preloader removed: always start at InitialState
 		#end
@@ -220,18 +244,19 @@ class Main extends Sprite
 		FlxG.save.bind('funkin', CoolUtil.getSavePath());
 		ClientPrefs.loadPrefs();
 		fpsVar = new FPSCounter(10, 3, 0xFFFFFF);
+		fpsVar.visible = ClientPrefs.data.showFPS;
 		addChild(fpsVar);
-		
-		traceDisplay = new TraceDisplay(10, 100, 0xFFFFFF);
-		addChild(traceDisplay);
 	
 		// Initialize touch pointer visualization for mobile
 		#if mobile
 
 		// Add TraceDisplay and Debug and buttons for mobile.
 		traceButton = new TraceButton();
+		traceButton.visible = ClientPrefs.data.showMobileDebugButtons;
 		addChild(traceButton);
+
 		debugButton = new DebugButton();
+		debugButton.visible = ClientPrefs.data.showMobileDebugButtons;
 		addChild(debugButton);
 		#end
 		
@@ -375,9 +400,21 @@ class Main extends Sprite
 
 	function onWindowFocusOut():Void
 	{
+		if (!windowHasFocus) return;
+		windowHasFocus = false;
 		focused = false;
 
-		oldVol = FlxG.sound.volume;
+		if (focusStateTimer != null)
+		{
+			focusStateTimer.cancel();
+			focusStateTimer = null;
+		}
+
+		if (!restoringFocusVolume)
+		{
+			oldVol = FlxG.sound.volume;
+		}
+		restoringFocusVolume = false;
 		if (oldVol > 0.3)
 		{
 			newVol = 0.3;
@@ -400,14 +437,27 @@ class Main extends Sprite
 
 	function onWindowFocusIn():Void
 	{
-		new FlxTimer().start(0.2, function(tmr:FlxTimer) {
+		if (windowHasFocus) return;
+		windowHasFocus = true;
+		restoringFocusVolume = true;
+
+		if (focusStateTimer != null)
+		{
+			focusStateTimer.cancel();
+		}
+		focusStateTimer = new FlxTimer().start(0.2, function(tmr:FlxTimer) {
 			focused = true;
+			focusStateTimer = null;
 		});
 
 		// Normal global volume when focused
 		if (focusMusicTween != null) focusMusicTween.cancel();
-
-		focusMusicTween = FlxTween.tween(FlxG.sound, {volume: oldVol}, 0.5);
+		focusMusicTween = FlxTween.tween(FlxG.sound, {volume: oldVol}, 0.5, {
+			onComplete: function(_)
+			{
+				restoringFocusVolume = false;
+			}
+		});
 	}
 	#end
 
@@ -426,7 +476,7 @@ class Main extends Sprite
 		}
 		#end
 		
-		var flxGraphic = funkin.Paths.image("marca");
+		var flxGraphic = funkin.Paths.image("watermark");
 		if (flxGraphic != null) {
 			var bmpData:openfl.display.BitmapData = flxGraphic.bitmap;
 			if (watermarkSprite != null && watermarkSprite.parent != null) {
@@ -444,10 +494,10 @@ class Main extends Sprite
 			watermarkSprite.visible = ClientPrefs.data.showWatermark;
 			openfl.Lib.current.stage.addChild(watermarkSprite);
 		} else {
-			trace('No se pudo cargar la marca de agua con funkin.Paths.image("marca").');
+			trace('No se pudo cargar la marca de agua con funkin.Paths.image("watermark").');
 		}
 
-		var imagePath = funkin.Paths.getPath('images/marca.png', IMAGE);
+		var imagePath = funkin.Paths.getPath('images/watermark.png', IMAGE);
 		if (sys.FileSystem.exists(imagePath)) {
 		    if (watermark != null && watermark.parent != null)
 		        removeChild(watermark);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 Mobile Porting Team
+ * Copyright (C) 2026 Mobile Porting Team
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -27,6 +27,7 @@ import openfl.display.Shape;
 import flixel.graphics.FlxGraphic;
 import flixel.util.FlxSignal.FlxTypedSignal;
 import openfl.geom.Matrix;
+import funkin.mobile.backend.MobileScaleMode;
 
 /**
  * A zone with 4 hint's (A hitbox).
@@ -54,8 +55,10 @@ class Hitbox extends MobileInputManager implements IMobileControls
 
 	/**
 	 * Create the zone.
+	 * @param extraMode Extra buttons mode (SINGLE, DOUBLE, or NONE)
+	 * @param arrowsLayout Use V-Slice style centered arrows layout
 	 */
-	public function new(?extraMode:ExtraActions = NONE)
+	public function new(?extraMode:ExtraActions = NONE, ?arrowsLayout:Bool = false)
 	{
 		super();
 
@@ -66,28 +69,48 @@ class Hitbox extends MobileInputManager implements IMobileControls
 				storedButtonsIDs.set(button, Reflect.getProperty(field, 'IDs'));
 		}
 
-		switch (extraMode)
+		// V-Slice style arrows layout (centered, fixed size)
+		if (arrowsLayout)
 		{
-			case NONE:
-				add(buttonLeft = createHint(0, 0, Std.int(FlxG.width / 4), FlxG.height, 0xFFC24B99));
-				add(buttonDown = createHint(FlxG.width / 4, 0, Std.int(FlxG.width / 4), FlxG.height, 0xFF00FFFF));
-				add(buttonUp = createHint(FlxG.width / 2, 0, Std.int(FlxG.width / 4), FlxG.height, 0xFF12FA05));
-				add(buttonRight = createHint((FlxG.width / 2) + (FlxG.width / 4), 0, Std.int(FlxG.width / 4), FlxG.height, 0xFFF9393F));
-			case SINGLE:
-				add(buttonLeft = createHint(0, offsetSec, Std.int(FlxG.width / 4), Std.int(FlxG.height / 4) * 3, 0xFFC24B99));
-				add(buttonDown = createHint(FlxG.width / 4, offsetSec, Std.int(FlxG.width / 4), Std.int(FlxG.height / 4) * 3, 0xFF00FFFF));
-				add(buttonUp = createHint(FlxG.width / 2, offsetSec, Std.int(FlxG.width / 4), Std.int(FlxG.height / 4) * 3, 0xFF12FA05));
-				add(buttonRight = createHint((FlxG.width / 2) + (FlxG.width / 4), offsetSec, Std.int(FlxG.width / 4), Std.int(FlxG.height / 4) * 3,
-					0xFFF9393F));
-				add(buttonExtra = createHint(0, offsetFir, FlxG.width, Std.int(FlxG.height / 4), 0xFF0066FF));
-			case DOUBLE:
-				add(buttonLeft = createHint(0, offsetSec, Std.int(FlxG.width / 4), Std.int(FlxG.height / 4) * 3, 0xFFC24B99));
-				add(buttonDown = createHint(FlxG.width / 4, offsetSec, Std.int(FlxG.width / 4), Std.int(FlxG.height / 4) * 3, 0xFF00FFFF));
-				add(buttonUp = createHint(FlxG.width / 2, offsetSec, Std.int(FlxG.width / 4), Std.int(FlxG.height / 4) * 3, 0xFF12FA05));
-				add(buttonRight = createHint((FlxG.width / 2) + (FlxG.width / 4), offsetSec, Std.int(FlxG.width / 4), Std.int(FlxG.height / 4) * 3,
-					0xFFF9393F));
-				add(buttonExtra2 = createHint(Std.int(FlxG.width / 2), offsetFir, Std.int(FlxG.width / 2), Std.int(FlxG.height / 4), 0xA6FF00));
-				add(buttonExtra = createHint(0, offsetFir, Std.int(FlxG.width / 2), Std.int(FlxG.height / 4), 0xFF0066FF));
+			final SCREEN_MIDDLE = FlxG.width / 2;
+			final ARROW_HITBOX_SIZE = 270;
+			final ARROW_DISTANCE = 220;
+			final ARROW_SPREAD = 30;
+
+			add(buttonLeft = createHint(SCREEN_MIDDLE - (ARROW_DISTANCE * 1.5) - (ARROW_HITBOX_SIZE / 2) - ARROW_SPREAD, 0, ARROW_HITBOX_SIZE,
+				FlxG.height, 0xFFC24B99));
+			add(buttonDown = createHint(SCREEN_MIDDLE - (ARROW_DISTANCE * 0.5) - (ARROW_HITBOX_SIZE / 2) - ARROW_SPREAD, 0, ARROW_HITBOX_SIZE,
+				FlxG.height, 0xFF00FFFF));
+			add(buttonUp = createHint(SCREEN_MIDDLE + (ARROW_DISTANCE * 0.5) - (ARROW_HITBOX_SIZE / 2) + ARROW_SPREAD, 0, ARROW_HITBOX_SIZE,
+				FlxG.height, 0xFF12FA05));
+			add(buttonRight = createHint(SCREEN_MIDDLE + (ARROW_DISTANCE * 1.5) - (ARROW_HITBOX_SIZE / 2) + ARROW_SPREAD, 0, ARROW_HITBOX_SIZE,
+				FlxG.height, 0xFFF9393F));
+		}
+		else
+		{
+			switch (extraMode)
+			{
+				case NONE:
+					add(buttonLeft = createHint(0, 0, Std.int(FlxG.width / 4), FlxG.height, 0xFFC24B99));
+					add(buttonDown = createHint(FlxG.width / 4, 0, Std.int(FlxG.width / 4), FlxG.height, 0xFF00FFFF));
+					add(buttonUp = createHint(FlxG.width / 2, 0, Std.int(FlxG.width / 4), FlxG.height, 0xFF12FA05));
+					add(buttonRight = createHint((FlxG.width / 2) + (FlxG.width / 4), 0, Std.int(FlxG.width / 4), FlxG.height, 0xFFF9393F));
+				case SINGLE:
+					add(buttonLeft = createHint(0, offsetSec, Std.int(FlxG.width / 4), Std.int(FlxG.height / 4) * 3, 0xFFC24B99));
+					add(buttonDown = createHint(FlxG.width / 4, offsetSec, Std.int(FlxG.width / 4), Std.int(FlxG.height / 4) * 3, 0xFF00FFFF));
+					add(buttonUp = createHint(FlxG.width / 2, offsetSec, Std.int(FlxG.width / 4), Std.int(FlxG.height / 4) * 3, 0xFF12FA05));
+					add(buttonRight = createHint((FlxG.width / 2) + (FlxG.width / 4), offsetSec, Std.int(FlxG.width / 4), Std.int(FlxG.height / 4) * 3,
+						0xFFF9393F));
+					add(buttonExtra = createHint(0, offsetFir, FlxG.width, Std.int(FlxG.height / 4), 0xFF0066FF));
+				case DOUBLE:
+					add(buttonLeft = createHint(0, offsetSec, Std.int(FlxG.width / 4), Std.int(FlxG.height / 4) * 3, 0xFFC24B99));
+					add(buttonDown = createHint(FlxG.width / 4, offsetSec, Std.int(FlxG.width / 4), Std.int(FlxG.height / 4) * 3, 0xFF00FFFF));
+					add(buttonUp = createHint(FlxG.width / 2, offsetSec, Std.int(FlxG.width / 4), Std.int(FlxG.height / 4) * 3, 0xFF12FA05));
+					add(buttonRight = createHint((FlxG.width / 2) + (FlxG.width / 4), offsetSec, Std.int(FlxG.width / 4), Std.int(FlxG.height / 4) * 3,
+						0xFFF9393F));
+					add(buttonExtra2 = createHint(Std.int(FlxG.width / 2), offsetFir, Std.int(FlxG.width / 2), Std.int(FlxG.height / 4), 0xA6FF00));
+					add(buttonExtra = createHint(0, offsetFir, Std.int(FlxG.width / 2), Std.int(FlxG.height / 4), 0xFF0066FF));
+			}
 		}
 
 		for (button in Reflect.fields(this))
@@ -99,8 +122,32 @@ class Hitbox extends MobileInputManager implements IMobileControls
 		storedButtonsIDs.clear();
 		scrollFactor.set();
 		updateTrackedButtons();
+		
+		// Apply infinity display offset (skips arrows layout as they span full height)
+		if (!arrowsLayout)
+			applyInfinityDisplayOffset();
 
 		instance = this;
+	}
+	
+	/**
+	 * Apply vertical offset for infinity display mode
+	 */
+	function applyInfinityDisplayOffset():Void
+	{
+		var offset:Float = MobileScaleMode.getVerticalOffset();
+		if (offset == 0) return;
+		
+		// Apply offset to all buttons
+		for (fieldName in Reflect.fields(this))
+		{
+			var field = Reflect.field(this, fieldName);
+			if (Std.isOfType(field, TouchButton))
+			{
+				var button:TouchButton = cast field;
+				button.y += offset;
+			}
+		}
 	}
 
 	/**

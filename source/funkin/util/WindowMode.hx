@@ -37,11 +37,16 @@ class WindowMode
 	public static function toggleFullscreen():Void
 	{
 		#if desktop
+		#if windows
 		var mode = ClientPrefs.data.fullscreenMode;
 		if (mode == 'Exclusive')
 			setExclusiveFullscreen(!exclusiveFullscreen);
 		else
 			setBorderlessFullscreen(!borderlessFullscreen);
+		#else
+		// On macOS and Linux, use borderless fullscreen (more stable)
+		setBorderlessFullscreen(!borderlessFullscreen);
+		#end
 		#end
 	}
 

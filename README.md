@@ -1,5 +1,10 @@
 ![Logo Off](docs/img/PlusEngineLogo.png)
 
+<div align="center">
+
+**EN-US | [ES-LA](README.es-LA.md) | [ID-ID](README.id-ID.md)**
+
+
 [![Build](https://github.com/LeninAsto/FNF-PlusEngine/actions/workflows/main.yml/badge.svg)](https://github.com/LeninAsto/FNF-PlusEngine/actions/workflows/main.yml)
 [![VirusTotal Scan](https://github.com/LeninAsto/FNF-PlusEngine/actions/workflows/virustotal.yml/badge.svg)](https://github.com/LeninAsto/FNF-PlusEngine/actions/workflows/virustotal.yml)
 ![Security](https://img.shields.io/badge/security-scanned-brightgreen?logo=virustotal)
@@ -16,57 +21,24 @@
 
 Engine based in Psych 1.0.4 with modcharts like NotITG and compatible with hxcodec videos from Psych mods 0.6.3 and 0.7.3.
 
-[Join the Discord!!](https://discord.gg/FCwACsDDMz)
+[Join the Discord!!](https://discord.gg/dHvGQfXy9h)
+
+</div>
 
 ## Contributors
 
-<table>
-  <tr>
-    <td align="center">
-      <a href="https://github.com/LeninAsto">
-        <img src="https://github.com/LeninAsto.png" width="100px;" alt="LeninAsto"/>
-        <br />
-        <sub><b>Lenin Asto</b></sub>
-      </a>
-      <br />
-      <sub>Main Developer</sub>
-    </td>
-    <td align="center">
-      <a href="https://github.com/sirthegamercoder">
-        <img src="https://github.com/sirthegamercoder.png" width="100px;" alt="Username2"/>
-        <br />
-        <sub><b>MTGC</b></sub>
-      </a>
-      <br />
-      <sub>Indonesian translation and other PRs</sub>
-    </td>
-  </tr>
-</table>
+<p align="center">
+  <a href="https://github.com/LeninAsto"><img src="https://github.com/LeninAsto.png" width="80px;" style="border-radius: 50%;" alt="LeninAsto"/></a>
+  <a href="https://github.com/rey164xds"><img src="https://github.com/rey164xds.png" width="80px;" style="border-radius: 50%;" alt="Legacy_Odyssey"/></a>
+  <a href="https://github.com/sirthegamercoder"><img src="https://github.com/sirthegamercoder.png" width="80px;" style="border-radius: 50%;" alt="MTGC"/></a>
+</p>
 
 ## Special Thanks
 
-<table>
-  <tr>
-    <td align="center">
-      <a href="https://github.com/Slushi-GitHub">
-        <img src="https://github.com/Slushi-Github.png" width="100px;" alt="Slushi-GitHub"/>
-        <br />
-        <sub><b>Slushi GitHub</b></sub>
-      </a>
-      <br />
-      <sub>Creator of several used Slushi Engine codes</sub>
-    </td>
-    <td align="center">
-      <a href="https://www.facebook.com/hansuke.hotaroshi">
-        <img src="https://raw.githubusercontent.com/Psych-Plus-Team/FNF-PlusEngine/d98e506ac8d567d1731e4652bc120887aff4376c/assets/shared/images/credits/hansu.png" width="100px;" alt="Hansu"/>
-        <br />
-        <sub><b>Hansuke H</b></sub>
-      </a>
-      <br />
-      <sub>Vietnamese translation and alphabet sprite</sub>
-    </td>
-  </tr>
-</table>
+<p align="center">
+  <a href="https://github.com/Slushi-GitHub"><img src="https://github.com/Slushi-Github.png" width="80px;" style="border-radius: 50%;" alt="Slushi-GitHub"/></a>
+  <a href="https://www.facebook.com/hansuke.hotaroshi"><img src="https://raw.githubusercontent.com/Psych-Plus-Team/FNF-PlusEngine/d98e506ac8d567d1731e4652bc120887aff4376c/assets/shared/images/credits/hansu.png" width="80px;" style="border-radius: 50%;" alt="Hansuke H"/></a>
+</p>
 
 Contributions are welcome! If you have ideas, improvements, or fixes, feel free to fork the repo and open a pull request.
 
@@ -112,6 +84,7 @@ relax — progress doesn’t wait.
 
 ## Developer Credits:
 * Lenin Asto - Main Programmer for Plus Engine Fork
+* Legacy Odyssey - Co-Programmer for Plus Engine Fork
 
 ## Original Credits:
 * Shadow Mario - Main Programmer and Head of Psych Engine.
@@ -148,7 +121,7 @@ You need to have:
 - Android NDK r27d
 - Java JDK 17
 
-# Features before 1.0.4
+# Features after 1.0.4
 
 - Variables for window and system management in Lua: Many variables were added, whether to hide the taskbar or window borders, etc.
 - Key Viewer

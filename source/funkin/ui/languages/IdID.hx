@@ -5,40 +5,26 @@ class IdID
     public static var languageName:String = "Indonesian (Bahasa Ind.)";
     public static var languageCode:String = "id-ID";
     
-    // IntroTexts localized for the title screen
     public static var introTexts:Array<Array<String>> = [
-        ["shoutouts to tom fulp", "lol"],
-        ["Ludum dare", "luar biasa"],
-        ["cyberzone", "gratis"],
-        ["game ini bukan", "mod"],
-        ["banyak ritme", "untuk kamu"],
         ["game ritme", "keren banget"],
         ["kesulitan sedang", "oke lah"],
-        ["funkin", "deluxe"],
-        ["jangan berhenti", "funkin"],
-        ["hampir selesai", "ceritanya"],
-        ["dua pemain", "segera hadir"],
-        ["Psych Engine", "Plus Edition"],
-        ["engine ini", "keren"],
         ["ingat latihan", "bikin kamu lebih baik"],
-        ["engine dibuat oleh", "Shadow Mario"],
-        ["versi plus oleh", "Lenin Asto"],
-        ["tekan Enter", "untuk mulai"],
-        ["friday night", "funkin"],
         ["stecu stecu", "konoha"],
         ["jiwa yang", "bersedih"],
         ["sial sialnya", "ku bertemu dengan cinta semu"],
         ["kisah tanpa", "dirimu"],
+        ["berbukalah dengan", "yang manis"],
+        ["liburan ke", "luar kota saat lebaran"],
     ];
     
     public static var translations:Map<String, String> = [
         "update_available_title" => "Pembaruan Tersedia!",
-        "version_comparison" => "Versi Saat Ini: {1} => Versi Terbaru: {2}",
+        "version_comparison" => "Saat Ini: {1} => Terbaru: {2}",
         "loading_changelog" => "Memuat changelog...",
-        "update_controls" => "Tekan ENTER untuk perbarui ke versi terkini\nTekan ESCAPE jika anda berada di versi engine benar\nAnda dapat mematikan peringatan ini di menu Pengaturan",
+        "update_controls_mobile" => "Tekan A untuk mengunduh pembaruan\nTekan B untuk melanjutkan\nNonaktifkan ini di Pengaturan",
+        "update_controls" => "Tekan ENTER untuk mengunduh pembaruan\nTekan ESC untuk melanjutkan\nNonaktifkan ini di Pengaturan",
         "changelog_title" => "Apa yang Baru:\n{1}",
         "changelog_error" => "Kesalahan memuat changelog: {1}",
-        "update_controls_mobile" => "Tekan {1} untuk mengunduh versi terbaru\nTekan {2} jika Anda berada di versi engine yang benar\nAnda dapat mematikan peringatan ini di menu Pengaturan",
 
         // Gameplay
         "score_text" => "Skor: {1} | {2}: {3} | Rating: {4} | TPS: {5}/{6}",
@@ -86,10 +72,9 @@ class IdID
         "storyname_tutorial" => "Tata Cara",
         "storyname_week1" => "Ayah yang Tercinta",
         "storyname_week2" => "Bulan Spooky",
-        "storyname_week4" => "Ibu Harus Membunuh",
-        "storyname_week5" => "Salju Merah",
-        "storyname_week6" => "Simulasi Hating ft. Moawling",
-        "storyname_week7" => "Tankman",
+        "storyname_week4" => "IBU HARUS MEMBUNUH",
+        "storyname_week5" => "SALJU MERAH",
+        "storyname_week6" => "simulasi hating ft. moawling",
         "storyname_weekend1" => "Utang yang Harus Dibayar",
 
         // Freeplay
@@ -107,9 +92,6 @@ class IdID
         "reload_button" => "MUAT ULANG",
         "enable_all_button" => "AKTIFKAN SEMUA",
         "disable_all_button" => "MATIKAN SEMUA",
-
-        // Credits
-        "description_shadow_mario" => "Tim Psych Engine",
 
         // Reset Score/Achievement
         "reset_score" => "Reset skor dari",
@@ -150,29 +132,27 @@ class IdID
         "description_two_keys" => "Selesaikan sebuah lagu hanya menekan dua keys.",
         "achievement_toastie" => "Panggang Roti Gamer",
         "description_toastie" => "Apakah Anda pernah mencoba menjalankan game di panggang roti?",
-        "achievement_debugger" => "Debugger",
         "description_debugger" => "Selesaikan Stage \"Test\" dari Editor Chart.",
         "achievement_pessy_easter_egg" => "Cewek Engine Teman",
         "description_pessy_easter_egg" => "Haha, kamu menemukan aku~!",
 
         // Options
         "options_note_colors" => "Warna Note",
-        "options_controls" => "Controls",
+        "options_controls" => "Kontrol",
         "options_adjust_delay_and_combo" => "Sesuaikan Delay dan Kombo",
         "options_gameplay" => "Gameplay",
         "options_legacy" => "Warisan",
-        "options_visuals" => "Visuals",
+        "options_visuals" => "Visual",
         "options_graphics" => "Grafik",
         "options_modchart" => "Modchart",
         "options_language" => "Bahasa",
-        "options_mobile_options" => "Pengaturan Mobile",
         "graphics_menu" => "Pengaturan Grafik",
-        "visuals_menu" => "Pengaturan Visuals",
+        "visuals_menu" => "Pengaturan Visual",
         "gameplay_menu" => "Pengaturan Gameplay",
         "legacy_menu" => "Pengaturan Warisan",
         "modchart_menu" => "Pengaturan Modchart",
         "language_menu" => "Pengaturan Bahasa",
-        "mobile_options_menu" => "Pengaturan Mobile",
+        "mobile_menu" => "Pengaturan Mobile",
         "mobile_controls_tip" => "Tekan {1} untuk pergi ke Menu Kontrol Ponsel",
 
         // Note Colors Menu
@@ -214,7 +194,7 @@ class IdID
         "key_fullscreen" => "Layar Penuh",
         "controls_rebinding" => "Perekat ulang {1}",
         "controls_rebinding2" => "Tahan ESC untuk Batalkan\nTahan Backspace untuk Hapus",
-        "reset_to_default_keys" => "Kembalikan ke\nKeys Bawaan",
+        "reset_to_default_keys" => "Kembalikan ke\nKeys Default",
 
         // Gameplay Changers
         "setting_scroll_type" => "Jenis Gulungan",
@@ -231,12 +211,6 @@ class IdID
         "setting_no_drop_penalty" => "Tidak Ada Denda",
 
         // Graphics Settings
-        "setting_auto_optimization_tier" => "Tingkat Optimasi Otomatis",
-        "setting_auto_optimization_tier-auto" => "Otomatis (Disarankan)",
-        "setting_auto_optimization_tier-force_low_end" => "Paksa Kelas-Rendah",
-        "setting_auto_optimization_tier-force_mid_range" => "Paksa Kelas-Menengah",
-        "setting_auto_optimization_tier-force_high_end" => "Paksa Kelas-Tinggi",
-        "description_auto_optimization_tier" => "Terdeteksi: $tierName\n\nAnda dapat memaksa secara manual tier di bawahnya untuk menggantikan.\nKelas-Bawah = Kinerja maksimum\nKelas-Tinggi = Kualitas maksimum",
         "setting_low_quality" => "Kualitas Rendah",
         "description_low_quality" => "Jika dicentang, menonaktifkan beberapa detail latar belakang,\nmengurangi waktu pemuatan, dan meningkatkan kinerja.",
         "setting_anti-aliasing" => "Anti-Aliasing",
@@ -256,10 +230,11 @@ class IdID
         "description_framerate" => "Cukup jelas, bukan?",
         "setting_fps_rework" => "Pembenahan FPS",
         "description_fps_rework" => "Jika dicentang, ini mencegah game menjadi \"lebih lambat\" dan \"lebih halus\" saat FPS saat ini lebih rendah dari batas framerate.",
+        "setting_fps_counter" => "Penghitung FPS",
+        "description_fps_counter" => "Jika tidak dicentang, menyembunyikan penghitung FPS.",
 
         // Visuals Settings
         "setting_note_skins" => "Note Skins:",
-        "setting_note_skins-default" => "Bawaan",
         "setting_note_skins-future" => "Masa Depan",
         "setting_note_skins-chip" => "Chip",
         "description_note_skins" => "Pilih Note skin yang Anda sukai",
@@ -273,7 +248,7 @@ class IdID
         "setting_note_splash_opacity" => "Opasitas Note Splash",
         "description_note_splash_opacity" => "Seberapa transparan seharusnya Note Splashes?",
         "setting_color_quantization" => "Kuantisasi Warna",
-        "description_color_quantization" => "Jika dicentang, note akan diberi warna sesuai dengan pembagian ritme (4, 8, 12, 16) seperti di StepMania.\nMengganti warna panah bawaan.",
+        "description_color_quantization" => "Jika dicentang, note akan diberi warna sesuai dengan pembagian ritme (4, 8, 12, 16) seperti di StepMania.\nMengganti warna panah default.",
         "setting_hide_hud" => "Sembunyikan HUD",
         "description_hide_hud" => "Jika dicentang, menyembunyikan sebagian besar elemen HUD.",
         "setting_hide_sustain_splash" => "Sembunyikan Sustain Splash",
@@ -301,7 +276,10 @@ class IdID
         "setting_key_viewer_color-white" => "Putih",
         "setting_key_viewer_color-black" => "Hitam",
         "description_key_viewer_color" => "Pilih warna untuk tombol key viewer.",
-        "setting_camera_zooms" => "Kamera Zooms",
+        "setting_icon_bounce" => "Ikon Pantulan",
+        "setting_icon_bounce-old" => "Lama",
+        "description_icon_bounce" => "Pilih jenis ikon pantulan yang Anda sukai. CATATAN: Skrip yang menggunakan pengaturan ini mungkin tidak berfungsi dengan nilai non-default. Disarankan untuk membiarkannya sebagai Default.",
+        "setting_camera_zooms" => "Kamera Zoom",
         "description_camera_zooms" => "Jika tidak diaktifkan, kamera tidak akan memperbesar pada saat beat hit.",
         "setting_score_text_grow_on_hit" => "Teks Skor Bertambah Saat Dihit",
         "description_score_text_grow_on_hit" => "Jika tidak dicentang, menonaktifkan teks skor yang bertambah\nsetiap kali Anda menekan sebuah note.",
@@ -345,18 +323,20 @@ class IdID
         "description_middlescroll" => "Jika dicentang, notes Anda akan ditempatkan di tengah.",
         "setting_opponent_notes" => "Lawan Notes",
         "description_opponent_notes" => "Jika tidak dicentang, notes lawan akan tersembunyi.",
+        "setting_aligned_receptors" => "Receptor yang Terintegrasi",
+        "description_aligned_receptors)" => "HANYA UNTUK MODE HITBOX-ARROWS!\nMenyesuaikan penerima pemain dengan jalur hitbox,\npenerima lawan di sudut kiri atas.\n\nPERINGATAN: Dapat merusak skrip!",
         "setting_ghost_tapping" => "Ketukan Hantu",
         "description_ghost_tapping" => "Jika dicentang, Anda tidak akan mendapatkan misses saat menekan tombol\nsaat tidak ada note yang dapat dimainkan.",
         "setting_bad_and_shit_break_combo" => "Buruk dan Jancok Memecah Kombo",
         "description_bad_and_shit_break_combo" => "Jika dicentang, kombo akan pecah saat mendapatkan Buruk atau Jancok.",
+        "setting_version_text_on_gameplay" => "Versi Teks pada Gameplay",
+        "description_version_text_on_gameplay" => "Jika dicentang, versi teks akan ditampilkan.",
         "setting_auto_pause" => "Jeda Otomatis",
         "description_auto_pause" => "Jika dicentang, game akan otomatis jeda jika layar tidak berada dalam fokus.",
         "setting_pop_up_score" => "Pop-up Kombo",
-        "description_pop_up_score" => "Jika tidak diaktifkan, memukul note tidak akan menghasilkan \"sick\", \"baik\".. dan popup combo\n(Berguna untuk perangkat dengan spesifikasi rendah " + Main.platform + ").",
+        "description_pop_up_score" => "Jika tidak diaktifkan, memukul note tidak akan menghasilkan \"sick\", \"baik\".. dan popup combo\n(Berguna untuk perangkat dengan spesifikasi rendah)",
         "setting_disable_reset_button" => "Nonaktifkan Tombol Reset",
         "description_disable_reset_button" => "Jika dicentang, menekan tombol Reset tidak akan melakukan apa-apa.",
-        "setting_disable_hold_animations" => "Nonaktifkan Animasi Hold",
-        "description_disable_hold_animations" => "Jika dicentang, note holds tidak akan memicu animasi karakter,\nmemungkinkan gameplay yang lebih lancar pada note yang banyak menggunakan menyusut.",
         "setting_game_over_vibration" => "Getar Game Over",
         "description_game_over_vibration" => "Jika dicentang, perangkat Anda akan bergetar saat game over.",
         "setting_hitsound_in_what_way" => "Hitsound dalam hal apa",
@@ -364,8 +344,9 @@ class IdID
         "description_hitsound_in_what_way" => "Jika dicentang, note dan keys akan menghasilkan suara saat ditekan!, jika tidak, hanya saat notes ditekan!",
         "setting_hitsound_volume" => "Hitsound Volume",
         "description_hitsound_volume" => "Notes lucu berbunyi \"Tick!\" saat Anda hit.",
-        "setting_hitsound-none" => "Tidak ada",
-        "description_hitsound" => "Note lucu mengeluarkan suara \"Suara Apapun\" saat Anda hit.",
+        "setting_hitsound_sound-none" => "Tidak ada",
+        "setting_hitsound_sound" => "Suara Hitsound",
+        "description_hitsound_sound" => "Note lucu mengeluarkan suara \"Suara Apapun\" saat Anda hit.",
         "setting_rating_offset" => "Penyesuaian Rating",
         "description_rating_offset" => "Mengubah seberapa terlambat/awal Anda harus menekan untuk mendapatkan \"Sick!\"\nNilai yang lebih tinggi berarti Anda harus menekan lebih terlambat.",
         "setting_flawless_hit_window" => "Mulus! Jendela Hit",
@@ -389,24 +370,24 @@ class IdID
         "description_heavy_charts_mode" => "Jika dicentang, mengaktifkan sistem Charts Berat untuk kinerja yang lebih baik\ndengan chart yang memiliki banyak note (1000+).",
 
         // Legacy Settings
-        "setting_use_sscript_for_psych_0_7_3_mods" => "Gunakan SScript untuk Mod Psych 0.7.3",
-        "description_use_sscript_for_psych_0_7_3_mods" => "Jika dicentang, gunakan SScript alih-alih hscript-iris untuk menjalankan kode Haxe\nAktifkan ini jika Anda menggunakan mod dari Psych Engine 0.6.x-0.7.3 yang memiliki masalah kompatibilitas dengan hscript-iris\nSaya tidak dapat menjamin bahwa semua mod Psych 0.7.3 akan berjalan dengan baik, maaf.",
+        "setting_use_sscript" => "Gunakan SScript",
+        "description_use_sscript" => "Jika dicentang, gunakan SScript alih-alih hscript-iris untuk menjalankan kode Haxe\nAktifkan ini jika Anda menggunakan mod dari Psych Engine 0.6.x-0.7.3 yang memiliki masalah kompatibilitas dengan hscript-iris\nSaya tidak dapat menjamin bahwa semua mod Psych 0.7.3 akan berjalan dengan baik, maaf.",
         "setting_legacy_memory_management" => "Manajemen Memori Lama",
         "description_legacy_memory_management" => "Jika dicentang, menggunakan manajemen memori gaya Psych 0.7.3.\nMenonaktifkan pembuangan tekstur GPU dan menggunakan pembersihan yang lebih sederhana.\nAktifkan jika mod lama mengalami kerusakan terkait memori.",
         "setting_legacy_filesystem_access" => "Akses FileSystem Lawas",
         "description_legacy_filesystem_access" => "Jika dicentang, izinkan langsung FileSystem.readDirectory akses.\nAktifkan jika mod lama mengharapkan perilaku sistem file Psych 0.7.3.\nMungkin diperlukan untuk beberapa pemuat mod khusus.",
         "setting_use_legacy_font" => "Gunakan Font Warisan",
         "description_use_legacy_font" => "Jika dicentang, akan menggunakan font TTF VCR warisan dari Psych Engine 0.7.3 alih-alih Phantom.",
+        "setting_legacy_shader_init" => "Inisialisasi Shader Warisan",
+        "description_legacy_shader_init" => "Jika dicentang, menggunakan sistem inisialisasi shader Psych 0.7.3.\nMenggunakan parameter glslVersion dan langsung menggunakan FlxRuntimeShader alih-alih\nErrorHandledRuntimeShader. Aktifkan jika mod shader lama tidak berfungsi.",
 
         // Modchart Settings
-        "setting_hold_subdivisions" => "Tahan Subdivisi",
-        "description_hold_subdivisions" => "Jumlah segmen per note tahan untuk rendering.\nLebih tinggi = Kurva yang lebih halus | Lebih rendah = Kinerja yang lebih baik\n(Rentang: 1-32)",
         "setting_enable_3d_cameras" => "Aktifkan Kamera 3D",
         "description_enable_3d_cameras" => "Jika dicentang: Mengaktifkan transformasi kamera 3D dan efek kedalaman.\nJika tidak dicentang: Menonaktifkan fitur 3D untuk kinerja yang lebih baik.",
         "setting_optimize_hold_rendering" => "Optimalkan Rendering Hold",
         "description_optimize_hold_rendering" => "Mengurangi perhitungan hold note untuk kinerja yang ~2x lebih baik.\nTIDAK disarankan untuk digunakan dengan modchart yang kompleks (dapat menyebabkan glitch visual).",
-        "setting_z-axis_depth_scale" => "Skala Kedalaman Sumbu Z",
-        "description_z-axis__depth_scale" => "Mengontrol kedalaman yang dirasakan dari efek 3D.\nLebih tinggi = Kedalaman yang lebih dramatis\nLebih rendah = Tampilan yang lebih datar",
+        "setting_z_axis_depth_scale" => "Skala Kedalaman Sumbu Z",
+        "description_z_axis_depth_scale" => "Mengontrol kedalaman yang dirasakan dari efek 3D.\nLebih tinggi = Kedalaman yang lebih dramatis\nLebih rendah = Tampilan yang lebih datar",
         "setting_render_arrow_paths" => "Render Jalur Panah",
         "description_render_arrow_paths" => "Jika dicentang: Menampilkan garis lintasan panah.\nPERINGATAN: Dapat mempengaruhi kinerja secara signifikan.",
         "setting_styled_arrow_paths" => "Jalur Panah Berdesain",
@@ -414,7 +395,7 @@ class IdID
         "setting_arrow_path_boundary" => "Batas Jalur Panah",
         "description_arrow_path_boundary" => "Jarak dalam piksel di luar tepi layar untuk merender jalur.\nLebih rendah = Kinerja lebih baik | Lebih tinggi = Lebih sedikit pop-in visual",
         "setting_hold_end_scale" => "Skala Akhir Hold",
-        "description_hold_end_scale" => "Pengali untuk ukuran tutup ekor note penahan.\n1.0 = Ukuran bawaan",
+        "description_hold_end_scale" => "Pengali untuk ukuran tutup ekor note penahan.\n1.0 = Ukuran default",
         "setting_prevent_scaled_hold_ends" => "Mencegah Ujung Pegangan yang Terkelupas",
         "description_prevent_scaled_hold_ends" => "Menjaga ujung pegangan tetap berukuran konstan terlepas dari modifikasi.\nPERINGATAN: Menambahkan perhitungan tambahan, dapat mengurangi FPS jika ada banyak pegangan.",
         "setting_column_specific_modifiers" => "Modifikator Spesifik Kolom",
@@ -434,9 +415,7 @@ class IdID
         "create_directory_error" => "Silakan buat direktori ke\n{1}\nTekan OK untuk menutup game",
         "files_missing" => "Sepertinya Anda memiliki beberapa file yang hilang yang diperlukan untuk menjalankan game\nTekan OK untuk memulai proses penyalinan",
 
-        // Mobile Options
-        "setting_device_performance_info" => "Informasi Kinerja Perangkat",
-        "description_device_performance_info" => "Terdeteksi: $tierName | GPU: $gpuName\n\nPengaturan kualitas telah dikonfigurasi secara otomatis.\nAnda dapat mengonfigurasi ulang secara manual di Pengaturan Grafik.",
+        // Mobile Settings
         "setting_extra_controls" => "Kontrol Ekstra",
         "setting_extra_controls-none" => "TIDAK ADA",
         "setting_extra_controls-single" => "TUNGGAL",
@@ -446,8 +425,8 @@ class IdID
         "description_mobile_controls_opacity" => "Pilih tingkat opasitas untuk tombol-tombol pada perangkat mobile (hati-hati jangan sampai mengaturnya ke 0 dan kehilangan jejak tombol-tombol Anda).",
         "setting_allow_phone_screensaver" => "Izinkan Layar Pengaman Ponsel",
         "description_allow_phone_screensaver" => "Jika dicentang, ponsel akan masuk ke mode tidur setelah tidak aktif selama beberapa detik.\n(Waktu yang dibutuhkan tergantung pada pengaturan ponsel Anda)",
-        "setting_wide_screen_mode" => "Mode Layar Lebar",
-        "description_wide_screen_mode" => "Jika dicentang, game akan diperluas untuk mengisi seluruh layar Anda. (PERINGATAN: Dapat menyebabkan tampilan yang buruk dan merusak beberapa mod yang mengubah ukuran game/kamera)",
+        "setting_infinity_display" => "Layar Infinity",
+        "description_infinity_display" => "Memperluas tampilan layar secara vertikal untuk layar modern\nsambil menjaga rasio aspek game tetap 16:9 untuk kompatibilitas mod.\nKontrol touchpad akan menyesuaikan secara otomatis.",
         "setting_hitbox_design" => "Desain Hitbox:",
         "setting_hitbox_design-no_gradient" => "Tanpa Gradasi",
         "setting_hitbox_design-no_gradient_(old)" => "Tanpa Gradasi (Lama)",
@@ -464,6 +443,8 @@ class IdID
         "setting_storage_type-external_media" => "EKSTERNAL_MEDIA",
         "setting_storage_type-external_obb" => "EKSTERNAL_OBB",
         "description_storage_type" => "Pilih lokasi penyimpanan data game.\nEKSTERNAL_DATA: Disarankan, penyimpanan berbatasan.\nEKSTERNAL: Publik /sdcard/.PlusEngine/\nMengubah pengaturan ini memerlukan restart game!",
+        "setting_show_debug_buttons" => "Tampilkan Tombol Debug",
+        "description_show_debug_buttons" => "Jika dicentang, menampilkan tombol T (Trace) dan D (Debug) di pojok kanan atas.\nT mengaktifkan/menonaktifkan tampilan trace, D mengganti tingkat debug FPS.",
 
         // Mobile Control Select Menu
         "mobileC_exitandsave" => "Keluar & Simpan",
@@ -558,8 +539,8 @@ class IdID
         "images/menudifficulties/easy" => "images/id-ID/menudifficulties/easy",
         "images/menudifficulties/normal" => "images/id-ID/menudifficulties/normal", 
         "images/menudifficulties/hard" => "images/id-ID/menudifficulties/hard",
-        "image/menudifficulties/erect" => "image/id-ID/menudifficulties/erect",
-        "image/menudifficulties/nightmare" => "image/id-ID/menudifficulties/nightmare",
+        "images/menudifficulties/erect" => "images/id-ID/menudifficulties/erect",
+        "images/menudifficulties/nightmare" => "images/id-ID/menudifficulties/nightmare",
 
         // Game UI
         "images/bad" => "images/id-ID/bad",
@@ -594,14 +575,13 @@ class IdID
         "images/storymenu/week6" => "images/id-ID/storymenu/week6",
         "images/storymenu/week7" => "images/id-ID/storymenu/week7",
         "images/storymenu/weekend1" => "images/id-ID/storymenu/weekend1",
+        "images/storymenu/sserafim" => "images/id-ID/storymenu/sserafim",
 
         "editorplaystate_section" => "Bagian: {1}",
         "editorplaystate_tip" => "Tekan ESC untuk kembali ke Editor Chart",
         "editorplaystate_time" => "Waktu: {1} / {2}",
         "editorplaystate_section_current" => "Bagian: {1}",
-        "editorplaystate_beat" => "Beat: {1}",
         "editorplaystate_step" => "Langkah: {1}",
-        "editorplaystate_score" => "Hits: {1} | Misses: {2}",
         
         // Language example text
         "language_example_text" => "Ini adalah teks contoh dalam bahasa Indonesia Nusantara."

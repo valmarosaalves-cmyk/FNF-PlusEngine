@@ -350,6 +350,27 @@ class ModState extends MusicBeatState
                 return variables.exists(name) ? variables.get(name) : defaultValue;
             });
             
+            // Mobile/TouchPad helper functions
+            newScript.set('addTouchPad', function(dpad:String, action:String) {
+                addTouchPad(dpad, action);
+            });
+            
+            newScript.set('removeTouchPad', function() {
+                removeTouchPad();
+            });
+            
+            newScript.set('addTouchPadCamera', function(?defaultDrawTarget:Bool = false) {
+                addTouchPadCamera(defaultDrawTarget);
+            });
+            
+            newScript.set('addMobileControls', function(?defaultDrawTarget:Bool = false) {
+                addMobileControls(defaultDrawTarget);
+            });
+            
+            newScript.set('removeMobileControls', function() {
+                removeMobileControls();
+            });
+            
             if (newScript.exists('onCreate')) newScript.call('onCreate');
             trace('initialized hscript interp successfully: $file');
             hscriptArray.push(newScript);

@@ -39,7 +39,6 @@ import openfl.filters.ShaderFilter;
 #end
 
 import funkin.graphics.shaders.ErrorHandledShader;
-import funkin.graphics.shaders.GlitchEffect;
 import flixel.util.FlxGradient;
 import openfl.geom.Rectangle;
 
@@ -366,12 +365,6 @@ class PlayState extends MusicBeatState
 	public var destructiveHUDMode:String = 'zoom'; // 'zoom' or 'note'
 	var _hudOrigPos:Map<String, Array<Float>> = [];
 
-	// Glitchy Notes Event
-	#if !flash
-	public var glitchyNotesTarget:String = ''; // 'opponent', 'player', 'both'
-	var glitchOpponent:GlitchEffect;
-	var glitchPlayer:GlitchEffect;
-	#end
 	var versionTextTween:FlxTween;
 	var judgementCounter:JudCounter;
 	
@@ -2750,17 +2743,6 @@ class PlayState extends MusicBeatState
 
 		super.update(elapsed);
 
-		#if !flash
-		// Update Glitchy Notes shaders
-		if (glitchyNotesTarget != '' && ClientPrefs.data.shaders)
-		{
-			if ((glitchyNotesTarget == 'opponent' || glitchyNotesTarget == 'both') && glitchOpponent != null)
-				glitchOpponent.update(elapsed);
-			if ((glitchyNotesTarget == 'player' || glitchyNotesTarget == 'both') && glitchPlayer != null)
-				glitchPlayer.update(elapsed);
-		}
-		#end
-
 		#if VIDEOS_ALLOWED
 		if(videoCutscene != null && videoCutscene.videoSprite != null && videoCutscene.videoSprite.bitmap != null)
 		{
@@ -2955,17 +2937,6 @@ class PlayState extends MusicBeatState
 				var dunceNote:Note = unspawnNotes[0];
 				notes.insert(0, dunceNote);
 				dunceNote.spawned = true;
-				
-				// Apply glitchy notes shader to spawned notes
-				#if !flash
-				if (glitchyNotesTarget != '' && ClientPrefs.data.shaders)
-				{
-					if ((glitchyNotesTarget == 'opponent' || glitchyNotesTarget == 'both') && !dunceNote.mustPress && glitchOpponent != null)
-						dunceNote.shader = glitchOpponent.shader;
-					else if ((glitchyNotesTarget == 'player' || glitchyNotesTarget == 'both') && dunceNote.mustPress && glitchPlayer != null)
-						dunceNote.shader = glitchPlayer.shader;
-				}
-				#end
 
 				callOnLuas('onSpawnNote', [notes.members.indexOf(dunceNote), dunceNote.noteData, dunceNote.noteType, dunceNote.isSustainNote, dunceNote.strumTime]);
 				callOnHScript('onSpawnNote', [dunceNote]);

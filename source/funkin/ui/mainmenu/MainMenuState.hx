@@ -39,7 +39,7 @@ class MainMenuState extends MusicBeatState
 		'credits'
 	];
 
-	var leftOption:String = #if ACHIEVEMENTS_ALLOWED 'achievements' #else null #end;
+	var leftOption:String = #if ACHIEVEMENTS_ALLOWED 'awards' #else null #end;
 	var rightOption:String = 'options';
 
 	var magenta:FlxSprite;

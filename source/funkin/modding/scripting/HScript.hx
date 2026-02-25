@@ -105,6 +105,13 @@ class HScript extends Iris
 		
 		// Register old Psych Engine paths as proxy imports for backwards compatibility
 		// This makes "import psychlua.LuaUtils" work by redirecting to the new Plus Engine path
+		Iris.proxyImports.set("vlc.MP4Handler", funkin.graphics.video.v3.MP4Handler);
+		Iris.proxyImports.set("vlc.MP4Sprite", funkin.graphics.video.v3.MP4Sprite);
+		Iris.proxyImports.set("hxcodec.VideoHandler", funkin.graphics.video.v2.VideoHandler);
+		Iris.proxyImports.set("hxcodec.VideoSprite", funkin.graphics.video.v2.VideoSprite);
+		Iris.proxyImports.set("hxcodec.flixel.FlxVideo", funkin.graphics.video.legacy.FlxVideo); // Backwards compatibility
+		Iris.proxyImports.set("hxcodec.flixel.FlxVideoSprite", funkin.graphics.video.legacy.FlxVideoSprite);
+
 		Iris.proxyImports.set("shaders.RGBPalette", funkin.graphics.shaders.RGBPalette); // menos mal eh
 		Iris.proxyImports.set("shaders.WiggleEffect", funkin.graphics.shaders.WiggleEffect);
 		Iris.proxyImports.set("shaders.WiggleEffectType", funkin.graphics.shaders.WiggleEffect.WiggleEffectType);
@@ -438,12 +445,23 @@ class HScript extends Iris
 		set('FlxAnimate', FlxAnimate);
 		#end
 		#if (hxvlc)
+		// hxvlc - Current video library (v3)
 		set('VideoSprite', funkin.graphics.VideoSprite);
 		set('FlxVideoSprite', hxvlc.flixel.FlxVideoSprite);
 		set('FlxVideo', hxvlc.flixel.FlxVideo);
-		// Compatibilidad con versiones anteriores
+		// v2 and v3 handlers
 		set('VideoHandler', funkin.graphics.video.v2.VideoHandler);
 		set('MP4Handler', funkin.graphics.video.v3.MP4Handler);
+		set('MP4Sprite', funkin.graphics.video.v3.MP4Sprite);
+		// Legacy compatibility (hxcodec paths)
+		set('hxcodec', {
+			flixel: {
+				FlxVideo: funkin.graphics.video.legacy.FlxVideo,
+				FlxVideoSprite: funkin.graphics.video.legacy.FlxVideoSprite
+			},
+			VideoHandler: funkin.graphics.video.v2.VideoHandler,
+			VideoSprite: funkin.graphics.video.v2.VideoSprite
+		});
 		#end
 
 		// ===== VARIABLES & INSTANCES =====
@@ -1344,6 +1362,24 @@ class CustomInterp extends crowplexus.hscript.Interp
 	}
 	
 	override function set(o:Dynamic, field:String, value:Dynamic):Dynamic {
+		#if mobile
+		// Check if trying to modify receptors when aligned mode is enabled
+		if (ClientPrefs.data.mobileReceptorAlign && o != null)
+		{
+			var className = try Type.getClassName(Type.getClass(o)) catch(e:Dynamic) null;
+			if (className == "funkin.play.notes.StrumNote")
+			{
+				// Block position and visual modifications to receptors
+				var blockedFields = ['x', 'y', 'alpha', 'visible', 'angle', 'scale'];
+				if (blockedFields.contains(field.toLowerCase()))
+				{
+					trace('HScript: Receptor modifications are disabled when Mobile Receptor Align is active.');
+					return value;
+				}
+			}
+		}
+		#end
+		
 		// Si el objeto es null, mostrar warning y guardar en variables globales
 		if (o == null) {
 			// Silently save to global variables to avoid spam

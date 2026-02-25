@@ -324,7 +324,7 @@ class IdID
         "setting_opponent_notes" => "Lawan Notes",
         "description_opponent_notes" => "Jika tidak dicentang, notes lawan akan tersembunyi.",
         "setting_aligned_receptors" => "Receptor yang Terintegrasi",
-        "description_aligned_receptors)" => "HANYA UNTUK MODE HITBOX-ARROWS!\nMenyesuaikan penerima pemain dengan jalur hitbox,\npenerima lawan di sudut kiri atas.\n\nPERINGATAN: Dapat merusak skrip!",
+        "description_aligned_receptors" => "HANYA UNTUK MODE HITBOX-ARROWS!\nMenyesuaikan penerima pemain dengan jalur hitbox,\npenerima lawan di sudut kiri atas.\nPERINGATAN: Memblokir modifikasi skrip pada reseptor\nuntuk menjaga keselarasan!",
         "setting_ghost_tapping" => "Ketukan Hantu",
         "description_ghost_tapping" => "Jika dicentang, Anda tidak akan mendapatkan misses saat menekan tombol\nsaat tidak ada note yang dapat dimainkan.",
         "setting_bad_and_shit_break_combo" => "Buruk dan Jancok Memecah Kombo",

@@ -292,8 +292,7 @@
 	</section>
 
 	<section if="ios">
-	    <icon path="art/icons/PlusEngine.appiconset/iOS-Default.png"/>
-		<icon path="art/icons/PlusEngine.appiconset/iOS-Dark.png"/>
-		<icon path="art/icons/PlusEngine.appiconset/iOS-Tinted.png"/>
+	    <!-- Copy our custom lanucher icon resources into Assets.xsassets for iOS -->
+	    <assets path="art/icons/ios/AppIcon.appiconset" rename="Assets.xcassets/Images.xcassets/AppIcon.appiconset" />
 	</section>
 </project>

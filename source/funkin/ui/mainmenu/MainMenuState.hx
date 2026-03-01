@@ -187,7 +187,7 @@ class MainMenuState extends MusicBeatState
 			if (allowMouse && ((FlxG.mouse.deltaScreenX != 0 && FlxG.mouse.deltaScreenY != 0) || FlxG.mouse.justPressed)) //FlxG.mouse.deltaScreenX/Y checks is more accurate than FlxG.mouse.justMoved
 			{
 				allowMouse = false;
-				FlxG.mouse.visible = true;
+				Cursor.show();
 				timeNotMoving = 0;
 
 				var selectedItem:FlxSprite;
@@ -249,10 +249,10 @@ class MainMenuState extends MusicBeatState
 			else
 			{
 				timeNotMoving += elapsed;
-				if(timeNotMoving > 2) FlxG.mouse.visible = false;
+				if(timeNotMoving > 2) Cursor.hide();
 			}
 
-			switch(curColumn)
+			switch (curColumn)
 			{
 				case CENTER:
 					if(controls.UI_LEFT_P && leftOption != null)
@@ -284,7 +284,7 @@ class MainMenuState extends MusicBeatState
 			if (controls.BACK)
 			{
 				selectedSomethin = true;
-				FlxG.mouse.visible = false;
+				Cursor.hide();
 				FlxG.sound.play(Paths.sound('cancelMenu'));
 				MusicBeatState.switchState(new funkin.ui.title.TitleState());
 			}
@@ -293,7 +293,7 @@ class MainMenuState extends MusicBeatState
 			{
 				FlxG.sound.play(Paths.sound('confirmMenu'));
 				selectedSomethin = true;
-				FlxG.mouse.visible = false;
+				Cursor.hide();
 
 				if (ClientPrefs.data.flashing)
 					FlxFlicker.flicker(magenta, 1.1, 0.15, false);
@@ -363,7 +363,7 @@ class MainMenuState extends MusicBeatState
 			else if (controls.justPressed('debug_1') || touchPad.buttonE.justPressed)
 			{
 				selectedSomethin = true;
-				FlxG.mouse.visible = false;
+				Cursor.hide();
 				MusicBeatState.switchState(new MasterEditorMenu());
 			}
 

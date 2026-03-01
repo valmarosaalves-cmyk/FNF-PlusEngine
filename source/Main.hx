@@ -30,6 +30,7 @@ import funkin.mobile.backend.CopyState;
 #end
 import funkin.save.Highscore;
 import lime.system.System as LimeSystem;
+import funkin.input.Cursor;
 
 import lenin.slushithings.windows.WindowsAPI;
 
@@ -292,7 +293,7 @@ class Main extends Sprite
 
 		#if html5
 		FlxG.autoPause = false;
-		FlxG.mouse.visible = false;
+		Cursor.hide();
 		#end
 
 		FlxG.fixedTimestep = false;

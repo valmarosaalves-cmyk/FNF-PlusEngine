@@ -55,6 +55,8 @@ class FreeplayState_New extends MusicBeatState {
     override public function create():Void {
         super.create();
 
+        Cursor.show();
+
         bg = new FlxSprite().loadGraphic(Paths.image('menuDesat'));
 		bg.antialiasing = ClientPrefs.data.antialiasing;
 		add(bg);
@@ -99,6 +101,7 @@ class FreeplayState_New extends MusicBeatState {
         searchIcon = new FlxSprite().loadGraphic(Paths.image('ui/freeplay/icons/search'));
         searchIcon.x = 895;
         searchIcon.y = 170;
+        searchIcon.color = FlxColor.GRAY;
         searchIcon.antialiasing = ClientPrefs.data.antialiasing;
         searchIcon.setGraphicSize(16, 16);
         searchIcon.updateHitbox();
@@ -112,8 +115,8 @@ class FreeplayState_New extends MusicBeatState {
         playIcon.updateHitbox();
         add(playIcon);
 
-        playText = new FlxText(110.8, 565, 0, 'Play');
-        playText.setFormat(Paths.font('inter-bold.otf'), 18, FlxColor.PURPLE, 'left');
+        playText = new FlxText(115, 565, 0, 'Play');
+        playText.setFormat(Paths.font('inter-bold.otf'), 22, FlxColor.PURPLE, 'left');
         add(playText);
 
         starIcon = new FlxSprite().loadGraphic(Paths.image('ui/freeplay/icons/star'));
@@ -224,13 +227,17 @@ class FreeplayState_New extends MusicBeatState {
         bpmText.setFormat(Paths.font('inter-bold.otf'), 12, FlxColor.PURPLE, 'left');
         add(bpmText);
 
-        themeText = new FlxText(294.2, 235.5, 0, 'Example Theme');
+        themeText = new FlxText(294.2, 230, 0, 'Example Theme');
         themeText.setFormat(Paths.font('inter-bold.otf'), 36, FlxColor.BLACK, 'left');
         add(themeText);
 
-        modText = new FlxText(294.2, 280.5, 0, 'Friday Night Funkin\'');
+        modText = new FlxText(294.2, 275.5, 0, 'Friday Night Funkin\'');
         modText.setFormat(Paths.font('inter-bold.otf'), 18, FlxColor.GRAY, 'left');
         add(modText);
+
+        todayText = new FlxText(1124, 38, 0, '20:14\n28/02/2026');
+        todayText.setFormat(Paths.font('inter-bold.otf'), 13, FlxColor.BLACK, 'center');
+        add(todayText);
 
         cardsGroup = new FlxTypedGroup<FlxSprite>();
         add(cardsGroup);

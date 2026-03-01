@@ -47,6 +47,7 @@ import js.html.*;
 
 import funkin.Paths;
 import funkin.input.Controls;
+import funkin.input.Cursor;
 import funkin.util.CoolUtil;
 import funkin.util.MemoryManager;
 import funkin.util.ThreadUtil;

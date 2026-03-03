@@ -27,6 +27,10 @@ import funkin.mobile.backend.StorageUtil;
 
 import haxe.Json;
 
+#if funkin.vis
+import funkin.vis.dsp.SpectralAnalyzer;
+#end
+
 class FreeplayState extends MusicBeatState {
     // Instance reference
     public static var instance:FreeplayState;
@@ -49,7 +53,8 @@ class FreeplayState extends MusicBeatState {
     private var curPlaying:Bool = false;
     public static var viewingOpponentScores:Bool = false;
     var instPlaying:Int = -1;
-    var previewTimer:FlxTimer = null; 
+    var previewTimer:FlxTimer = null;
+    var _prevInstSongName:String = null; // Track previous inst to unload from cache
     var holdTime:Float = 0;
     var stopMusicPlay:Bool = false;
     
@@ -106,6 +111,31 @@ class FreeplayState extends MusicBeatState {
     var diffsGroup:FlxTypedGroup<FlxSprite>;
     var diffsTextGroup:FlxTypedGroup<FlxText>;
     var barsGroup:FlxTypedGroup<FlxSprite>;
+    var _barTweens:Array<FlxTween> = []; // One tween per bar, for proper cancellation
+
+    // Full-width bottom spectral visualizer bars (driven by SpectralAnalyzer)
+    var vizBarsGroup:FlxTypedGroup<FlxSprite>;
+
+    // SpectralAnalyzer for live bottom bar visualization
+    #if funkin.vis
+    var _analyzer:SpectralAnalyzer = null;
+    var _analyzerLevels:Array<funkin.vis.dsp.SpectralAnalyzer.Bar> = null;
+    // Flag: retry analyzer init every frame until __audioSource is ready (same pattern as ABotSpeaker).
+    var _needsAnalyzerInit:Bool = false;
+    #end
+
+    // Note density bar constants (small section, chart-data only)
+    static inline var BAR_COUNT:Int    = 24;
+    static inline var BAR_WIDTH:Int    = 10;
+    static inline var BAR_STEP:Int     = 12;   // bar width + gap
+    static inline var BAR_START_X:Float = 417;
+    static inline var BAR_BASELINE_Y:Float = 605;
+    static inline var BAR_MIN_H:Int    = 4;
+    static inline var BAR_MAX_H:Int    = 64;
+
+    // Full-width bottom spectral visualizer bar constants
+    static inline var VIZ_BAR_COUNT:Int = 128;
+    static inline var VIZ_BAR_MAX_H:Int = 120;
     var blurEffect:BlurEffect;
     //var diff:Array<FlxSpriteGroup>;
 
@@ -198,6 +228,23 @@ class FreeplayState extends MusicBeatState {
         blackOverlay = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
 		blackOverlay.alpha = 0.5;
 		add(blackOverlay);
+
+        // Full-width bottom spectral visualizer bars — behind all UI, above blackOverlay.
+        // Driven exclusively by SpectralAnalyzer; note density bars are separate.
+        vizBarsGroup = new FlxTypedGroup<FlxSprite>();
+        var vizBarW:Int = Std.int(FlxG.width / VIZ_BAR_COUNT); // 1280 / 64 = 20px per slot
+        for(i in 0...VIZ_BAR_COUNT) {
+            var vbar:FlxSprite = new FlxSprite();
+            vbar.makeGraphic(vizBarW - 1, VIZ_BAR_MAX_H, FlxColor.WHITE);
+            vbar.setGraphicSize(vizBarW - 1, 2);
+            vbar.updateHitbox();
+            vbar.x = i * vizBarW;
+            vbar.y = FlxG.height - 2;
+            vbar.alpha = 0.0;
+            vbar.ID = i;
+            vizBarsGroup.add(vbar);
+        }
+        add(vizBarsGroup);
 
         freeplayText = new FlxText(45, 28, 0, 'Freeplay');
         freeplayText.setFormat(Paths.font('inter-bold.otf'), 32, FlxColor.WHITE, 'left');
@@ -503,18 +550,23 @@ class FreeplayState extends MusicBeatState {
         barsGroup = new FlxTypedGroup<FlxSprite>();
         add(barsGroup);
         
-        for (i in 0...13) {
-            var bar:FlxSprite = new FlxSprite().loadGraphic(Paths.image('ui/freeplay/card'));
-            bar.color = FlxColor.PURPLE;
-            bar.angle = 90;
-            bar.x = 420 + (i * 18);
-            bar.y = 545;
-            bar.setGraphicSize(12, 10);
+        // Bars: vertical equalizer-style, anchored from BAR_BASELINE_Y upward.
+        // Fixed 12xBAR_MAX_H bitmap so setGraphicSize never allocs new BitmapData.
+        _barTweens = [];
+        for (i in 0...BAR_COUNT) {
+            var bar:FlxSprite = new FlxSprite();
+            bar.makeGraphic(BAR_WIDTH, BAR_MAX_H, FlxColor.WHITE);
+            bar.setGraphicSize(BAR_WIDTH, BAR_MIN_H);
             bar.updateHitbox();
+            bar.color = FlxColor.PURPLE;
+            bar.x = BAR_START_X + (i * BAR_STEP);
+            bar.y = BAR_BASELINE_Y - BAR_MIN_H;
+            bar.alpha = 0.18;
             bar.ID = i;
             barsGroup.add(bar);
+            _barTweens.push(null);
         }
-        
+
         if(curSelected >= songs.length) curSelected = 0;
         if(songs.length > 0) {
             bg.color = songs[curSelected].color;
@@ -565,6 +617,11 @@ class FreeplayState extends MusicBeatState {
         add(player);
         
         Conductor.bpm = 102;
+        
+        // Start the visualizer with the freeplay menu music right away.
+        #if funkin.vis
+        _needsAnalyzerInit = true;
+        #end
         
         changeSelection();
         updateTexts();
@@ -656,11 +713,9 @@ class FreeplayState extends MusicBeatState {
         if (FlxG.sound.music.volume < 0.7)
             FlxG.sound.music.volume += 0.5 * elapsed;
         
+        // instSound is now an alias for FlxG.sound.music when preview is active,
+        // so a single assignment covers both states.
         Conductor.songPosition = FlxG.sound.music.time;
-        
-        if(instSound != null && instSound.playing) {
-            Conductor.songPosition = instSound.time;
-        }
         
         bgZoom = FlxMath.lerp(defaultBgZoom, bgZoom, Math.exp(-elapsed * 3.125));
         bg.scale.set(bgZoom, bgZoom);
@@ -1407,14 +1462,16 @@ class FreeplayState extends MusicBeatState {
                     var noteData:Int = Std.int(note[1]);
                     var strumTime:Float = note[0];
                     
-                    if(noteData < 0 || strumTime < 0) continue;
+                    // Skip events (noteData < 0 or > 7) and invalid timestamps.
+                    if(noteData < 0 || noteData > 7 || strumTime < 0) continue;
                     
                     if(strumTime > lastNoteTime) {
                         lastNoteTime = strumTime;
                     }
                     
-                    var keyData:Int = noteData % 8;
-                    var isPlayerNote:Bool = section.mustHitSection ? (keyData < 4) : (keyData >= 4);
+                    // mustHitSection=true  → player owns lanes 0-3
+                    // mustHitSection=false → player owns lanes 4-7
+                    var isPlayerNote:Bool = section.mustHitSection ? (noteData < 4) : (noteData >= 4);
                     
                     if(isPlayerNote) noteCount++;
                 }
@@ -1433,9 +1490,9 @@ class FreeplayState extends MusicBeatState {
             speedText.text = Std.string(chartSpeed) + 'x';
             
             var sectionDensities:Array<Int> = [];
-            var sectionDuration:Float = lastNoteTime / 13.0;
+            var sectionDuration:Float = lastNoteTime / BAR_COUNT;
             
-            for(i in 0...13) {
+            for(i in 0...BAR_COUNT) {
                 var sectionStart:Float = i * sectionDuration;
                 var sectionEnd:Float = (i + 1) * sectionDuration;
                 var sectionNoteCount:Int = 0;
@@ -1449,11 +1506,11 @@ class FreeplayState extends MusicBeatState {
                         var noteData:Int = Std.int(note[1]);
                         var strumTime:Float = note[0];
                         
-                        if(noteData < 0 || strumTime < 0) continue;
+                        // Skip events (noteData < 0 or > 7) and invalid timestamps.
+                        if(noteData < 0 || noteData > 7 || strumTime < 0) continue;
                         if(strumTime < sectionStart || strumTime >= sectionEnd) continue;
                         
-                        var keyData:Int = noteData % 8;
-                        var isPlayerNote:Bool = section.mustHitSection ? (keyData < 4) : (keyData >= 4);
+                        var isPlayerNote:Bool = section.mustHitSection ? (noteData < 4) : (noteData >= 4);
                         
                         if(isPlayerNote) sectionNoteCount++;
                     }
@@ -1471,7 +1528,7 @@ class FreeplayState extends MusicBeatState {
             timerText.text = '0:00';
             speedText.text = '1.0x';
             noteDiffText.text = '(?) 0 notes';
-            updateNoteDensityBars([0,0,0,0,0,0,0,0,0,0,0,0,0]);
+            updateNoteDensityBars([for(_ in 0...BAR_COUNT) 0]);
         }
         
         // Restore previous mod context
@@ -1480,43 +1537,49 @@ class FreeplayState extends MusicBeatState {
     
     /**
      * Play instrumental preview for the currently selected song.
-     * Reuses the same FlxSound object to avoid garbage collection overhead.
+     * Uses FlxG.sound.playMusic so the audio stream always has a valid
+     * __audioSource on native targets (required by SpectralAnalyzer).
      */
     function playInstPreview():Void {
         if(songs.length == 0 || curSelected >= songs.length) return;
         
         var songName:String = Paths.formatToSongPath(songs[curSelected].songName);
         
-        if(FlxG.sound.music != null && FlxG.sound.music.playing) {
-            FlxG.sound.music.fadeOut(0.5, 0, function(twn:FlxTween) {
-                FlxG.sound.music.stop();
-            });
+        // Remove previous song from Paths cache so the GC can actually free it
+        if(_prevInstSongName != null && _prevInstSongName != songName) {
+            var toRemove:Array<String> = [];
+            for(key in Paths.currentTrackedSounds.keys()) {
+                if(key.contains('/' + _prevInstSongName + '/')) {
+                    toRemove.push(key);
+                }
+            }
+            for(key in toRemove) {
+                openfl.Assets.cache.clear(key);
+                Paths.currentTrackedSounds.remove(key);
+            }
+            openfl.system.System.gc();
         }
-        
-        if(instSound == null) {
-            instSound = new FlxSound();
-            FlxG.sound.list.add(instSound);
-        }
-        
-        if(instSound.playing) {
-            instSound.stop();
-        }
+        _prevInstSongName = songName;
         
         try {
-            instSound.loadEmbedded(Paths.inst(songName), true);
-            instSound.volume = 0;
-            instSound.play();
-            instSound.fadeIn(1.0, 0, 0.7);
+            // playMusic creates a proper streaming FlxSound with a valid OpenAL
+            // __audioSource — unlike loadEmbedded which can produce null on native.
+            FlxG.sound.playMusic(Paths.inst(songName), 0, true);
+            FlxG.sound.music.fadeIn(1.0, 0, 0.7);
+            instSound = FlxG.sound.music; // Keep public alias working
             instPlaying = curSelected;
             
             Conductor.bpm = currentBPM;
+
+            #if funkin.vis
+            _analyzer = null;
+            _analyzerLevels = null;
+            _needsAnalyzerInit = true;
+            #end
             
         } catch(e:Dynamic) {
             trace('Error loading inst for $songName: $e');
-            if(FlxG.sound.music != null && !FlxG.sound.music.playing) {
-                FlxG.sound.music.play();
-                FlxG.sound.music.fadeIn(0.5, 0, 0.7);
-            }
+            FlxG.sound.playMusic(Paths.music('freakyMenu'), 0.7);
         }
     }
     
@@ -1524,21 +1587,22 @@ class FreeplayState extends MusicBeatState {
      * Stop instrumental preview and return to freakyMenu.
      */
     function stopInstPreview():Void {
-        if(instSound != null && instSound.playing) {
-            instSound.fadeOut(0.5, 0, function(twn:FlxTween) {
-                instSound.stop();
-            });
-        }
-        
         instPlaying = -1;
+        instSound = null;
+        
+        // Restore freeplay menu music — playMusic creates a fresh stream so
+        // the SpectralAnalyzer can re-attach to it on the next frame.
+        FlxG.sound.playMusic(Paths.music('freakyMenu'), 0, true);
+        FlxG.sound.music.fadeIn(0.5, 0, 0.7);
+        
+        #if funkin.vis
+        _analyzer = null;
+        _analyzerLevels = null;
+        _needsAnalyzerInit = true;
+        #end
         
         Conductor.bpm = 102;
         currentBPM = 102;
-        
-        if(FlxG.sound.music != null && !FlxG.sound.music.playing) {
-            FlxG.sound.music.play();
-            FlxG.sound.music.fadeIn(0.5, 0, 0.7);
-        }
     }
     
     /**
@@ -1548,16 +1612,17 @@ class FreeplayState extends MusicBeatState {
      */
     function updateNoteDensityBars(sectionDensities:Array<Int>):Void {
         if(barsGroup == null || barsGroup.members.length == 0) return;
-        if(sectionDensities.length != 13) return;
+        if(sectionDensities.length != BAR_COUNT) return;
         
         var maxDensity:Int = 1;
         for(density in sectionDensities) {
             if(density > maxDensity) maxDensity = density;
         }
         
-        var baseY:Float = 545;
-        var minHeight:Float = 8;
-        var maxHeight:Float = 60;
+        // BASELINE_Y: bottom anchor where all bars sit
+        var BASELINE_Y:Float = BAR_BASELINE_Y;
+        var minHeight:Float = BAR_MIN_H;
+        var maxHeight:Float = BAR_MAX_H;
         
         for(i in 0...barsGroup.members.length) {
             var bar:FlxSprite = barsGroup.members[i];
@@ -1567,22 +1632,33 @@ class FreeplayState extends MusicBeatState {
             var densityRatio:Float = density / maxDensity;
             var targetHeight:Float = minHeight + (densityRatio * (maxHeight - minHeight));
             
-            var barIndex:Int = i;
-            var currentHeight:Float = bar.frameHeight > 0 ? bar.frameHeight : minHeight;
+            // Cancel existing tween safely via stored reference
+            if(i < _barTweens.length && _barTweens[i] != null) {
+                _barTweens[i].cancel();
+                _barTweens[i] = null;
+            }
             
-            FlxTween.num(currentHeight, targetHeight, 0.3, {
-                ease: FlxEase.expoOut
-            }, function(value:Float) {
-                if(barsGroup.members[barIndex] != null) {
-                    var b = barsGroup.members[barIndex];
-                    b.setGraphicSize(Std.int(value), 10);
-                    b.updateHitbox();
-                    b.x = 420 + (barIndex * 18);
-                    b.y = baseY;
+            var barIndex:Int = i;
+            // Current visual height from hitbox (no bitmap alloc - uses scale internally)
+            var currentHeight:Float = bar.height > 0 ? bar.height : minHeight;
+            
+            _barTweens[i] = FlxTween.num(currentHeight, targetHeight, 0.35, {
+                ease: FlxEase.expoOut,
+                onComplete: function(_) {
+                    if(barIndex < _barTweens.length) _barTweens[barIndex] = null;
                 }
+            }, function(value:Float) {
+                if(barsGroup == null || barsGroup.members[barIndex] == null) return;
+                var b = barsGroup.members[barIndex];
+                var h:Int = Std.int(Math.max(1, value));
+                b.setGraphicSize(BAR_WIDTH, h);
+                b.updateHitbox();
+                b.x = BAR_START_X + (barIndex * BAR_STEP);
+                b.y = BAR_BASELINE_Y - h;
             });
             
-            bar.alpha = density > 0 ? 0.7 + (densityRatio * 0.3) : 0.25;
+            // Alpha: inactive sections barely visible, max density fully opaque
+            bar.alpha = density > 0 ? 0.50 + (densityRatio * 0.50) : 0.18;
         }
     }
     
@@ -1775,16 +1851,60 @@ class FreeplayState extends MusicBeatState {
             noFavoritesText.color = _curLabelColor;
         }
 
+        // Note density bars — always pure chart-data (no FFT, height managed by tweens).
         if(barsGroup != null) {
             for(i in 0...barsGroup.members.length) {
                 var bar = barsGroup.members[i];
-                if(bar != null && bar.alpha > 0.5) {
+                if(bar != null) {
                     bar.color = _curAccentColor;
-                    bar.x = 420 + (i * 18);
-                    bar.y = 545;
+                    bar.x = BAR_START_X + (i * BAR_STEP);
                 }
             }
         }
+
+        // Full-width bottom spectral visualizer bars — driven exclusively by SpectralAnalyzer.
+        #if funkin.vis
+        // Lazy-init: attach to FlxG.sound.music as soon as __audioSource is ready.
+        // Both inst preview and freeplay bg music go through FlxG.sound.music now.
+        if(_needsAnalyzerInit && FlxG.sound.music != null && FlxG.sound.music.playing) {
+            @:privateAccess
+            if(FlxG.sound.music._channel != null && FlxG.sound.music._channel.__audioSource != null) {
+                _analyzer = new SpectralAnalyzer(FlxG.sound.music._channel.__audioSource, VIZ_BAR_COUNT, 0.1, 40);
+                #if !web
+                _analyzer.fftN = 256;
+                #end
+                _needsAnalyzerInit = false;
+            }
+        }
+        if(vizBarsGroup != null) {
+            var vizBarW:Int = Std.int(FlxG.width / VIZ_BAR_COUNT);
+            if(_analyzer != null) {
+                _analyzerLevels = _analyzer.getLevels(_analyzerLevels);
+                for(i in 0...vizBarsGroup.members.length) {
+                    var vbar = vizBarsGroup.members[i];
+                    if(vbar == null) continue;
+                    var level:Float = (i < _analyzerLevels.length) ? _analyzerLevels[i].value : 0.0;
+                    var h:Int = Std.int(Math.max(2, level * VIZ_BAR_MAX_H));
+                    vbar.setGraphicSize(vizBarW - 1, h);
+                    vbar.updateHitbox();
+                    vbar.x = i * vizBarW;
+                    vbar.y = FlxG.height - h;
+                    vbar.color = _curAccentColor;
+                    vbar.alpha = 1.0;
+                }
+            } else {
+                // No audio — shrink bars to minimum height, keep alpha=1.
+                for(i in 0...vizBarsGroup.members.length) {
+                    var vbar = vizBarsGroup.members[i];
+                    if(vbar == null) continue;
+                    vbar.setGraphicSize(Std.int(FlxG.width / VIZ_BAR_COUNT) - 1, 2);
+                    vbar.updateHitbox();
+                    vbar.y = FlxG.height - 2;
+                    vbar.alpha = 1.0;
+                }
+            }
+        }
+        #end
 
         lerpDiffViewOffset = FlxMath.lerp(diffViewOffset, lerpDiffViewOffset, Math.exp(-elapsed * 9.6));
 
@@ -1900,12 +2020,48 @@ class FreeplayState extends MusicBeatState {
         }
         instPlaying = -1;
         
+        // Remove last previewed inst from Paths cache on exit
+        if(_prevInstSongName != null) {
+            var toRemove:Array<String> = [];
+            for(key in Paths.currentTrackedSounds.keys()) {
+                if(key.contains('/' + _prevInstSongName + '/')) {
+                    toRemove.push(key);
+                }
+            }
+            for(key in toRemove) {
+                openfl.Assets.cache.clear(key);
+                Paths.currentTrackedSounds.remove(key);
+            }
+            _prevInstSongName = null;
+        }
+        
         Conductor.bpm = 102;
         currentBPM = 102;
         
         if (FlxG.sound.music != null && FlxG.sound.music.volume < 0.7) {
             FlxG.sound.music.volume = 0.7;
         }
+        
+        // Cancel and clear bar tweens
+        if(_barTweens != null) {
+            for(t in _barTweens) {
+                if(t != null) t.cancel();
+            }
+            _barTweens = null;
+        }
+
+        // Destroy full-width bottom spectral visualizer bars
+        if(vizBarsGroup != null) {
+            vizBarsGroup.destroy();
+            vizBarsGroup = null;
+        }
+        
+        // Kill spectral analyzer
+        #if funkin.vis
+        _analyzer = null;
+        _analyzerLevels = null;
+        _needsAnalyzerInit = false;
+        #end
         
         // Clear icon array to free memory
         if(iconArray != null) {

@@ -6,6 +6,10 @@ import funkin.ui.debug.MasterEditorMenu;
 import funkin.ui.options.OptionsState;
 import flixel.text.FlxText;
 
+#if funkin.vis
+import funkin.vis.dsp.SpectralAnalyzer;
+#end
+
 enum MainMenuColumn {
 	LEFT;
 	CENTER;
@@ -47,6 +51,16 @@ class MainMenuState extends MusicBeatState
 	
 	var visualizerEnabled:Bool = true;
 
+	// Full-width bottom spectral visualizer
+	#if funkin.vis
+	var _vizBars:FlxTypedGroup<FlxSprite>;
+	var _analyzer:SpectralAnalyzer = null;
+	var _analyzerLevels:Array<funkin.vis.dsp.SpectralAnalyzer.Bar> = null;
+	var _needsAnalyzerInit:Bool = false;
+	static inline var VIZ_BAR_COUNT:Int = 128;
+	static inline var VIZ_BAR_MAX_H:Int = 120;
+	#end
+
 	static var showOutdatedWarning:Bool = true;
 	static var updateWarningShown:Bool = false; // Show update warning only once per session
 	
@@ -74,6 +88,25 @@ class MainMenuState extends MusicBeatState
 		bg.updateHitbox();
 		bg.screenCenter();
 		add(bg);
+
+		// Full-width bottom spectral visualizer bars — behind all UI.
+		#if funkin.vis
+		_vizBars = new FlxTypedGroup<FlxSprite>();
+		var vizBarW:Int = Std.int(FlxG.width / VIZ_BAR_COUNT);
+		for(i in 0...VIZ_BAR_COUNT) {
+			var vbar = new FlxSprite();
+			vbar.makeGraphic(vizBarW - 1, VIZ_BAR_MAX_H, FlxColor.WHITE);
+			vbar.setGraphicSize(vizBarW - 1, 2);
+			vbar.updateHitbox();
+			vbar.x = i * vizBarW;
+			vbar.y = FlxG.height - 2;
+			vbar.alpha = 0.0;
+			vbar.scrollFactor.set();
+			_vizBars.add(vbar);
+		}
+		add(_vizBars);
+		_needsAnalyzerInit = true;
+		#end
 
 
 		camFollow = new FlxObject(0, 0, 1, 1);
@@ -173,6 +206,46 @@ class MainMenuState extends MusicBeatState
 	{
 		if (FlxG.sound.music.volume < 0.8)
 			FlxG.sound.music.volume = Math.min(FlxG.sound.music.volume + 0.5 * elapsed, 0.8);
+
+		// Spectral visualizer update
+		#if funkin.vis
+		if(_needsAnalyzerInit && FlxG.sound.music != null && FlxG.sound.music.playing) {
+			@:privateAccess
+			if(FlxG.sound.music._channel != null && FlxG.sound.music._channel.__audioSource != null) {
+				_analyzer = new SpectralAnalyzer(FlxG.sound.music._channel.__audioSource, VIZ_BAR_COUNT, 0.1, 40);
+				#if !web
+				_analyzer.fftN = 256;
+				#end
+				_needsAnalyzerInit = false;
+			}
+		}
+		if(_vizBars != null) {
+			var vizBarW:Int = Std.int(FlxG.width / VIZ_BAR_COUNT);
+			if(_analyzer != null) {
+				_analyzerLevels = _analyzer.getLevels(_analyzerLevels);
+				for(i in 0..._vizBars.members.length) {
+					var vbar = _vizBars.members[i];
+					if(vbar == null) continue;
+					var level:Float = (i < _analyzerLevels.length) ? _analyzerLevels[i].value : 0.0;
+					var h:Int = Std.int(Math.max(2, level * VIZ_BAR_MAX_H));
+					vbar.setGraphicSize(vizBarW - 1, h);
+					vbar.updateHitbox();
+					vbar.x = i * vizBarW;
+					vbar.y = FlxG.height - h;
+					vbar.alpha = 1.0;
+				}
+			} else {
+				for(i in 0..._vizBars.members.length) {
+					var vbar = _vizBars.members[i];
+					if(vbar == null) continue;
+					vbar.setGraphicSize(vizBarW - 1, 2);
+					vbar.updateHitbox();
+					vbar.y = FlxG.height - 2;
+					vbar.alpha = 1.0;
+				}
+			}
+		}
+		#end
 
 		if (!selectedSomethin)
 		{
@@ -403,5 +476,14 @@ class MainMenuState extends MusicBeatState
 		selectedItem.animation.play('selected');
 		selectedItem.centerOffsets();
 		camFollow.y = selectedItem.getGraphicMidpoint().y;
+	}
+
+	override function destroy():Void {
+		#if funkin.vis
+		_analyzer = null;
+		_analyzerLevels = null;
+		if(_vizBars != null) { _vizBars.destroy(); _vizBars = null; }
+		#end
+		super.destroy();
 	}
 }

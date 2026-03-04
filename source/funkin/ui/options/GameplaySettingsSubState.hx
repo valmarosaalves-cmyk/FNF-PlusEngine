@@ -204,7 +204,7 @@ class GameplaySettingsSubState extends BaseOptionsMenu
 			BOOL);
 		addOption(option);
 
-		var option:Option = new Option('Hey! Intro',
+		var option:Option = new Option('Hey Intro',
 			"If checked, when the countdown says Go! both BF and GF\nwill automatically do the Hey! animation.",
 			'heyIntro',
 			BOOL);

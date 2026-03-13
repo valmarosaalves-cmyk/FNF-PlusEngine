@@ -369,20 +369,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v4.1.7
 
-      - uses: krdlab/setup-haxe@v1.3.0
+      - uses: krdlab/setup-haxe@master
         with:
           haxe-version: 4.3.4
       
       - name: Setup Java JDK 17
-        uses: actions/setup-java@v4.7.0
+        uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
       
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3.2.2
+        uses: android-actions/setup-android@v3
       
       - name: Install Android SDK 35 and NDK r27d
         run: |

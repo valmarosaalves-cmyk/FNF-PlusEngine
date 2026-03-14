@@ -46,7 +46,6 @@ on:
 
 env:
   APP_VERSION: 4.0.0-${{ github.run_id }}
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   # ╔═══════════════════════════════════════════════════════════════════╗
@@ -154,9 +153,9 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v6.0.2
 
-      - uses: krdlab/setup-haxe@v1.3.0
+      - uses: krdlab/setup-haxe@v2.0.2
         with:
           haxe-version: 4.3.4
       
@@ -180,7 +179,7 @@ jobs:
         run: haxelib run lime build windows -32 -D 32bits --app-version="${{ env.APP_VERSION }}" -D officialBuild
       
       - name: Publish Artifact
-        uses: actions/upload-artifact@v4.6.0
+        uses: actions/upload-artifact@v7.0.0
         with:
           name: windowsBuild32
           path: export/32bit/windows/bin/*
@@ -192,9 +191,9 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v6.0.2
 
-      - uses: krdlab/setup-haxe@v1.3.0
+      - uses: krdlab/setup-haxe@v2.0.2
         with:
           haxe-version: 4.3.4
       
@@ -218,7 +217,7 @@ jobs:
         run: haxelib run lime build windows -64 --app-version="${{ env.APP_VERSION }}" -D officialBuild
       
       - name: Publish Artifact
-        uses: actions/upload-artifact@v4.6.0
+        uses: actions/upload-artifact@v7.0.0
         with:
           name: windowsBuild64
           path: export/release/windows/bin/*
@@ -243,9 +242,9 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v6.0.2
 
-      - uses: krdlab/setup-haxe@v1.3.0
+      - uses: krdlab/setup-haxe@v2.0.2
         with:
           haxe-version: 4.3.4
       
@@ -267,7 +266,7 @@ jobs:
         run: haxelib run lime build mac -64 --app-version="${{ env.APP_VERSION }}" -D officialBuild
       
       - name: Publish Artifact
-        uses: actions/upload-artifact@v4.6.0
+        uses: actions/upload-artifact@v7.0.0
         with:
           name: macBuildIntel
           path: export/release/macos/bin/*
@@ -279,9 +278,9 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v6.0.2
 
-      - uses: krdlab/setup-haxe@v1.3.0
+      - uses: krdlab/setup-haxe@v2.0.2
         with:
           haxe-version: 4.3.4
       
@@ -303,7 +302,7 @@ jobs:
         run: haxelib run lime build mac -arm64 --app-version="${{ env.APP_VERSION }}" -D officialBuild -D HXCPP_ARM64
       
       - name: Publish Artifact
-        uses: actions/upload-artifact@v4.6.0
+        uses: actions/upload-artifact@v7.0.0
         with:
           name: macBuildARM
           path: export/release/macos/bin/*
@@ -328,9 +327,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v6.0.2
 
-      - uses: krdlab/setup-haxe@v1.3.0
+      - uses: krdlab/setup-haxe@v2.0.2
         with:
           haxe-version: 4.3.4
       
@@ -357,7 +356,7 @@ jobs:
         run: haxelib run lime build linux -64bits --app-version="${{ env.APP_VERSION }}" -D officialBuild
       
       - name: Publish Artifact
-        uses: actions/upload-artifact@v4.6.0
+        uses: actions/upload-artifact@v7.0.0
         with:
           name: linuxBuild64
           path: export/release/linux/bin/*
@@ -369,27 +368,36 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v6.0.2
 
-      - uses: krdlab/setup-haxe@v1.3.0
+      - uses: krdlab/setup-haxe@v2.0.2
         with:
           haxe-version: 4.3.4
       
       - name: Setup Java JDK 17
-        uses: actions/setup-java@v4.7.0
+        uses: actions/setup-java@v5.2.0
         with:
           distribution: 'zulu'
           java-version: '17'
       
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3.2.2
+        uses: amyu/setup-android@v5.5
+        with:
+          api-level: 35
+          build-tools: 35.0.0
+          ndk-version: 27.0.12077973
+          accept-licenses: true
       
-      - name: Install Android SDK 35 and NDK r27d
+      - name: Set Android Environment Variables
         run: |
-          sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platforms;android-35" "build-tools;35.0.0" "ndk;27.0.12077973" "cmdline-tools;latest"
+          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
           echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/27.0.12077973" >> $GITHUB_ENV
           echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/27.0.12077973" >> $GITHUB_ENV
           echo "JAVA_HOME=$JAVA_HOME_17_X64" >> $GITHUB_ENV
+      
+      - name: Install additional SDK components
+        run: |
+          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platforms;android-35" "build-tools;35.0.0" "ndk;27.0.12077973" "cmdline-tools;latest"
       
       - name: Install Haxelib
         run: |
@@ -428,10 +436,10 @@ jobs:
           haxelib run lime build android --app-version="${{ env.APP_VERSION }}" -D officialBuild -D HXCPP_IGNORE_WARNINGS
       
       - name: Publish Artifact
-        uses: actions/upload-artifact@v4.6.0
+        uses: actions/upload-artifact@v7.0.0
         with:
           name: androidBuild
-          path: export/release/android/bin/app/build/outputs/apk/release/*
+          path: export/release/android/bin/app/build/outputs/apk/release/*.apk
 
   # └── iOS (Unsigned)
   iOS:
@@ -440,9 +448,9 @@ jobs:
     runs-on: macos-15
 
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v6.0.2
 
-      - uses: krdlab/setup-haxe@v1.3.0
+      - uses: krdlab/setup-haxe@v2.0.2
         with:
           haxe-version: 4.3.4
       
@@ -472,7 +480,7 @@ jobs:
           rm -rf Payload
       
       - name: Publish Artifact
-        uses: actions/upload-artifact@v4.6.0
+        uses: actions/upload-artifact@v7.0.0
         with:
           name: iOSBuild
           path: export/release/ios/build/Release-iphoneos/*.ipa

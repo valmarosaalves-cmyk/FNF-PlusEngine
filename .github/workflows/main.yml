@@ -383,10 +383,13 @@ jobs:
       - name: Setup Android SDK
         uses: amyu/setup-android@v5.5
         with:
-          api-level: 35
-          build-tools: 35.0.0
+          cache-disabled: true
+          sdk-version: 35
+          build-tools-version: 35.0.0
+          cmake-version: 4.2.3
           ndk-version: 27.3.13750724
-          accept-licenses: true
+          command-line-tools-version: 14742923
+          generate-job-summary: false
       
       - name: Set Android Environment Variables
         run: |

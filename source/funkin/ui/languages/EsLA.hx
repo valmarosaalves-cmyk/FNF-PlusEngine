@@ -529,6 +529,7 @@ class EsLA
         "dialogue_editor" => "Editor de Diálogos",
         "dialogue_portrait_editor" => "Editor de Dial. Ava.",
         "note_splash_editor" => "Editor de Salpicaduras",
+        "hold_splash_editor" => "Editor de Sostenidos",
         "no_mod_directory_loaded" => "< No se ha cargado ningúna carpeta de mods. >",
         "loaded_mod_directory" => "< Carpeta de mods cargada: {1} >",
 

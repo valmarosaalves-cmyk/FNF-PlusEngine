@@ -5,6 +5,7 @@ class Indonesia : Language {
     override val back = "Kembali"
     override val mods = "Mods"
     override val saves = "Saves"
+    override val assets = "Assets"
     override val searchHint = "Cari berkas..."
     override val newFolder = "Folder Baru"
     override val newFile = "Berkas Baru"

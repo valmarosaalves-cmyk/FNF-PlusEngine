@@ -5,6 +5,7 @@ class Spanish : Language {
     override val back = "Atrás"
     override val mods = "Mods"
     override val saves = "Partidas"
+    override val assets = "Archivos"
     override val searchHint = "Buscar archivos..."
     override val newFolder = "Nueva Carpeta"
     override val newFile = "Nuevo Archivo"

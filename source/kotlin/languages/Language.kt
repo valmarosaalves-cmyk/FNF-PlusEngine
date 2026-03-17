@@ -5,6 +5,7 @@ interface Language {
     val back: String
     val mods: String
     val saves: String
+    val assets: String
     val searchHint: String
     val newFolder: String
     val newFile: String

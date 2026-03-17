@@ -5,6 +5,7 @@ class English : Language {
     override val back = "Back"
     override val mods = "Mods"
     override val saves = "Saves"
+    override val assets = "Assets"
     override val searchHint = "Search files..."
     override val newFolder = "New Folder"
     override val newFile = "New File"

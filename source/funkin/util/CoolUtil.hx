@@ -2,12 +2,19 @@ package funkin.util;
 
 import openfl.utils.Assets;
 import lime.utils.Assets as LimeAssets;
+#if android
+import lime.system.JNI;
+#end
 
 #if cpp
 @:cppFileCode('#include <thread>')
 #end
 class CoolUtil
 {
+	#if android
+	private static var showMessageBox_jni:Dynamic = null;
+	#end
+
 	// Legacy update checker variables (forwarded to UpdateManager for compatibility)
 	public static var hasUpdate(get, never):Bool;
 	public static var latestVersion(get, never):String;
@@ -197,11 +204,28 @@ class CoolUtil
 
 	public static function showPopUp(message:String, title:String):Void
 	{
-		/*#if android
-		AndroidTools.showAlertDialog(title, message, {name: "OK", func: null}, null);
-		#else*/
+		#if android
+		try
+		{
+			if (showMessageBox_jni == null)
+			{
+				showMessageBox_jni = JNI.createStaticMethod(
+					'com/leninasto/plusengine/PlusEngineExtension',
+					'showMessageBox',
+					'(Ljava/lang/String;Ljava/lang/String;)V'
+				);
+			}
+
+			showMessageBox_jni(title, message);
+		}
+		catch (e:Dynamic)
+		{
+			trace('[CoolUtil] Native showPopUp failed: ' + e);
+			FlxG.stage.window.alert(message, title);
+		}
+		#else
 		FlxG.stage.window.alert(message, title);
-		//#end
+		#end
 	}
 
 	#if cpp

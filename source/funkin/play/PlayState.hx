@@ -1383,8 +1383,9 @@ class PlayState extends MusicBeatState
 		}
 		#end
 		
-		// Si no hay función onInitModchart, no inicializar el manager
-		if (!hasModchartFunction) {
+		// If no onInitModchart function found and the chart does not force-enable modcharts, skip initialization
+		var forcedByChart:Bool = (PlayState.SONG != null && PlayState.SONG.useModcharts == true);
+		if (!hasModchartFunction && !forcedByChart) {
 			//trace("No onInitModchart function found - modchart manager not initialized");
 			return;
 		}

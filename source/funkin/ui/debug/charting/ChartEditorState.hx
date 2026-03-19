@@ -663,7 +663,7 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 			player2: 'dad',
 			gfVersion: 'gf',
 			stage: 'stage',
-			format: 'psych_v1'
+			format: 'psych_v2'
 		};
 		Song.chartPath = null;
 		loadChart(song);
@@ -712,6 +712,7 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 		gameOverRetryInputText.text = PlayState.SONG.gameOverEnd;
 
 		noRGBCheckBox.checked = (PlayState.SONG.disableNoteRGB == true);
+		useModchartsCheckBox.checked = (PlayState.SONG.useModcharts == true);
 
 		noteTextureInputText.text = PlayState.SONG.arrowSkin;
 		noteSplashesInputText.text = PlayState.SONG.splashSkin;
@@ -2757,6 +2758,7 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 	var gameOverLoopInputText:PsychUIInputText;
 	var gameOverRetryInputText:PsychUIInputText;
 	var noRGBCheckBox:PsychUICheckBox;
+	var useModchartsCheckBox:PsychUICheckBox;
 	var noteTextureInputText:PsychUIInputText;
 	var noteSplashesInputText:PsychUIInputText;
 	function addDataTab()
@@ -2795,7 +2797,14 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 
 		objY += 35;
 		noRGBCheckBox = new PsychUICheckBox(objX, objY, 'Disable Note RGB', 100, updateNotesRGB);
-		
+
+		objY += 24;
+		useModchartsCheckBox = new PsychUICheckBox(objX, objY, 'Use Modcharts', 100, function()
+		{
+			PlayState.SONG.useModcharts = useModchartsCheckBox.checked;
+			if (!useModchartsCheckBox.checked) Reflect.deleteField(PlayState.SONG, 'useModcharts');
+		});
+
 		objY += 40;
 		noteTextureInputText = new PsychUIInputText(objX, objY, 120, '');
 		noteTextureInputText.unfocus = function()
@@ -2845,6 +2854,7 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 		tab_group.add(gameOverLoopInputText);
 		tab_group.add(gameOverRetryInputText);
 		tab_group.add(noRGBCheckBox);
+		tab_group.add(useModchartsCheckBox);
 
 		tab_group.add(new FlxText(noteTextureInputText.x, noteTextureInputText.y - 15, 100, 'Note Texture:'));
 		tab_group.add(new FlxText(noteSplashesInputText.x, noteSplashesInputText.y - 15, 120, 'Note Splashes Texture:'));
@@ -4492,7 +4502,47 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 		},btnWid);
 		btn.text.alignment = LEFT;
 		tab_group.add(btn);
-		
+
+		btnY += 20;
+		var btn:PsychUIButton = new PsychUIButton(btnX, btnY, '  Load v2...', function()
+		{
+			if(!fileDialog.completed) return;
+			upperBox.isMinimized = true;
+			upperBox.bg.visible = false;
+
+			fileDialog.open('song.json', 'Open a psych_v2 Chart file', function()
+			{
+				try
+				{
+					var raw:Dynamic = Json.parse(fileDialog.data);
+					if (raw == null || raw.format != 'psych_v2' || raw.notes == null)
+					{
+						showOutput('Error: File loaded is not a valid psych_v2 chart.', true);
+						return;
+					}
+					var loadedSong:SwagSong = Song.downgradeFromV2(raw);
+					var func:Void->Void = function()
+					{
+						loadChart(loadedSong);
+						reloadNotesDropdowns();
+						prepareReload();
+						showOutput('v2 chart loaded successfully!');
+					};
+					if (!ignoreProgressCheckBox.checked)
+						openSubState(new Prompt('Warning: Any unsaved progress will be lost', func));
+					else
+						func();
+				}
+				catch(e:Exception)
+				{
+					showOutput('Error: ${e.message}', true);
+					trace(e.stack);
+				}
+			});
+		}, btnWid);
+		btn.text.alignment = LEFT;
+		tab_group.add(btn);
+
 		btnY += 20;
 		var btn:PsychUIButton = new PsychUIButton(btnX, btnY, '  Update (Legacy)...', function()
 		{
@@ -5117,7 +5167,8 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 	function saveChart(canQuickSave:Bool = true)
 	{
 		updateChartData();
-		var chartData:String = PsychJsonPrinter.print(PlayState.SONG, ['sectionNotes', 'events']);
+		var v2:Dynamic = Song.upgradeToV2(PlayState.SONG);
+		var chartData:String = PsychJsonPrinter.print(v2, ['notes', 'events', 'bpmChanges', 'characters']);
 		if(canQuickSave && Song.chartPath != null)
 		{
 			#if mobile

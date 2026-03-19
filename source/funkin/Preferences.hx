@@ -115,6 +115,7 @@ import funkin.ui.title.TitleState;
 	public var noReset:Bool = false;
 	public var healthBarAlpha:Float = 1;
 	public var smoothHealthBar:Bool = true;
+	public var smoothHPBug:Bool = false;
 	public var hitsoundVolume:Float = 0;
 	public var hitSounds:String = "None";
 	public var hitsoundType:String = "None";
@@ -141,6 +142,7 @@ import funkin.ui.title.TitleState;
 		'instakill' => false,
 		'practice' => false,
 		'botplay' => false,
+		'opponentdrain' => false, // JS Engine-style: opponent note hits drain player health
 		'opponentplay' => false,
 		'perfect' => false, // Perfect Mode - insta-kill on any judgement below Sick
 		'nodroppenalty' => false // Hold drops don't cause misses

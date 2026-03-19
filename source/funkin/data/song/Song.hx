@@ -5,6 +5,7 @@ import lime.utils.Assets;
 
 import funkin.play.notes.Note;
 import funkin.data.stage.StageData;
+import funkin.ui.debug.charting.components.PsychJsonPrinter;
 
 typedef SwagSong =
 {
@@ -203,7 +204,8 @@ class Song
 			for (section in song.notes)
 			{
 				if (section == null) continue;
-				var beats:Float = (section.sectionBeats != null && !Math.isNaN(section.sectionBeats)) ? section.sectionBeats : 4.0;
+				var beatsRaw:Null<Float> = cast section.sectionBeats;
+			var beats:Float = (beatsRaw != null && !Math.isNaN(beatsRaw)) ? beatsRaw : 4.0;
 
 				// Emit a Camera Focus event whenever mustHitSection changes
 				if (lastMustHit == null || lastMustHit != section.mustHitSection)
@@ -590,7 +592,26 @@ class Song
 			rawData = Assets.getText(_lastPath);
 		}
 
-		return rawData != null ? parseJSON(rawData, jsonInput) : null;
+		if (rawData == null) return null;
+		var song:SwagSong = parseJSON(rawData, jsonInput);
+
+		// Auto-migrate charts that are not yet in psych_v2 format.
+		// Only runs for mod files (writable paths on disk), never for embedded assets.
+		#if (MODS_ALLOWED && sys)
+		if (song != null && _lastPath != null && sys.FileSystem.exists(_lastPath)
+			&& (song.format == null || !song.format.startsWith('psych_v2')))
+		{
+			try
+			{
+				var v2:Dynamic = upgradeToV2(song);
+				sys.io.File.saveContent(_lastPath, PsychJsonPrinter.print(v2, ['notes', 'events', 'bpmChanges', 'characters']));
+				trace('Auto-migrated chart "$jsonInput" to psych_v2 at $_lastPath');
+			}
+			catch (e:Dynamic) { trace('Could not auto-migrate chart "$jsonInput": $e'); }
+		}
+		#end
+
+		return song;
 	}
 
 	public static function parseJSON(rawData:String, ?nameForError:String = null, ?convertTo:String = 'psych_v1'):SwagSong

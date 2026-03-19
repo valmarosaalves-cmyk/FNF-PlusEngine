@@ -172,7 +172,13 @@ class VisualsSettingsSubState extends BaseOptionsMenu
 			'smoothHealthBar',
 			BOOL);
 		addOption(option);
-		
+
+		var option:Option = new Option('Health Bar Overflow',
+			'If checked, health icons can go outside the bar edges on health spikes (JS Engine style).',
+			'smoothHPBug',
+			BOOL);
+		addOption(option);
+
 		var option:Option = new Option('Show Watermark',
 			'If checked, shows the watermark on screen.',
 			'showWatermark',

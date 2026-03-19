@@ -322,9 +322,11 @@ class PlayState extends MusicBeatState
 	public var cpuControlled:Bool = false;
 	public var practiceMode:Bool = false;
 	public var perfectMode:Bool = false; // Perfect Mode - miss on anything below Sick
+	public var opponentDrain:Bool = false; // Opponent Mode - how much health the opponent drains on hit 
 	public var playOpponent:Bool = false; // Opponent Mode - play as opponent
 	public var noDropPenalty:Bool = false; // Hold drops don't cause misses
 	public var pressMissDamage:Float = 0.05;
+	public var OPPONENT_DRAIN_FLOOR:Float = 0.2; // Minimum health when opponent drain is active
 
 	public var botplaySine:Float = 0;
 	public var botplayTxt:FlxText;
@@ -666,6 +668,7 @@ class PlayState extends MusicBeatState
 		perfectMode = ClientPrefs.getGameplaySetting('perfect');
 		playOpponent = ClientPrefs.getGameplaySetting('opponentplay');
 		noDropPenalty = ClientPrefs.getGameplaySetting('nodroppenalty');
+		opponentDrain = ClientPrefs.getGameplaySetting('opponentdrain');
 		cpuControlled = ClientPrefs.getGameplaySetting('botplay');
 		guitarHeroSustains = ClientPrefs.data.guitarHeroSustains;
 
@@ -1122,7 +1125,7 @@ class PlayState extends MusicBeatState
 		botplayTxt.scrollFactor.set();
 		botplayTxt.borderSize = 1.25;
 		
-		// Actualiza el texto según el modo activo
+		// Update text according to the active mode
 		if (cpuControlled)
 			botplayTxt.text = Language.getPhrase("botplay", "Botplay").toUpperCase();
 		else if (practiceMode)
@@ -1134,6 +1137,7 @@ class PlayState extends MusicBeatState
 		
 		botplayTxt.visible = (cpuControlled || practiceMode || perfectMode || playOpponent);
 		uiGroup.add(botplayTxt);
+
 		if(ClientPrefs.data.downScroll)
 			botplayTxt.y = healthBar.y + 70;
 
@@ -2554,7 +2558,7 @@ class PlayState extends MusicBeatState
 		generatedMusic = true;
 		
 		totalNotes = 0;
-		for (note in unspawnNotes)
+			for (note in unspawnNotes)
 		{
 			if (!note.isSustainNote && note.mustPress)
 				totalNotes++;
@@ -2943,7 +2947,20 @@ class PlayState extends MusicBeatState
 		}
 
 		if (healthBar.bounds.max != null && health > healthBar.bounds.max)
-			health = healthBar.bounds.max;
+		{
+			if (!ClientPrefs.data.smoothHPBug)
+			{
+				health = healthBar.bounds.max;
+			}
+			else
+			{
+				// Keep overflow behavior, but spring back to max health when pressure stops.
+				var springBack:Float = Math.min(1, elapsed * 6);
+				health = FlxMath.lerp(health, healthBar.bounds.max, springBack);
+				if (health - healthBar.bounds.max < 0.0005)
+					health = healthBar.bounds.max;
+			}
+		}
 
 		updateIconsScale(elapsed);
 		updateIconsPosition();
@@ -3125,7 +3142,7 @@ class PlayState extends MusicBeatState
 				}
 				else
 					playerDance();
-					
+
 				if(notes.length > 0)
 				{
 					if(startedCountdown)
@@ -3194,7 +3211,7 @@ class PlayState extends MusicBeatState
 			if (useHeavyCharts && !paused && startedCountdown)
 				spawnHeavyNotes();
 
-			checkEventNote();
+				checkEventNote();
 			
 			// Break Timer Feature - Show timer when next notes are approaching
 			if (ClientPrefs.data.breakTimer && breakTimerText != null && playerStrums != null && playerStrums.length > 0)
@@ -5216,10 +5233,10 @@ class PlayState extends MusicBeatState
 
 	function noteMiss(daNote:Note):Void { //You didn't hit the key and let it go offscreen, also used by Hurt Notes
 		//Dupe note remove
-		notes.forEachAlive(function(note:Note) {
-			if (daNote != note && daNote.mustPress && daNote.noteData == note.noteData && daNote.isSustainNote == note.isSustainNote && Math.abs(daNote.strumTime - note.strumTime) < 1)
-				invalidateNote(note);
-		});
+			notes.forEachAlive(function(note:Note) {
+				if (daNote != note && daNote.mustPress && daNote.noteData == note.noteData && daNote.isSustainNote == note.isSustainNote && Math.abs(daNote.strumTime - note.strumTime) < 1)
+					invalidateNote(note);
+			});
 
 		// Safely check for parent and tail
 		var parentNote:Note = daNote.isSustainNote ? daNote.parent : daNote;
@@ -5395,7 +5412,15 @@ class PlayState extends MusicBeatState
 		if(opponentVocals.length <= 0) vocals.volume = 1;
 		strumPlayAnim(true, Std.int(Math.abs(note.noteData)), Conductor.stepCrochet * 1.25 / 1000 / playbackRate);
 		note.hitByOpponent = true;
-		
+
+		// JS Engine-style opponent drain: each opponent head-note drains a small amount of
+		// player health. Sustains are skipped to avoid instant death at high note densities.
+		// A floor prevents the player from dying from drain alone (instakill still applies).
+		if (opponentDrain && !note.isSustainNote && !practiceMode && health > OPPONENT_DRAIN_FLOOR)
+		{
+			health = Math.max(OPPONENT_DRAIN_FLOOR, health - note.hitHealth * healthLoss);
+		}
+
 		stagesFunc(function(stage:BaseStage) stage.opponentNoteHit(note));
 		if (destructiveHUDActive && destructiveHUDMode == 'note')
 			shuffleHUD();
@@ -5502,7 +5527,7 @@ class PlayState extends MusicBeatState
 				djmax_combo++;
 				if(djmax_combo > djmax_maxCombo) djmax_maxCombo = djmax_combo;
 				
-				popUpScore(note);
+					popUpScore(note);
 			}
 			var gainHealth:Bool = true; // prevent health gain, *if* sustains are treated as a singular note
 			if (guitarHeroSustains && note.isSustainNote) gainHealth = false;
@@ -5641,6 +5666,8 @@ class PlayState extends MusicBeatState
 		}
 		luaArray = null;
 		FunkinLua.customFunctions.clear();
+		// Clear the script content cache so memory is freed and next session reads fresh files if needed
+		funkin.modding.scripting.ScriptCache.clear();
 		#end
 
 		#if HSCRIPT_ALLOWED

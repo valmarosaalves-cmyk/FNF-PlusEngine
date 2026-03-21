@@ -55,6 +55,9 @@ class FreeplayState extends MusicBeatState {
     public static var viewingOpponentScores:Bool = false;
     var instPlaying:Int = -1;
     var previewTimer:FlxTimer = null;
+    var previewLoadTimer:FlxTimer = null;
+    var previewLoadToken:Int = 0;
+    static inline var PREVIEW_LOAD_DELAY:Float = 0.12;
     var _prevInstSongName:String = null; // Track previous inst to unload from cache
     var holdTime:Float = 0;
     var stopMusicPlay:Bool = false;
@@ -128,6 +131,11 @@ class FreeplayState extends MusicBeatState {
     var blackOverlay:FlxSprite;
     var dinamic:FlxSprite;
     var album:FlxSprite;
+    var bgTransition:FlxSprite;
+    var bgFadeTween:FlxTween = null;
+    var currentBgAssetKey:String = 'menuDesat';
+    var currentBgFolderKey:String = '';
+    var currentAlbumAssetKey:String = 'albumRoll/example';
     var uiprincipal:FlxSprite;
     var list:FlxSprite;
     var cardsGroup:FlxTypedGroup<FlxSprite>;
@@ -151,8 +159,8 @@ class FreeplayState extends MusicBeatState {
 
     // Note density bar constants (small section, chart-data only)
     static inline var BAR_COUNT:Int    = 24;
-    static inline var BAR_WIDTH:Int    = 10;
-    static inline var BAR_STEP:Int     = 12;   // bar width + gap
+    static inline var BAR_WIDTH:Int    = 8;
+    static inline var BAR_STEP:Int     = 10;   // bar width + gap
     static inline var BAR_START_X:Float = 417;
     static inline var BAR_BASELINE_Y:Float = 605;
     static inline var BAR_MIN_H:Int    = 4;
@@ -165,6 +173,7 @@ class FreeplayState extends MusicBeatState {
     static inline var VIZ_BAR_COUNT:Int = 160;
     #end
     static inline var VIZ_BAR_MAX_H:Int = 240;
+    static inline var VIZ_BAR_FILL:Float = 0.62;
     var blurEffect:BlurEffect;
     //var diff:Array<FlxSpriteGroup>;
 
@@ -250,11 +259,19 @@ class FreeplayState extends MusicBeatState {
 		bg.antialiasing = ClientPrefs.data.antialiasing;
 		add(bg);
 		bg.screenCenter();
+
+        bgTransition = new FlxSprite().loadGraphic(Paths.image('menuDesat'));
+        bgTransition.antialiasing = ClientPrefs.data.antialiasing;
+        bgTransition.alpha = 0;
+        bgTransition.visible = false;
+        add(bgTransition);
+        bgTransition.screenCenter();
 		
 		#if !mobile
 		blurEffect = new BlurEffect();
 		blurEffect.strength = 5.0;
 		bg.shader = blurEffect.shader;
+        bgTransition.shader = blurEffect.shader;
 		#end
 		//bgZoom = defaultBgZoom = 1;
 
@@ -266,10 +283,12 @@ class FreeplayState extends MusicBeatState {
         // Driven exclusively by SpectralAnalyzer; note density bars are separate.
         vizBarsGroup = new FlxTypedGroup<FlxSprite>();
         var vizBarW:Int = Std.int(FlxG.width / VIZ_BAR_COUNT); // 1280 / 64 = 20px per slot
+        var vizDrawW:Int = Std.int(Math.max(1, vizBarW * VIZ_BAR_FILL));
+        var vizOffsetX:Float = (vizBarW - vizDrawW) * 0.5;
         for(i in 0...VIZ_BAR_COUNT) {
             var vbar:FlxSprite = new FlxSprite();
-            vbar.makeGraphic(vizBarW - 1, VIZ_BAR_MAX_H, FlxColor.WHITE);
-            vbar.x = i * vizBarW;
+            vbar.makeGraphic(vizDrawW, VIZ_BAR_MAX_H, FlxColor.WHITE);
+            vbar.x = i * vizBarW + vizOffsetX;
             vbar.y = FlxG.height - 2;
             vbar.scale.y = 2 / VIZ_BAR_MAX_H;
             vbar.alpha = 0.0;
@@ -1146,6 +1165,227 @@ class FreeplayState extends MusicBeatState {
         else
             return 0xCCCCCC; // Default gray
     }
+
+    inline function imageExists(imageKey:String):Bool {
+        return imageKey != null && imageKey.length > 0 && Paths.fileExists('images/$imageKey.png', IMAGE);
+    }
+
+    function getCurrentWeekDataForSelection():WeekData {
+        if (songs == null || songs.length == 0 || curSelected < 0 || curSelected >= songs.length)
+            return null;
+
+        var weekIndex:Int = songs[curSelected].week;
+        if (weekIndex < 0 || weekIndex >= WeekData.weeksList.length)
+            return null;
+
+        return WeekData.weeksLoaded.get(WeekData.weeksList[weekIndex]);
+    }
+
+    function resolveFreeplayBgAsset(song:SongMetadata, weekData:WeekData):String {
+        return 'menuDesat';
+    }
+
+    inline function getSongFolderKey(song:SongMetadata):String {
+        return (song != null && song.folder != null) ? Paths.formatToSongPath(song.folder) : '';
+    }
+
+    function transitionToBackground(assetKey:String):Void {
+        if (bgFadeTween != null) {
+            bgFadeTween.cancel();
+            bgFadeTween = null;
+        }
+
+        bgTransition.loadGraphic(Paths.image(assetKey));
+        bgTransition.antialiasing = ClientPrefs.data.antialiasing;
+        #if !mobile
+        bgTransition.shader = blurEffect.shader;
+        #end
+        bgTransition.alpha = 0;
+        bgTransition.visible = true;
+        bgTransition.scale.set(bgZoom, bgZoom);
+        bgTransition.updateHitbox();
+        bgTransition.screenCenter();
+
+        bgFadeTween = FlxTween.tween(bgTransition, {alpha: 1}, 0.22, {
+            onComplete: function(_:FlxTween) {
+                bg.loadGraphic(Paths.image(assetKey));
+                bg.antialiasing = ClientPrefs.data.antialiasing;
+                #if !mobile
+                bg.shader = blurEffect.shader;
+                #end
+                _lastAppliedBgZoom = -1;
+
+                bgTransition.visible = false;
+                bgTransition.alpha = 0;
+                bgFadeTween = null;
+            }
+        });
+    }
+
+    function resolveAlbumArtFromJson(songKey:String):String {
+        var jsonPath:String = 'images/albumRoll/$songKey.json';
+        if (!Paths.fileExists(jsonPath, TEXT))
+            return null;
+
+        try {
+            var raw:String = Paths.getTextFromFile(jsonPath, false);
+            if (raw == null || raw.length == 0)
+                return null;
+
+            var parsed:Dynamic = Json.parse(raw);
+            if (parsed == null)
+                return null;
+
+            var imageField:Dynamic = null;
+            if (Reflect.hasField(parsed, 'image')) imageField = Reflect.field(parsed, 'image');
+            else if (Reflect.hasField(parsed, 'album')) imageField = Reflect.field(parsed, 'album');
+            else if (Reflect.hasField(parsed, 'art')) imageField = Reflect.field(parsed, 'art');
+            else if (Reflect.hasField(parsed, 'key')) imageField = Reflect.field(parsed, 'key');
+
+            if (imageField == null)
+                return null;
+
+            var imageKey:String = Std.string(imageField);
+            if (imageKey == null || imageKey.length == 0)
+                return null;
+
+            if (!imageKey.startsWith('albumRoll/'))
+                imageKey = 'albumRoll/' + Paths.formatToSongPath(imageKey);
+
+            return imageExists(imageKey) ? imageKey : null;
+        } catch (e:Dynamic) {
+            trace('Failed to parse album JSON for $songKey: $e');
+        }
+
+        return null;
+    }
+
+    function resolveAlbumArtFromSongMetadata(songKey:String):String {
+        var metadataPath:String = 'data/$songKey/metadata.json';
+        if (!Paths.fileExists(metadataPath, TEXT))
+            return null;
+
+        try {
+            var raw:String = Paths.getTextFromFile(metadataPath, false);
+            if (raw == null || raw.length == 0)
+                return null;
+
+            var parsed:Dynamic = Json.parse(raw);
+            if (parsed == null || !Reflect.hasField(parsed, 'albumId'))
+                return null;
+
+            var albumId:Dynamic = Reflect.field(parsed, 'albumId');
+            if (albumId == null)
+                return null;
+
+            var albumKey:String = Paths.formatToSongPath(Std.string(albumId));
+            if (albumKey == null || albumKey.length == 0)
+                return null;
+
+            var fullKey:String = 'albumRoll/$albumKey';
+            return imageExists(fullKey) ? fullKey : null;
+        } catch (e:Dynamic) {
+            trace('Failed to parse song metadata for $songKey: $e');
+        }
+
+        return null;
+    }
+
+    function resolveAlbumArtAsset(song:SongMetadata, weekData:WeekData):String {
+        var songKey:String = Paths.formatToSongPath(song.songName);
+
+        var fromMetadata:String = resolveAlbumArtFromSongMetadata(songKey);
+        if (fromMetadata != null)
+            return fromMetadata;
+
+        var directSong:String = 'albumRoll/$songKey';
+        if (imageExists(directSong))
+            return directSong;
+
+        var fromJson:String = resolveAlbumArtFromJson(songKey);
+        if (fromJson != null)
+            return fromJson;
+
+        if (weekData != null && weekData.songs != null && weekData.songs.length > 1) {
+            var weekSongKeys:Array<String> = [];
+            for (entry in weekData.songs) {
+                if (entry != null && entry.length > 0 && entry[0] != null)
+                    weekSongKeys.push(Paths.formatToSongPath(Std.string(entry[0])));
+            }
+
+            var curIndex:Int = weekSongKeys.indexOf(songKey);
+            if (curIndex > -1) {
+                if (curIndex < weekSongKeys.length - 1) {
+                    var pairForward:String = 'albumRoll/' + songKey + '_' + weekSongKeys[curIndex + 1];
+                    if (imageExists(pairForward))
+                        return pairForward;
+                }
+
+                if (curIndex > 0) {
+                    var pairBackward:String = 'albumRoll/' + weekSongKeys[curIndex - 1] + '_' + songKey;
+                    if (imageExists(pairBackward))
+                        return pairBackward;
+                }
+            }
+
+            var groupedWeek:String = 'albumRoll/' + weekSongKeys.join('_');
+            if (imageExists(groupedWeek))
+                return groupedWeek;
+        }
+
+        if (weekData != null) {
+            var weekFileKey:String = Paths.formatToSongPath(weekData.fileName);
+            var weekNameKey:String = Paths.formatToSongPath(weekData.weekName);
+
+            var weekCandidates:Array<String> = [
+                'albumRoll/' + weekFileKey,
+                'albumRoll/week-' + weekFileKey,
+                'albumRoll/' + weekNameKey
+            ];
+
+            for (candidate in weekCandidates) {
+                if (imageExists(candidate))
+                    return candidate;
+            }
+        }
+
+        return 'albumRoll/example';
+    }
+
+    function applySelectionVisualAssets():Void {
+        if (songs == null || songs.length == 0 || curSelected < 0 || curSelected >= songs.length)
+            return;
+
+        var weekData:WeekData = getCurrentWeekDataForSelection();
+        var selectedSong:SongMetadata = songs[curSelected];
+
+        var bgAsset:String = resolveFreeplayBgAsset(selectedSong, weekData);
+        var bgFolderKey:String = getSongFolderKey(selectedSong);
+        if (bgAsset != currentBgAssetKey || bgFolderKey != currentBgFolderKey) {
+            currentBgAssetKey = bgAsset;
+            currentBgFolderKey = bgFolderKey;
+            transitionToBackground(bgAsset);
+        }
+
+        var albumAsset:String = resolveAlbumArtAsset(selectedSong, weekData);
+        if (albumAsset != currentAlbumAssetKey) {
+            currentAlbumAssetKey = albumAsset;
+            album.loadGraphic(Paths.image(albumAsset));
+            album.antialiasing = ClientPrefs.data.antialiasing;
+            album.setGraphicSize(100, 100);
+            album.updateHitbox();
+            _lastAppliedAlbumZoom = -1;
+        }
+    }
+
+    inline function chartExistsForDifficulty(songName:String, diffName:String):Bool {
+        var postfix:String = '';
+        if (Paths.formatToSongPath(diffName) != Paths.formatToSongPath(Difficulty.getDefault()))
+            postfix = '-' + Paths.formatToSongPath(diffName);
+
+        var chartFile:String = songName + postfix;
+        return Paths.fileExists('data/$songName/$chartFile.json', TEXT);
+    }
     
     /**
      * Change song selection
@@ -1215,6 +1455,8 @@ class FreeplayState extends MusicBeatState {
         } else {
             Mods.currentModDirectory = '';
         }
+
+        applySelectionVisualAssets();
         
         // Clear bitmap cache of unused songs to reduce memory usage
         #if MODS_ALLOWED
@@ -1239,7 +1481,7 @@ class FreeplayState extends MusicBeatState {
         var savedDiff:String = songs[curSelected].lastDifficulty;
         var lastDiff:Int = Difficulty.list.indexOf(lastDifficultyName);
         
-        if(savedDiff != null && !Difficulty.list.contains(savedDiff) && Difficulty.list.contains(savedDiff))
+        if(savedDiff != null && Difficulty.list.contains(savedDiff))
             curDifficulty = Math.round(Math.max(0, Difficulty.list.indexOf(savedDiff)));
         else if(lastDiff > -1)
             curDifficulty = lastDiff;
@@ -1353,9 +1595,15 @@ class FreeplayState extends MusicBeatState {
         
         var songName:String = Paths.formatToSongPath(songs[curSelected].songName);
         var availableDiffs:Array<String> = [];
-        
-        for (diff in Difficulty.list) {
-            availableDiffs.push(diff);
+
+        Difficulty.loadFromWeek();
+        var weekDiffs:Array<String> = Difficulty.list.copy();
+        if (weekDiffs == null || weekDiffs.length == 0)
+            weekDiffs = Difficulty.defaultList.copy();
+
+        for (diff in weekDiffs) {
+            if (chartExistsForDifficulty(songName, diff))
+                availableDiffs.push(diff);
         }
         
         // Only check for erect/nightmare in base game songs (not mods)
@@ -1364,21 +1612,16 @@ class FreeplayState extends MusicBeatState {
         if(isBaseGame) {
             var erectDiffs:Array<String> = ['Erect', 'Nightmare'];
             for (diff in erectDiffs) {
-                if (!availableDiffs.contains(diff)) {
-                    var diffFile:String = Highscore.formatSong(songName, Difficulty.list.indexOf(diff));
-                    var path:String = Paths.getPath('data/$songName/$diffFile.json', TEXT);
-                    
-                    #if MODS_ALLOWED
-                    if(FileSystem.exists(path) || Assets.exists(path)) {
-                        availableDiffs.push(diff);
-                    }
-                    #else
-                    if(Assets.exists(path)) {
-                        availableDiffs.push(diff);
-                    }
-                    #end
-                }
+                if (!availableDiffs.contains(diff) && chartExistsForDifficulty(songName, diff))
+                    availableDiffs.push(diff);
             }
+        }
+
+        if (availableDiffs.length == 0) {
+            if (chartExistsForDifficulty(songName, Difficulty.getDefault()))
+                availableDiffs.push(Difficulty.getDefault());
+            else
+                availableDiffs.push('Normal');
         }
         
         Difficulty.list = availableDiffs;
@@ -1641,51 +1884,66 @@ class FreeplayState extends MusicBeatState {
      */
     function playInstPreview():Void {
         if(songs.length == 0 || curSelected >= songs.length) return;
-        
-        var songName:String = Paths.formatToSongPath(songs[curSelected].songName);
-        
-        // Remove previous song from Paths cache so the GC can actually free it
-        if(_prevInstSongName != null && _prevInstSongName != songName) {
-            var toRemove:Array<String> = [];
-            for(key in Paths.currentTrackedSounds.keys()) {
-                if(key.contains('/' + _prevInstSongName + '/')) {
-                    toRemove.push(key);
-                }
-            }
-            for(key in toRemove) {
-                openfl.Assets.cache.clear(key);
-                Paths.currentTrackedSounds.remove(key);
-            }
-            openfl.system.System.gc();
-        }
-        _prevInstSongName = songName;
-        
-        try {
-            // playMusic creates a proper streaming FlxSound with a valid OpenAL
-            // __audioSource — unlike loadEmbedded which can produce null on native.
-            FlxG.sound.playMusic(Paths.inst(songName), 0, true);
-            FlxG.sound.music.fadeIn(1.0, 0, 0.7);
-            instSound = FlxG.sound.music; // Keep public alias working
-            instPlaying = curSelected;
-            
-            Conductor.bpm = currentBPM;
 
-            #if funkin.vis
-            _analyzer = null;
-            _analyzerLevels = null;
-            _needsAnalyzerInit = true;
-            #end
-            
-        } catch(e:Dynamic) {
-            trace('Error loading inst for $songName: $e');
-            FlxG.sound.playMusic(Paths.music('freakyMenu'), 0.7);
+        previewLoadToken++;
+        var requestToken:Int = previewLoadToken;
+        var requestedIndex:Int = curSelected;
+        var songName:String = Paths.formatToSongPath(songs[requestedIndex].songName);
+
+        if(previewLoadTimer != null) {
+            previewLoadTimer.cancel();
+            previewLoadTimer = null;
         }
+
+        previewLoadTimer = new FlxTimer().start(PREVIEW_LOAD_DELAY, function(_:FlxTimer) {
+            previewLoadTimer = null;
+
+            if(requestToken != previewLoadToken || songs.length == 0 || requestedIndex != curSelected)
+                return;
+
+            var instAssetPath:String = Paths.getPath(Language.getFileTranslation(songName + '/Inst') + '.${Paths.SOUND_EXT}', SOUND, 'songs', true);
+            Assets.loadSound(instAssetPath).onComplete(function(loadedSound:openfl.media.Sound) {
+                if(requestToken != previewLoadToken || songs.length == 0 || requestedIndex != curSelected)
+                    return;
+
+                _prevInstSongName = songName;
+
+                try {
+                    FlxG.sound.playMusic(loadedSound, 0, true);
+                    FlxG.sound.music.fadeIn(1.0, 0, 0.7);
+                    instSound = FlxG.sound.music;
+                    instPlaying = requestedIndex;
+
+                    Conductor.bpm = currentBPM;
+
+                    #if funkin.vis
+                    _analyzer = null;
+                    _analyzerLevels = null;
+                    _needsAnalyzerInit = true;
+                    #end
+                } catch(e:Dynamic) {
+                    trace('Error loading inst for $songName: $e');
+                    FlxG.sound.playMusic(Paths.music('freakyMenu'), 0.7);
+                }
+            }).onError(function(err) {
+                if(requestToken != previewLoadToken)
+                    return;
+                trace('Error preloading inst for $songName: $err');
+                FlxG.sound.playMusic(Paths.music('freakyMenu'), 0.7);
+            });
+        });
     }
     
     /**
      * Stop instrumental preview and return to freakyMenu.
      */
     function stopInstPreview():Void {
+        previewLoadToken++;
+        if(previewLoadTimer != null) {
+            previewLoadTimer.cancel();
+            previewLoadTimer = null;
+        }
+
         instPlaying = -1;
         instSound = null;
         
@@ -1998,6 +2256,7 @@ class FreeplayState extends MusicBeatState {
         _vizUpdateAccum += elapsed;
         if(vizBarsGroup != null) {
             var vizBarW:Int = Std.int(FlxG.width / VIZ_BAR_COUNT);
+            var vizOffsetX:Float = (vizBarW - Std.int(Math.max(1, vizBarW * VIZ_BAR_FILL))) * 0.5;
 
             if (_vizUpdateAccum >= VIZ_UPDATE_INTERVAL)
             {
@@ -2026,7 +2285,7 @@ class FreeplayState extends MusicBeatState {
                 _vizCurrentHeights[i] = curH;
 
                 vbar.scale.y = curH / VIZ_BAR_MAX_H;
-                vbar.x = i * vizBarW;
+                vbar.x = i * vizBarW + vizOffsetX;
                 vbar.y = FlxG.height - curH;
                 vbar.color = _curAccentColor;
                 vbar.alpha = 1.0;
@@ -2143,6 +2402,13 @@ class FreeplayState extends MusicBeatState {
             previewTimer.cancel();
             previewTimer = null;
         }
+
+        if(previewLoadTimer != null) {
+            previewLoadTimer.cancel();
+            previewLoadTimer = null;
+        }
+
+        previewLoadToken++;
         
         if (instSound != null && instSound.playing) {
             instSound.stop();

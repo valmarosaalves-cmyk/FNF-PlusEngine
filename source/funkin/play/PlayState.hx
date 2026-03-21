@@ -413,6 +413,14 @@ class PlayState extends MusicBeatState
 	var TIME_UPDATE_INTERVAL:Float = 1.0; // Actualizar cada segundo
 	var debugUpdateTimer:Float = 0;
 	var DEBUG_UPDATE_INTERVAL:Float = 0.1; // Actualizar cada 100ms
+	var adaptivePerformanceEnabled:Bool = true;
+	var adaptivePerfTier:Int = 0; // 0 = normal, 1 = stressed, 2 = critical
+	var adaptivePerfFrameAvg:Float = 1 / 60;
+	var adaptivePerfSampleAccum:Float = 0;
+	var adaptiveIconUpdateAccum:Float = 0;
+	var adaptiveIconUpdateInterval:Float = 0;
+	var adaptiveBreakTimerInterval:Float = 0.12;
+	var adaptiveHeavySpawnCap:Int = 50;
 	var missSpritesPool:Array<FlxSprite> = [];
 	var MAX_MISS_SPRITES:Int = 3;
 	var endCountdownText:FlxText = null;
@@ -3109,6 +3117,55 @@ class PlayState extends MusicBeatState
 	var freezeCamera:Bool = false;
 	var allowDebugKeys:Bool = true;
 
+	inline function updateAdaptivePerformance(elapsed:Float):Void
+	{
+		if (!adaptivePerformanceEnabled || paused || !startedCountdown)
+			return;
+
+		var smooth:Float = Math.exp(-elapsed * 8);
+		adaptivePerfFrameAvg = (adaptivePerfFrameAvg * smooth) + (elapsed * (1 - smooth));
+		adaptivePerfSampleAccum += elapsed;
+
+		if (adaptivePerfSampleAccum < 0.25)
+			return;
+
+		adaptivePerfSampleAccum = 0;
+		var frameMs:Float = adaptivePerfFrameAvg * 1000;
+
+		switch (adaptivePerfTier)
+		{
+			case 0:
+				if (frameMs > 30)
+					adaptivePerfTier = 2;
+				else if (frameMs > 22)
+					adaptivePerfTier = 1;
+			case 1:
+				if (frameMs > 30)
+					adaptivePerfTier = 2;
+				else if (frameMs < 18)
+					adaptivePerfTier = 0;
+			case 2:
+				if (frameMs < 24)
+					adaptivePerfTier = 1;
+		}
+
+		switch (adaptivePerfTier)
+		{
+			case 0:
+				adaptiveIconUpdateInterval = 0;
+				adaptiveBreakTimerInterval = 0.12;
+				adaptiveHeavySpawnCap = 50;
+			case 1:
+				adaptiveIconUpdateInterval = 1 / 30;
+				adaptiveBreakTimerInterval = 0.16;
+				adaptiveHeavySpawnCap = 32;
+			case 2:
+				adaptiveIconUpdateInterval = 1 / 20;
+				adaptiveBreakTimerInterval = 0.22;
+				adaptiveHeavySpawnCap = 20;
+		}
+	}
+
 	override public function update(elapsed:Float)
 	{
 		if(!inCutscene && !paused && !freezeCamera) {
@@ -3127,6 +3184,7 @@ class PlayState extends MusicBeatState
 		callOnScripts('onUpdate', [elapsed]);
 
 		super.update(elapsed);
+		updateAdaptivePerformance(elapsed);
 
 		#if VIDEOS_ALLOWED
 		if(videoCutscene != null && videoCutscene.videoSprite != null && videoCutscene.videoSprite.bitmap != null)
@@ -3175,8 +3233,13 @@ class PlayState extends MusicBeatState
 			}
 		}
 
-		updateIconsScale(elapsed);
-		updateIconsPosition();
+		adaptiveIconUpdateAccum += elapsed;
+		if (adaptiveIconUpdateInterval <= 0 || adaptiveIconUpdateAccum >= adaptiveIconUpdateInterval)
+		{
+			updateIconsScale(elapsed);
+			updateIconsPosition();
+			adaptiveIconUpdateAccum = 0;
+		}
 
 		if (startedCountdown && !paused)
 		{
@@ -3323,9 +3386,11 @@ class PlayState extends MusicBeatState
 			camHUD.zoom = FlxMath.lerp(1, camHUD.zoom, Math.exp(-elapsed * 3.125 * camZoomingDecay * playbackRate));
 		}
 
+		#if debug
 		FlxG.watch.addQuick("secShit", curSection);
 		FlxG.watch.addQuick("beatShit", curBeat);
 		FlxG.watch.addQuick("stepShit", curStep);
+		#end
 
 		// RESET = Quick Game Over Screen
 		if (!ClientPrefs.data.noReset && controls.RESET && canReset && !inCutscene && startedCountdown && !endingSong)
@@ -3447,7 +3512,7 @@ class PlayState extends MusicBeatState
 				var currentTime:Float = Conductor.songPosition;
 
 				breakTimerUpdateAccum += elapsed;
-				if (breakTimerUpdateAccum >= 0.12)
+				if (breakTimerUpdateAccum >= adaptiveBreakTimerInterval)
 				{
 					breakTimerUpdateAccum = 0;
 					breakTimerNextNoteTime = -1;
@@ -5840,7 +5905,8 @@ class PlayState extends MusicBeatState
 		if(curStage == 'notitg') return;
 		
 		if(note != null) {
-			var strum:StrumNote = playerStrums.members[note.noteData];
+			var strumGroup:FlxTypedGroup<StrumNote> = note.mustPress ? playerStrums : opponentStrums;
+			var strum:StrumNote = strumGroup.members[note.noteData];
 			if(strum != null)
 				spawnNoteSplash(strum.x, strum.y, note.noteData, note, strum);
 		}
@@ -7024,7 +7090,9 @@ class PlayState extends MusicBeatState
 		var targetNote:PreloadedChartNote = null;
 		var spawnedCount:Int = 0;
 		var lastNote:Note = null; // Rastrear la última nota para sustains
-		var maxNotesPerFrame:Int = 50; // Limitar a 50 notas por frame para evitar lag spikes
+		var maxNotesPerFrame:Int = adaptiveHeavySpawnCap;
+		if (maxNotesPerFrame < 8)
+			maxNotesPerFrame = 8;
 
 		// Spawnear notas mientras haya espacio en el límite dinámico
 		while (notesAddedCount < preloadedNotes.length && limitNC < dynamicNoteLimit && spawnedCount < maxNotesPerFrame)

@@ -292,10 +292,8 @@ class NoteSplash extends FlxSprite
 			animation.finishCallback = null;
 			
 		animation.finishCallback = function(name:String) {
-			if (spawned) // Only kill if still marked as spawned
-			{
-				kill();
-			}
+			kill();
+			spawned = false;
 		}
 
 		alpha = ClientPrefs.data.splashAlpha;
@@ -347,28 +345,7 @@ class NoteSplash extends FlxSprite
 		if (spawned)
 		{
 			aliveTime += elapsed;
-			
-			// Check if animation is finished or broken
-			var shouldKill:Bool = false;
-			
-			if (animation.curAnim == null)
-			{
-				// Animation object is null - definitely broken
-				if (aliveTime >= buggedKillTime)
-					shouldKill = true;
-			}
-			else if (animation.curAnim.finished)
-			{
-				// Animation has completed
-				shouldKill = true;
-			}
-			else if (aliveTime >= buggedKillTime)
-			{
-				// Animation is taking too long - likely paused/stuck
-				shouldKill = true;
-			}
-			
-			if (shouldKill)
+			if (animation.curAnim == null && aliveTime >= buggedKillTime)
 			{
 				kill();
 				spawned = false;

@@ -5971,8 +5971,6 @@ class PlayState extends MusicBeatState
 		}
 		luaArray = null;
 		FunkinLua.customFunctions.clear();
-		// Clear the script content cache so memory is freed and next session reads fresh files if needed
-		funkin.modding.scripting.ScriptCache.clear();
 		#end
 
 		#if HSCRIPT_ALLOWED
@@ -7148,4 +7146,5 @@ class PlayState extends MusicBeatState
 		}
 	}
 }
+
 

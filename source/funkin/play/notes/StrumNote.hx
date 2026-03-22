@@ -44,27 +44,27 @@ class StrumNote extends FlxSprite
 		var customSkin:String = skin + Note.getNoteSkinPostfix();
 		if(Paths.fileExists('images/$customSkin.png', IMAGE)) skin = customSkin;
 		
-		// Detectar PRIMERO si es NotITG antes de configurar el shader
+		// Detect special skins first, before configuring the shader.
 		var isNotITG:Bool = skin.toLowerCase().contains('notitg');
 		
-		// Crear el shader
+		// Create shader.
 		rgbShader = new RGBShaderReference(this, Note.initializeGlobalRGBShader(leData));
 		rgbShader.enabled = false;
 		
 		if(PlayState.SONG != null && PlayState.SONG.disableNoteRGB) useRGBShader = false;
 		
-		// Si es NotITG, desactivar shader desde el inicio
+		// NotITG skins keep RGB shader disabled from the start.
 		if(isNotITG)
 		{
 			useRGBShader = false;
 			animateOnBeat = true;
 			rgbShader.enabled = false;
-			rgbShader.forceDisabled = true; // BLOQUEAR la activación del shader permanentemente
-			shader = null; // No aplicar shader
+			rgbShader.forceDisabled = true; // Keep shader activation blocked.
+			shader = null; // Do not apply shader.
 		}
 		else
 		{
-			// Solo asignar colores RGB si NO es NotITG
+			// Only assign RGB colors when it's not a special skin.
 			var arr:Array<FlxColor> = ClientPrefs.data.arrowRGB[leData];
 			if(PlayState.isPixelStage) arr = ClientPrefs.data.arrowRGBPixel[leData];
 			
@@ -87,30 +87,30 @@ class StrumNote extends FlxSprite
 	
 	public function checkNotITGSkin():Void
 	{
-		// Verificar si el skin actual contiene "notitg" o "psych" en el nombre
+		// Check whether the current skin contains "notitg" or "psych".
 		var skinLower:String = texture.toLowerCase();
 		if(skinLower.contains('notitg') || skinLower.contains('psych'))
 		{
-			useRGBShader = false; // Desactivar shader RGB para NotITG y Psych
-			animateOnBeat = true; // Activar animación sincronizada con el beat
+			useRGBShader = false; // Disable RGB shader for NotITG/Psych skins.
+			animateOnBeat = true; // Enable beat-synced static animation.
 			
-			// Desactivar el shader completamente y BLOQUEAR su activación
+			// Disable shader completely and block reactivation.
 			if(rgbShader != null)
 			{
-				rgbShader.forceDisabled = true; // BLOQUEAR permanentemente
+				rgbShader.forceDisabled = true; // Keep blocked permanently.
 				rgbShader.enabled = false;
 			}
-			// Remover el shader del sprite
+			// Remove shader from the sprite.
 			shader = null;
 		}
 		else
 		{
-			// Restaurar valores por defecto si no es NotITG ni Psych
+			// Restore defaults for regular skins.
 			useRGBShader = true;
 			animateOnBeat = false;
 			if(PlayState.SONG != null && PlayState.SONG.disableNoteRGB) useRGBShader = false;
 			
-			// Desbloquear el shader para skins normales
+			// Unblock shader for regular skins.
 			if(rgbShader != null)
 				rgbShader.forceDisabled = false;
 		}
@@ -122,7 +122,8 @@ class StrumNote extends FlxSprite
 		if(animation.curAnim != null) lastAnim = animation.curAnim.name;
 
 		// NotITG/Psych skins have no pixel variant - treat them as normal skins on any stage
-		var isSpecialSkin:Bool = texture.toLowerCase().contains('notitg');
+		var textureLower:String = texture.toLowerCase();
+		var isSpecialSkin:Bool = textureLower.contains('notitg') || textureLower.contains('psych');
 
 		if(PlayState.isPixelStage && !isSpecialSkin)
 		{
@@ -196,7 +197,7 @@ class StrumNote extends FlxSprite
 			playAnim(lastAnim, true);
 		}
 		
-		// Re-verificar si es NotITG después de recargar
+		// Re-check special skin after reloading.
 		checkNotITGSkin();
 	}
 
@@ -226,11 +227,10 @@ class StrumNote extends FlxSprite
 			centerOffsets();
 			centerOrigin();
 		}
-		// Solo activar shader RGB si useRGBShader está habilitado y no es animación estática
-		// Para NotITG (useRGBShader = false), NUNCA activar el shader
+		// Only enable RGB shader when allowed and the receptor isn't static.
 		if(useRGBShader && rgbShader != null) 
 			rgbShader.enabled = (animation.curAnim != null && animation.curAnim.name != 'static');
 		else if(rgbShader != null)
-			rgbShader.enabled = false; // Asegurar que esté desactivado si useRGBShader = false
+			rgbShader.enabled = false; // Keep disabled when RGB is not allowed.
 	}
 }

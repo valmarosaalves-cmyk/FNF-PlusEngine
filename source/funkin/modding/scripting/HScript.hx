@@ -1,7 +1,5 @@
 package funkin.modding.scripting;
 
-import funkin.modding.scripting.ScriptCache;
-
 import funkin.play.character.Character;
 import funkin.modding.scripting.psychlua.LuaUtils;
 import funkin.modding.scripting.psychlua.CustomSubstate;
@@ -218,8 +216,7 @@ class HScript extends Iris
 		{
 			var f:String = file.replace('\\', '/');
 			if(f.contains('/') && !f.contains('\n')) {
-				var cached:String = ScriptCache.get(f);
-				scriptThing = cached != null ? cached : File.getContent(f); // fallback in case of non-sys builds
+				scriptThing = File.getContent(f);
 				scriptName = f;
 			}
 		}

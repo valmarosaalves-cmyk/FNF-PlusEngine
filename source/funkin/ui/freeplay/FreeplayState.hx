@@ -16,8 +16,6 @@ import flixel.util.FlxDestroyUtil;
 import flixel.util.FlxTimer;
 import flixel.tweens.FlxTween;
 import flixel.math.FlxRect;
-import openfl.utils.Assets;
-
 #if MODS_ALLOWED
 import sys.FileSystem;
 #end
@@ -1540,6 +1538,11 @@ class FreeplayState extends MusicBeatState {
      */
     function playSong():Void {
         persistentUpdate = false;
+        if (!songs[curSelected].isStepMania)
+            Mods.currentModDirectory = songs[curSelected].folder;
+        else
+            Mods.currentModDirectory = '';
+
         var songLowercase:String = Paths.formatToSongPath(songs[curSelected].songName);
         var poop:String = Highscore.formatSong(songLowercase, curDifficulty);
         
@@ -1563,8 +1566,7 @@ class FreeplayState extends MusicBeatState {
         
         @:privateAccess
         if(PlayState._lastLoadedModDirectory != Mods.currentModDirectory) {
-            Paths.clearUnusedMemory();
-            Mods.loadTopMod();
+            Paths.freeGraphicsFromMemory();
         }
         
         LoadingState.prepareToSong();
@@ -1901,36 +1903,25 @@ class FreeplayState extends MusicBeatState {
             if(requestToken != previewLoadToken || songs.length == 0 || requestedIndex != curSelected)
                 return;
 
-            var instAssetPath:String = Paths.getPath(Language.getFileTranslation(songName + '/Inst') + '.${Paths.SOUND_EXT}', SOUND, 'songs', true);
-            Assets.loadSound(instAssetPath).onComplete(function(loadedSound:openfl.media.Sound) {
-                if(requestToken != previewLoadToken || songs.length == 0 || requestedIndex != curSelected)
-                    return;
+            _prevInstSongName = songName;
 
-                _prevInstSongName = songName;
+            try {
+                FlxG.sound.playMusic(Paths.inst(songName), 0, true);
+                FlxG.sound.music.fadeIn(1.0, 0, 0.7);
+                instSound = FlxG.sound.music;
+                instPlaying = requestedIndex;
 
-                try {
-                    FlxG.sound.playMusic(loadedSound, 0, true);
-                    FlxG.sound.music.fadeIn(1.0, 0, 0.7);
-                    instSound = FlxG.sound.music;
-                    instPlaying = requestedIndex;
+                Conductor.bpm = currentBPM;
 
-                    Conductor.bpm = currentBPM;
-
-                    #if funkin.vis
-                    _analyzer = null;
-                    _analyzerLevels = null;
-                    _needsAnalyzerInit = true;
-                    #end
-                } catch(e:Dynamic) {
-                    trace('Error loading inst for $songName: $e');
-                    FlxG.sound.playMusic(Paths.music('freakyMenu'), 0.7);
-                }
-            }).onError(function(err) {
-                if(requestToken != previewLoadToken)
-                    return;
-                trace('Error preloading inst for $songName: $err');
+                #if funkin.vis
+                _analyzer = null;
+                _analyzerLevels = null;
+                _needsAnalyzerInit = true;
+                #end
+            } catch(e:Dynamic) {
+                trace('Error loading inst for $songName: $e');
                 FlxG.sound.playMusic(Paths.music('freakyMenu'), 0.7);
-            });
+            }
         });
     }
     

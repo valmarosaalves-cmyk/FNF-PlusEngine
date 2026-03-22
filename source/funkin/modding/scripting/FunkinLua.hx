@@ -25,7 +25,6 @@ import funkin.play.substates.GameOverSubstate;
 
 import funkin.modding.scripting.psychlua.LuaUtils;
 import funkin.modding.scripting.psychlua.LuaUtils.LuaTweenOptions;
-import funkin.modding.scripting.ScriptCache;
 
 // LuaJIT imports
 import hxluajit.Lua;
@@ -1825,20 +1824,7 @@ class FunkinLua {
 			var isString:Bool = !FileSystem.exists(scriptName);
 			var result:Dynamic = null;
 			if(!isString)
-			{
-				// Load script content from the in-memory cache to avoid blocking disk I/O.
-				// Using loadbuffer with "@filename" preserves the chunk name so that
-				// error messages and debug.getinfo() report the correct file path.
-				var src:String = ScriptCache.get(scriptName);
-				if (src == null)
-				{
-					trace('ScriptCache: could not read $scriptName');
-					lua = null;
-					return;
-				}
-				var loadErr:Int = LuaL.loadbuffer(lua, src, src.length, '@$scriptName');
-				result = (loadErr != 0) ? loadErr : Lua.pcall(lua, 0, Lua.LUA_MULTRET, 0);
-			}
+				result = LuaL.dofile(lua, scriptName);
 			else
 				result = LuaL.dostring(lua, scriptName);
 

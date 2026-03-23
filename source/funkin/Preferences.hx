@@ -66,7 +66,7 @@ import funkin.ui.title.TitleState;
 	public var hideSustainSplash:Bool = false;
 	public var showKeyViewer:Bool = false;
 	public var iconBounceType:String = 'Default';
-	public var judgementCounter:Bool = true;
+	public var judgementCounter:Bool = false;
 	public var showCombo:Bool = true;
 	public var comboInGame:Bool = false;
 	public var useFreakyFont:Bool = false;
@@ -74,7 +74,7 @@ import funkin.ui.title.TitleState;
 	public var showEndCountdown:Bool = false; // Enables/disables the end countdown
 	public var endCountdownSeconds:Int = 10;  // End countdown seconds (10-30)
 	#if android
-	public var useNativeWavyTimebar:Bool = true;
+	public var useNativeWavyTimebar:Bool = false;
 	#end
 	
 	// ========== Modchart Config Options ==========
@@ -116,10 +116,12 @@ import funkin.ui.title.TitleState;
 	public var timeBarType:String = 'Time Left';
 	public var shadedTimeBar:Bool = false;
 	public var scoreZoom:Bool = true;
+	public var timeBump:Bool = false;
 	public var noReset:Bool = false;
 	public var healthBarAlpha:Float = 1;
 	public var smoothHealthBar:Bool = true;
 	public var smoothHPBug:Bool = false;
+	public var usePsychScoreText:Bool = true;
 	public var hitsoundVolume:Float = 0;
 	public var hitSounds:String = "None";
 	public var hitsoundType:String = "None";
@@ -166,6 +168,7 @@ import funkin.ui.title.TitleState;
 	public var loadingScreen:Bool = true;
 	public var language:String = 'en-US';
 	public var abbreviateScore:Bool = true;
+	public var newfreeplay:Bool = true;
 	public var heavyCharts:Bool = false; // Heavy Charts Mode for heavy charts
 	public var vanillaTransition:Bool = false; // Use vanilla Psych Engine transition instead of custom
 	

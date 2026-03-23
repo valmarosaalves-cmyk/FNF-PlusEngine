@@ -427,8 +427,10 @@ class MainMenuState extends MusicBeatState
 						case 'story_mode':
 						MusicBeatState.switchState(new funkin.ui.story.StoryMenuState());
 					case 'freeplay':
-						MusicBeatState.switchState(new funkin.ui.freeplay.FreeplayState());
-
+						if (ClientPrefs.data.newfreeplay)
+							MusicBeatState.switchState(new funkin.ui.freeplay.FreeplayState());
+						else
+							MusicBeatState.switchState(new funkin.ui.freeplay.FreeplayState_Psych());
 					#if MODS_ALLOWED
 					case 'mods':
 						MusicBeatState.switchState(new funkin.modding.ModsMenuState());

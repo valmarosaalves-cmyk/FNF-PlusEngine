@@ -156,6 +156,12 @@ class VisualsSettingsSubState extends BaseOptionsMenu
 			'scoreZoom',
 			BOOL);
 		addOption(option);
+
+		var option:Option = new Option('Time Text Bump',
+			'If unchecked, disables the time text bump animation on beat.',
+			'timeBump',
+			BOOL);
+		addOption(option);
 		
 		var option:Option = new Option('Abbreviate Score',
 			'If enabled, the score will be abbreviated (e.g. 10.00K, 1.00M).',

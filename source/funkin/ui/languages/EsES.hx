@@ -16,6 +16,8 @@ class EsES
         // Gameplay
         "score_text" => "Puntuación: {1} | {2}: {3} | Clasificación: {4}",
         "score_text_instakill" => "Puntuación: {1} | Clasificación: {2}",
+        "score_text_legacy" => "Puntuación: {1} | Fallos: {2} | Clasificación: {3}",
+        "score_text_instakill_legacy" => "Puntuación: {1} | Clasificación: {2}",
         "botplay" => "Automático",
         "misses" => "Fallos",
         "combo_breaks" => "Rupturas de Combo",

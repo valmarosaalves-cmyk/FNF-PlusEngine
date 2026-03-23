@@ -41,6 +41,18 @@ class LegacySettingsSubState extends BaseOptionsMenu
 			BOOL);
 		addOption(option);
 
+		option = new Option('Use Psych Score Text',
+			"If checked, uses the original Psych Engine score text format in gameplay HUD.",
+			'usePsychScoreText',
+			BOOL);
+		addOption(option);
+
+		option = new Option('Use New Freeplay',
+			"If unchecked, uses the classic Psych Freeplay instead of the new Plus Engine Freeplay.",
+			'newfreeplay',
+			BOOL);
+		addOption(option);
+
 		super();
 	}
 }

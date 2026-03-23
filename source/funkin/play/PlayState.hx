@@ -2055,8 +2055,8 @@ class PlayState extends MusicBeatState
 	}
 	
 	/**
-	 * Permite a los scripts resetear el control del scoreTxt al motor
-	 * Llama a esta función desde Lua con: callMethod('resetScoreTxtOverride')
+	 * Allows scripts to return scoreTxt control to the engine.
+	 * Call from Lua with: callMethod('resetScoreTxtOverride')
 	 */
 	public function resetScoreTxtOverride():Void {
 		scoreTxtOverridden = false;
@@ -2075,40 +2075,72 @@ class PlayState extends MusicBeatState
 
 	public dynamic function updateScoreText()
 	{
-		// Si es un chart de StepMania, actualizar UI personalizado
+		// If this is a StepMania chart, update custom UI.
 		if (isStepManiaChart) {
 			updateStepManiaUI();
 			return;
 		}
 		
-		// Wife3 estándar: rango 0-100%
+		// Standard Wife3 range: 0-100%.
 		var percent:Float = CoolUtil.floorDecimal(ratingPercent * 100, 2);
+
+		var str:String = ''; 
 		
-		// Formateo estándar (sin soporte para >100%)
+		// Standard formatting (no support for >100%).
 		var percentDisplay:String = Std.string(percent) + '%';
-		
-		var str:String = percentDisplay + ' / ' + ratingName + ' [' + ratingFC + ']';
-	
 		var scoreStr:String = ClientPrefs.data.abbreviateScore ? abbreviateScore(songScore) : Std.string(songScore);
+
+		if (ClientPrefs.data.usePsychScoreText)
+		{
+			str = Language.getPhrase('rating_$ratingName', ratingName);
+			if(totalPlayed != 0)
+				str += ' (${percent}%) - ' + Language.getPhrase(ratingFC);
+		}
+	   else
+		{
+			str = percentDisplay + ' / ' + ratingName + ' [' + ratingFC + ']';
+			
+	   	}
+
+		if (ClientPrefs.data.usePsychScoreText)
+		{
+			var psychScore:String;
+			if(!instakillOnMiss)
+				psychScore = Language.getPhrase('score_text_legacy', 'Score: {1} | Misses: {2} | Rating: {3}', [scoreStr, songMisses, str]);
+			else
+				psychScore = Language.getPhrase('score_text_instakill_legacy', 'Score: {1} | Rating: {2}', [scoreStr, str]);
+
+			if (scoreTxt.text != lastScoreTxtContent && scoreTxt.text != psychScore) {
+				scoreTxtOverridden = true;
+			}
+
+			if (!scoreTxtOverridden) {
+				scoreTxt.text = psychScore;
+				lastScoreTxtContent = psychScore;
+			}
+			return;
+		}
 
 		var tempScore:String;
 		if(!instakillOnMiss)
 		{
-			// Determinar qué contador mostrar
+			// Choose which miss-related counter to display.
 			var missLabel:String = ClientPrefs.data.badShitBreakCombo ? Language.getPhrase('combo_breaks', 'Combo Breaks') : Language.getPhrase('misses', 'Misses');
 			var missCount:Int = ClientPrefs.data.badShitBreakCombo ? comboBreaks : songMisses;
 			
 			tempScore = Language.getPhrase('score_text', 'Score: {1} | {2}: {3} | Rating: {4} | TPS: {5}/{6}', [scoreStr, missLabel, missCount, str, nps, maxNPS]);
 		}
 		else
+		{
 			tempScore = Language.getPhrase('score_text_instakill', 'Score: {1} | Rating: {2} | TPS: {3}/{4}', [scoreStr, str, nps, maxNPS]);
-		
-		// Detectar si un script modificó el texto externamente
+		}
+
+		// Detect if a script changed the text externally.
 		if (scoreTxt.text != lastScoreTxtContent && scoreTxt.text != tempScore) {
 			scoreTxtOverridden = true;
 		}
 		
-		// Solo actualizar si no ha sido sobrescrito por un script
+		// Only update if it wasn't overridden by a script.
 		if (!scoreTxtOverridden) {
 			scoreTxt.text = tempScore;
 			lastScoreTxtContent = tempScore;
@@ -2208,7 +2240,7 @@ class PlayState extends MusicBeatState
 		if(!ClientPrefs.data.scoreZoom)
 			return;
 		
-		// Para charts StepMania, no animar el contador (el score se actualiza instantáneamente)
+		// For StepMania charts, do not animate score text (score updates instantly).
 		if (isStepManiaChart) {
 			return;
 		}
@@ -2226,12 +2258,15 @@ class PlayState extends MusicBeatState
 	}
 
 	public function doTimeBump():Void {
+		if(!ClientPrefs.data.timeBump)
+			return;
+
 		if(timeTxtTween != null)
 			timeTxtTween.cancel();
 
 			timeTxt.scale.set(1.5, 1.5);
 			timeTxtTween = FlxTween.tween(timeTxt.scale, {x: 1, y: 1}, 0.3, {
-				ease: FlxEase.expoOut, // <-- Easing suave
+				ease: FlxEase.expoOut,
 				onComplete: function(twn:FlxTween) {
 					timeTxtTween = null;
 			}
@@ -2244,7 +2279,7 @@ class PlayState extends MusicBeatState
 
 			versionText.scale.set(1.5, 1.5);
 			versionTextTween = FlxTween.tween(versionText.scale, {x: 1, y: 1}, 0.3, {
-				ease: FlxEase.expoOut, // <-- Easing suave
+				ease: FlxEase.expoOut,
 				onComplete: function(twn:FlxTween) {
 					versionTextTween = null;
 			}
@@ -4627,7 +4662,8 @@ class PlayState extends MusicBeatState
 			#if !switch
 			var percent:Float = ratingPercent;
 			if(Math.isNaN(percent)) percent = 0;
-			Highscore.saveScore(Song.loadedSongName, songScore, storyDifficulty, percent, playOpponent, ClientPrefs.data.accuracySystem);
+			if(!cpuControlled)
+				Highscore.saveScore(Song.loadedSongName, songScore, storyDifficulty, percent, playOpponent, ClientPrefs.data.accuracySystem);
 			#end
 			playbackRate = 1;
 
@@ -4809,7 +4845,11 @@ class PlayState extends MusicBeatState
 
 				canResync = false;
 				restoreWindowState();
-				MusicBeatState.switchState(new FreeplayState());
+				if (ClientPrefs.data.newfreeplay)
+					MusicBeatState.switchState(new FreeplayState());
+				else
+					MusicBeatState.switchState(new funkin.ui.freeplay.FreeplayState_Psych());
+
 				FlxG.sound.playMusic(Paths.music('freakyMenu'));
 				changedDifficulty = false;
 			}
@@ -5068,36 +5108,34 @@ class PlayState extends MusicBeatState
 		}
 		#end
 
-		if(!cpuControlled) {
-			songScore += score;
-			if(!note.ratingDisabled)
-			{
-				songHits++;
-				totalPlayed++;
-				RecalculateRating(false);
-				
-				// Perfect Mode: Miss on anything below Sick!
-				if (perfectMode && !practiceMode && daRating.name != 'flawless' && daRating.name != 'sick')
-				{
-					doDeathCheck(true);
-				}
-			}
+		songScore += score;
+		if(!note.ratingDisabled)
+		{
+			songHits++;
+			totalPlayed++;
+			RecalculateRating(false);
 			
-			// Verificar si Bad o Shit rompen el combo
-			if (ClientPrefs.data.badShitBreakCombo && (daRating.name == 'bad' || daRating.name == 'shit'))
+			// Perfect Mode: Miss on anything below Sick!
+			if (!cpuControlled && perfectMode && !practiceMode && daRating.name != 'flawless' && daRating.name != 'sick')
 			{
-				combo = 0;
-				comboBreaks++; // Incrementar contador de combo breaks
-				showComboBreak(); // Mostrar sprite de combo broken
+				doDeathCheck(true);
 			}
+		}
+		
+		// Check if Bad or Shit should break combo.
+		if (ClientPrefs.data.badShitBreakCombo && (daRating.name == 'bad' || daRating.name == 'shit'))
+		{
+			combo = 0;
+			comboBreaks++; // Increase combo break counter.
+			showComboBreak(); // Show combo broken sprite.
+		}
 
-			if (judgementCounter != null) {
-				judgementCounter.doComboBump();
-				
-				// Si es un nuevo máximo combo
-				if (combo > maxCombo) {
-					judgementCounter.doMaxComboBump();
-				}
+		if (judgementCounter != null) {
+			judgementCounter.doComboBump();
+			
+			// If this is a new max combo.
+			if (combo > maxCombo) {
+				judgementCounter.doMaxComboBump();
 			}
 		}
 
@@ -6603,7 +6641,8 @@ class PlayState extends MusicBeatState
 	public var ratingPercent:Float;
 	public var ratingFC:String;
 	public function RecalculateRating(badHit:Bool = false, scoreBop:Bool = true) {
-		setOnScripts('score', songScore);
+		var scoreValueForScripts:Dynamic = ClientPrefs.data.abbreviateScore ? abbreviateScore(songScore) : songScore;
+		setOnScripts('score', scoreValueForScripts);
 		setOnScripts('misses', songMisses);
 		setOnScripts('hits', songHits);
 		setOnScripts('combo', combo);

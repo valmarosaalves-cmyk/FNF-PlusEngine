@@ -131,6 +131,14 @@ class VisualsSettingsSubState extends BaseOptionsMenu
 		    BOOL);
 		addOption(option);
 
+		#if android
+		var option:Option = new Option('EXPERIMENTAL Native Wavy Time Bar',
+			'WARNING: (Feature Experimental) If enabled, uses the Android native wavy time bar and hides the engine time bar fill.',
+			'useNativeWavyTimebar',
+			BOOL);
+		addOption(option);
+		#end
+
 		var option:Option = new Option('Flashing Lights',
 			"Uncheck this if you're sensitive to flashing lights!",
 			'flashing',

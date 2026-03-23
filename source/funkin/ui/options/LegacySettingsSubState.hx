@@ -35,6 +35,12 @@ class LegacySettingsSubState extends BaseOptionsMenu
 			BOOL);
 		addOption(option);
 
+		option = new Option('Vanilla Transition',
+			"If checked, uses the vanilla transition instead of the custom Plus Engine transition.",
+			'vanillaTransition',
+			BOOL);
+		addOption(option);
+
 		super();
 	}
 }

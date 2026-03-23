@@ -16,6 +16,10 @@ class TouchScroll
     public static inline var TAP_DISTANCE_THRESHOLD:Float = 15.0; // Pixels - if movement < this, it's a tap
     public static inline var TAP_TIME_THRESHOLD:Float = 0.3; // Seconds - max duration for a tap
     public static inline var SWIPE_VELOCITY_THRESHOLD:Float = 50.0; // Pixels/second - minimum for swipe
+    public static inline var AXIS_LOCK_RATIO:Float = 1.2; // Primary axis must exceed secondary axis by this ratio
+    public static inline var MAX_VELOCITY:Float = 4200.0; // Clamp velocity to avoid huge spikes
+    public static inline var VELOCITY_SMOOTHING:Float = 0.35; // Blend factor for stable velocity
+    public static inline var MIN_DELTA:Float = 0.05; // Ignore tiny jitter deltas
     
     // Momentum/inertia settings
     public static inline var MOMENTUM_FRICTION:Float = 0.92; // Deceleration multiplier (0-1)
@@ -27,6 +31,7 @@ class TouchScroll
     private var touchStartTime:Float;
     private var lastTouchPos:FlxPoint;
     private var lastMoveTime:Float;
+    private var justReleasedScroll:Bool = false;
     
     // State
     public var isScrolling(default, null):Bool = false;
@@ -54,6 +59,7 @@ class TouchScroll
         isTap = false;
         scrollVelocity = 0;
         totalDelta = 0;
+        justReleasedScroll = false;
         activeTouch = null;
         touchStartTime = 0;
         lastMoveTime = 0;
@@ -66,14 +72,31 @@ class TouchScroll
     public function update():Float
     {
         var currentTouch:FlxTouch = null;
+        justReleasedScroll = false;
         
-        // Find active touch
-        for (touch in FlxG.touches.list)
+        // Prioritize the currently active touch.
+        if (activeTouch != null)
         {
-            if (touch != null && (touch.justPressed || touch.pressed))
+            if (activeTouch.pressed || activeTouch.justReleased)
             {
-                currentTouch = touch;
-                break;
+                currentTouch = activeTouch;
+            }
+            else
+            {
+                activeTouch = null;
+            }
+        }
+
+        // Fallback: find a new touch.
+        if (currentTouch == null)
+        {
+            for (touch in FlxG.touches.list)
+            {
+                if (touch != null && (touch.justPressed || touch.pressed))
+                {
+                    currentTouch = touch;
+                    break;
+                }
             }
         }
         
@@ -83,7 +106,7 @@ class TouchScroll
             touchStartPos.set(currentTouch.screenX, currentTouch.screenY);
             touchCurrentPos.set(currentTouch.screenX, currentTouch.screenY);
             lastTouchPos.set(currentTouch.screenX, currentTouch.screenY);
-            touchStartTime = FlxG.game.ticks / 1000.0;
+            touchStartTime = haxe.Timer.stamp();
             lastMoveTime = touchStartTime;
             activeTouch = currentTouch;
             isScrolling = false;
@@ -96,43 +119,52 @@ class TouchScroll
         {
             touchCurrentPos.set(currentTouch.screenX, currentTouch.screenY);
             
-            var distance = getDistance();
-            var duration = (FlxG.game.ticks / 1000.0) - touchStartTime;
+            var primaryDistance = getDistance();
+            var secondaryDistance = getSecondaryDistance();
             
             // Determine if this is a scroll or still could be a tap
-            if (distance > TAP_DISTANCE_THRESHOLD)
+            if (!isScrolling && primaryDistance > TAP_DISTANCE_THRESHOLD && primaryDistance > secondaryDistance * AXIS_LOCK_RATIO)
             {
                 isScrolling = true;
                 isTap = false;
-                
+            }
+
+            if (isScrolling)
+            {
                 // Calculate velocity for momentum
-                var currentTime = FlxG.game.ticks / 1000.0;
+                var currentTime = haxe.Timer.stamp();
                 var deltaTime = currentTime - lastMoveTime;
                 
                 if (deltaTime > 0)
                 {
-                    var delta = vertical ? 
+                    var delta = vertical ?
                         (touchCurrentPos.y - lastTouchPos.y) : 
                         (touchCurrentPos.x - lastTouchPos.x);
-                    
-                    scrollVelocity = delta / deltaTime;
+
+                    var instantVelocity = FlxMath.bound(delta / deltaTime, -MAX_VELOCITY, MAX_VELOCITY);
+                    scrollVelocity = (scrollVelocity * (1 - VELOCITY_SMOOTHING)) + (instantVelocity * VELOCITY_SMOOTHING);
                     totalDelta += delta;
                     
                     lastTouchPos.set(touchCurrentPos.x, touchCurrentPos.y);
                     lastMoveTime = currentTime;
-                    
-                    return delta;
+
+                    if (Math.abs(delta) >= MIN_DELTA)
+                    {
+                        return delta;
+                    }
                 }
             }
         }
         // Touch ended
         else if (activeTouch != null && activeTouch.justReleased)
         {
-            var distance = getDistance();
-            var duration = (FlxG.game.ticks / 1000.0) - touchStartTime;
+            var primaryDistance = getDistance();
+            var secondaryDistance = getSecondaryDistance();
+            var duration = haxe.Timer.stamp() - touchStartTime;
+            var totalDistance = Math.sqrt((primaryDistance * primaryDistance) + (secondaryDistance * secondaryDistance));
             
             // Determine if it was a tap
-            if (distance < TAP_DISTANCE_THRESHOLD && duration < TAP_TIME_THRESHOLD)
+            if (!isScrolling && totalDistance < TAP_DISTANCE_THRESHOLD && duration < TAP_TIME_THRESHOLD)
             {
                 isTap = true;
                 isScrolling = false;
@@ -140,9 +172,16 @@ class TouchScroll
             }
             else
             {
-                isScrolling = false;
                 isTap = false;
-                // Keep velocity for momentum
+                if (Math.abs(scrollVelocity) < SWIPE_VELOCITY_THRESHOLD)
+                {
+                    scrollVelocity = 0;
+                }
+                if (isScrolling)
+                {
+                    justReleasedScroll = true;
+                }
+                isScrolling = false;
             }
             
             activeTouch = null;
@@ -150,7 +189,8 @@ class TouchScroll
         // No touch - apply momentum if scrolling ended
         else if (activeTouch == null && Math.abs(scrollVelocity) > MOMENTUM_MIN_VELOCITY)
         {
-            scrollVelocity *= MOMENTUM_FRICTION;
+            var frameAdjustedFriction = Math.pow(MOMENTUM_FRICTION, FlxG.elapsed * 60);
+            scrollVelocity *= frameAdjustedFriction;
             
             if (Math.abs(scrollVelocity) < MOMENTUM_MIN_VELOCITY)
             {
@@ -183,6 +223,18 @@ class TouchScroll
             return Math.abs(touchCurrentPos.x - touchStartPos.x);
         }
     }
+
+    private function getSecondaryDistance():Float
+    {
+        if (vertical)
+        {
+            return Math.abs(touchCurrentPos.x - touchStartPos.x);
+        }
+        else
+        {
+            return Math.abs(touchCurrentPos.y - touchStartPos.y);
+        }
+    }
     
     /**
      * Get the touch position for tap detection
@@ -213,6 +265,22 @@ class TouchScroll
     {
         return isScrolling || Math.abs(scrollVelocity) > MOMENTUM_MIN_VELOCITY;
     }
+
+    /**
+     * Check if a scroll gesture ended this frame.
+     */
+    public function didReleaseScroll():Bool
+    {
+        return justReleasedScroll;
+    }
+
+    /**
+     * Check if finger is currently down.
+     */
+    public function isTouchActive():Bool
+    {
+        return activeTouch != null;
+    }
     
     /**
      * Force stop scrolling and momentum
@@ -221,6 +289,7 @@ class TouchScroll
     {
         scrollVelocity = 0;
         isScrolling = false;
+        justReleasedScroll = false;
     }
     
     public function destroy():Void

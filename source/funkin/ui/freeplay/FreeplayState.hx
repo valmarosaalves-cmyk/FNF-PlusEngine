@@ -7,11 +7,11 @@ import funkin.save.Highscore;
 import funkin.data.song.Song;
 import funkin.data.song.Song.SwagSong;
 import funkin.play.HealthIcon;
-import funkin.ui.MusicPlayer;
 import funkin.ui.options.GameplayChangersSubstate;
 import funkin.play.substates.ResetScoreSubState;
 import funkin.ui.components.PsychUIInputText;
 import flixel.math.FlxMath;
+import flixel.math.FlxPoint;
 import flixel.util.FlxDestroyUtil;
 import flixel.util.FlxTimer;
 import flixel.tweens.FlxTween;
@@ -230,10 +230,6 @@ class FreeplayState extends MusicBeatState {
     var bottomString:String;
     var bottomText:FlxText;
     
-    // Music player
-    var player:MusicPlayer;
-    
-
     override public function create():Void {
         super.create();
 
@@ -679,9 +675,6 @@ class FreeplayState extends MusicBeatState {
         noFavoritesText.visible = false;
         add(noFavoritesText);
         
-        player = new MusicPlayer(this);
-        add(player);
-        
         Conductor.bpm = 102;
         
         // Start the visualizer with the freeplay menu music right away.
@@ -696,6 +689,9 @@ class FreeplayState extends MusicBeatState {
         #if mobile
         addTouchPad('UP_DOWN', 'A_B_C_X_Y_Z');
         addTouchPadCamera();
+        touchScroll = new funkin.mobile.backend.TouchScroll(true);
+        difficultyScroll = new funkin.mobile.backend.TouchScroll(false);
+        funkin.mobile.backend.TouchUtil.setScrollHandler(touchScroll);
         if(touchPad != null) {
             touchPad.visible = true;
             touchPad.updateTrackedButtons();
@@ -766,6 +762,31 @@ class FreeplayState extends MusicBeatState {
         var leWeek:WeekData = WeekData.weeksLoaded.get(name);
         return (!leWeek.startUnlocked && leWeek.weekBefore.length > 0 && (!funkin.ui.story.StoryMenuState.weekCompleted.exists(leWeek.weekBefore) || !funkin.ui.story.StoryMenuState.weekCompleted.get(leWeek.weekBefore)));
     }
+
+    function getVisibleSongIndices():Array<Int> {
+        var visibleIndices:Array<Int> = [];
+        if(showingFavorites) {
+            for(i in 0...songs.length) {
+                if(songs[i].isFavorite) {
+                    visibleIndices.push(i);
+                }
+            }
+        } else {
+            for(i in 0...songs.length) {
+                visibleIndices.push(i);
+            }
+        }
+        return visibleIndices;
+    }
+
+    function getCurrentVisibleSelectionIndex(visibleIndices:Array<Int>):Int {
+        for(vi in 0...visibleIndices.length) {
+            if(visibleIndices[vi] == curSelected) {
+                return vi;
+            }
+        }
+        return 0;
+    }
     
     /**
      * Update function - main game loop
@@ -826,13 +847,87 @@ class FreeplayState extends MusicBeatState {
         updateDynamicData();
 
         var shiftMult:Int = 1;
-        if((FlxG.keys.pressed.SHIFT || (touchPad != null && touchPad.buttonZ.pressed)) && !player.playingMusic) 
+        if((FlxG.keys.pressed.SHIFT || (touchPad != null && touchPad.buttonZ.pressed))) 
             shiftMult = 3;
 
         // Disable navigation when typing in search
         var isTyping:Bool = (PsychUIInputText.focusOn == searchInput);
 
-        if (!player.playingMusic && !isTyping) {
+        if (!isTyping) {
+            #if mobile
+            var touchSongNavigationActive:Bool = false;
+            var touchDiffNavigationActive:Bool = false;
+            var anyTouchInDiffArea:Bool = isAnyTouchInDifficultyArea();
+
+            if (anyTouchInDiffArea)
+            {
+                if (difficultyScroll != null)
+                {
+                    var diffScrollDelta = difficultyScroll.update();
+                    touchDiffNavigationActive = difficultyScroll.isTouchActive() || difficultyScroll.isCurrentlyScrolling();
+
+                    if (Math.abs(diffScrollDelta) > 0.01 && Difficulty.list.length > 0)
+                    {
+                        diffViewOffset += -diffScrollDelta / 120;
+                        diffViewOffset = FlxMath.bound(diffViewOffset, 0, Difficulty.list.length - 1);
+                    }
+
+                    if (difficultyScroll.didReleaseScroll() && Difficulty.list.length > 0)
+                    {
+                        var snappedDiff:Int = Math.round(diffViewOffset);
+                        if (snappedDiff < 0) snappedDiff = 0;
+                        else if (snappedDiff > Difficulty.list.length - 1) snappedDiff = Difficulty.list.length - 1;
+
+                        if (snappedDiff != curDifficulty)
+                        {
+                            changeDiff(snappedDiff - curDifficulty);
+                            FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
+                        }
+                        diffViewOffset = snappedDiff;
+                    }
+                }
+            }
+            else if (touchScroll != null)
+            {
+                var scrollDelta = touchScroll.update();
+                touchSongNavigationActive = touchScroll.isTouchActive() || touchScroll.isCurrentlyScrolling();
+
+                var visibleTouchIndices:Array<Int> = getVisibleSongIndices();
+                if (visibleTouchIndices.length > 0)
+                {
+                    if (Math.abs(scrollDelta) > 0.01)
+                    {
+                        viewOffset += -scrollDelta / 74;
+                        viewOffset = FlxMath.bound(viewOffset, 0, visibleTouchIndices.length - 1);
+                    }
+
+                    if (touchScroll.didReleaseScroll())
+                    {
+                        var snappedVisibleIndex:Int = Math.round(viewOffset);
+                        if (snappedVisibleIndex < 0) snappedVisibleIndex = 0;
+                        else if (snappedVisibleIndex > visibleTouchIndices.length - 1) snappedVisibleIndex = visibleTouchIndices.length - 1;
+
+                        viewOffset = snappedVisibleIndex;
+                    }
+                }
+            }
+
+            var touchPadNavigatingSongs:Bool = (touchPad != null && (touchPad.buttonUp.pressed || touchPad.buttonDown.pressed || touchPad.buttonUp.justPressed || touchPad.buttonDown.justPressed));
+            var touchPadNavigatingDiffs:Bool = (touchPad != null && (touchPad.buttonLeft.pressed || touchPad.buttonRight.pressed || touchPad.buttonLeft.justPressed || touchPad.buttonRight.justPressed));
+            var allowSongDigitalNav:Bool = !touchSongNavigationActive || touchPadNavigatingSongs;
+            var allowDiffDigitalNav:Bool = !touchDiffNavigationActive || touchPadNavigatingDiffs;
+            var allowPointerClick:Bool = !touchSongNavigationActive && !touchDiffNavigationActive;
+
+            if (touchScroll != null && touchScroll.wasTapped() && allowPointerClick)
+            {
+                var tapPos = touchScroll.getTapPosition();
+                if (tapPos != null)
+                {
+                    handleFreeplayPointerPress(tapPos.x, tapPos.y);
+                }
+            }
+            #end
+
             var mouseOverPills:Bool = FlxG.mouse.y > 475 && FlxG.mouse.y < 515;
 
             if (FlxG.mouse.wheel != 0 && !mouseOverPills) {
@@ -847,109 +942,69 @@ class FreeplayState extends MusicBeatState {
                 FlxG.sound.play(Paths.sound('scrollMenu'), 0.2);
             }
 
-            if (FlxG.mouse.justPressed) {
-                if (playIcon != null && FlxG.mouse.overlaps(playIcon)) {
-                    playSong();
-                }
-                else if ((starIcon != null && FlxG.mouse.overlaps(starIcon)) || (starFullIcon != null && FlxG.mouse.overlaps(starFullIcon))) {
-                    toggleFavorite();
-                }
-                else if (allLevels != null && FlxG.mouse.overlaps(allLevels)) {
-                    if(showingFavorites) {
-                        showingFavorites = false;
-                        _visCacheValid = false;
-                        refreshSongList();
-                        FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
-                    }
-                }
-                else if (favorites != null && FlxG.mouse.overlaps(favorites)) {
-                    if(!showingFavorites) {
-                        showingFavorites = true;
-                        _visCacheValid = false;
-                        refreshSongList();
-                        FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
-                    }
-                }
-                else {
-                    var clickedCard:Bool = false;
-                    for (i in 0...cardsGroup.members.length) {
-                        var card = cardsGroup.members[i];
-                        if (card != null && card.visible && card.alpha > 0.1 && FlxG.mouse.overlaps(card)) {
-                            if(i < songs.length && i != curSelected) {
-                                var visibleIndices:Array<Int> = [];
-                                if(showingFavorites) {
-                                    for(si in 0...songs.length) {
-                                        if(songs[si].isFavorite) {
-                                            visibleIndices.push(si);
-                                        }
-                                    }
-                                } else {
-                                    for(si in 0...songs.length) {
-                                        visibleIndices.push(si);
-                                    }
-                                }
-                                
-                                var currentVisIndex:Int = 0;
-                                var targetVisIndex:Int = 0;
-                                for(vi in 0...visibleIndices.length) {
-                                    if(visibleIndices[vi] == curSelected) currentVisIndex = vi;
-                                    if(visibleIndices[vi] == i) targetVisIndex = vi;
-                                }
-                                
-                                var change:Int = targetVisIndex - currentVisIndex;
-                                changeSelection(change, true, false);
-                            }
-                            clickedCard = true;
-                            break;
-                        }
-                    }
+            if (
+                FlxG.mouse.justPressed
+                #if mobile
+                && allowPointerClick
+                #end
+            ) {
+                handleFreeplayPointerPress(FlxG.mouse.x, FlxG.mouse.y);
+            }
 
-                    if (!clickedCard) {
-                        for (i in 0...diffsGroup.members.length) {
-                            var diffIcon = diffsGroup.members[i];
-                            if (diffIcon != null && diffIcon.alpha > 0.1 && FlxG.mouse.overlaps(diffIcon)) {
-                                var globalIdx:Int = diffIcon.ID;
-                                if (curDifficulty != globalIdx) {
-                                    curDifficulty = globalIdx;
-                                    changeDiff();
-                                    FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
-                                }
-                                break;
-                            }
-                        }
-                    }
+            if(
+                #if mobile
+                allowSongDigitalNav
+                #else
+                true
+                #end
+            ) {
+                var songUpPressed:Bool = controls.UI_UP_P || (touchPad != null && touchPad.buttonUp.justPressed);
+                var songDownPressed:Bool = controls.UI_DOWN_P || (touchPad != null && touchPad.buttonDown.justPressed);
+                var songUpHeld:Bool = controls.UI_UP || (touchPad != null && touchPad.buttonUp.pressed);
+                var songDownHeld:Bool = controls.UI_DOWN || (touchPad != null && touchPad.buttonDown.pressed);
+
+                if(songUpPressed) {
+                    changeSelection(-shiftMult);
+                    holdTime = 0;
+                }
+                if(songDownPressed) {
+                    changeSelection(shiftMult);
+                    holdTime = 0;
+                }
+
+                if(songDownHeld || songUpHeld) {
+                    var checkLastHold:Int = Math.floor((holdTime - 0.5) * 10);
+                    holdTime += elapsed;
+                    var checkNewHold:Int = Math.floor((holdTime - 0.5) * 10);
+
+                    if(holdTime > 0.5 && checkNewHold - checkLastHold > 0)
+                        changeSelection((checkNewHold - checkLastHold) * (songUpHeld ? -shiftMult : shiftMult));
                 }
             }
 
-            if(controls.UI_UP_P) {
-                changeSelection(-shiftMult);
-                holdTime = 0;
-            }
-            if(controls.UI_DOWN_P) {
-                changeSelection(shiftMult);
-                holdTime = 0;
-            }
-
-            if(controls.UI_DOWN || controls.UI_UP) {
-                var checkLastHold:Int = Math.floor((holdTime - 0.5) * 10);
-                holdTime += elapsed;
-                var checkNewHold:Int = Math.floor((holdTime - 0.5) * 10);
-
-                if(holdTime > 0.5 && checkNewHold - checkLastHold > 0)
-                    changeSelection((checkNewHold - checkLastHold) * (controls.UI_UP ? -shiftMult : shiftMult));
-            }
-
-            if(controls.UI_LEFT_P) {
+            if(
+                #if mobile
+                allowDiffDigitalNav
+                #else
+                true
+                #end
+            && (controls.UI_LEFT_P || (touchPad != null && touchPad.buttonLeft.justPressed))) {
                 changeDiff(-1);
                 FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
             }
-            if(controls.UI_RIGHT_P) {
+            if(
+                #if mobile
+                allowDiffDigitalNav
+                #else
+                true
+                #end
+            && (controls.UI_RIGHT_P || (touchPad != null && touchPad.buttonRight.justPressed))) {
                 changeDiff(1);
                 FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
             }
         }
         
-        if (FlxG.keys.justPressed.TAB && !player.playingMusic && !isTyping) {
+        if (FlxG.keys.justPressed.TAB && !isTyping) {
             viewingOpponentScores = !viewingOpponentScores;
             FlxG.sound.play(Paths.sound('scrollMenu'));
             
@@ -967,41 +1022,32 @@ class FreeplayState extends MusicBeatState {
         }
 
         if ((controls.BACK || (touchPad != null && touchPad.buttonB.justPressed)) && !isTyping) {
-            if (player.playingMusic) {
-                FlxG.sound.music.stop();
-                destroyFreeplayVocals();
-                FlxG.sound.music.volume = 0;
-                instPlaying = -1;
-                player.playingMusic = false;
-                player.switchPlayMusic();
-            } else {
-                persistentUpdate = false;
-                FlxG.sound.play(Paths.sound('cancelMenu'));
-                MusicBeatState.switchState(new funkin.ui.mainmenu.MainMenuState());
-            }
+            persistentUpdate = false;
+            FlxG.sound.play(Paths.sound('cancelMenu'));
+            MusicBeatState.switchState(new funkin.ui.mainmenu.MainMenuState());
         }
 
         // Gameplay changers
-        if((FlxG.keys.justPressed.CONTROL || (touchPad != null && touchPad.buttonC.justPressed)) && !player.playingMusic && !isTyping) {
+        if((FlxG.keys.justPressed.CONTROL || (touchPad != null && touchPad.buttonC.justPressed)) && !isTyping) {
             persistentUpdate = false;
             removeTouchPad();
             openSubState(new GameplayChangersSubstate());
         }
         
         if((FlxG.keys.justPressed.SPACE || (touchPad != null && touchPad.buttonX.justPressed)) && !isTyping) {
-            if(instPlaying != curSelected && !player.playingMusic) {
+            if(instPlaying != curSelected) {
                 playInstPreview();
-            } else if (instPlaying == curSelected && !player.playingMusic) {
+            } else if (instPlaying == curSelected) {
                 stopInstPreview();
             }
         }
         
-        if ((controls.ACCEPT || (touchPad != null && touchPad.buttonA.justPressed)) && !player.playingMusic && !isTyping) {
+        if ((controls.ACCEPT || (touchPad != null && touchPad.buttonA.justPressed)) && !isTyping) {
             playSong();
         }
         
         // Reset score
-        if((controls.RESET || (touchPad != null && touchPad.buttonY.justPressed)) && !player.playingMusic && !isTyping) {
+        if((controls.RESET || (touchPad != null && touchPad.buttonY.justPressed)) && !isTyping) {
             persistentUpdate = false;
             removeTouchPad();
             openSubState(new ResetScoreSubState(songs[curSelected].songName, curDifficulty, songs[curSelected].songCharacter));
@@ -1389,7 +1435,7 @@ class FreeplayState extends MusicBeatState {
      * Change song selection
      */
     function changeSelection(change:Int = 0, playSound:Bool = true, scrollView:Bool = true):Void {
-        if (player.playingMusic || songs.length == 0)
+        if (songs.length == 0)
             return;
 
         // Periodic GC for large song lists to prevent memory buildup
@@ -1510,7 +1556,7 @@ class FreeplayState extends MusicBeatState {
      * Change difficulty
      */
     function changeDiff(change:Int = 0):Void {
-        if (player.playingMusic || Difficulty.list.length == 0)
+        if (Difficulty.list.length == 0)
             return;
 
         curDifficulty = FlxMath.wrap(curDifficulty + change, 0, Difficulty.list.length-1);
@@ -1791,33 +1837,54 @@ class FreeplayState extends MusicBeatState {
             
             var noteCount:Int = 0;
             var lastNoteTime:Float = 0;
-            var totalBeats:Float = 0;
-            
-            for(section in chart.notes) {
-                if(section == null || section.sectionNotes == null) continue;
-                
-                var sectionBeats:Float = section.sectionBeats;
-                if(Math.isNaN(sectionBeats) || sectionBeats <= 0) sectionBeats = 4;
-                totalBeats += sectionBeats;
-                
-                for(note in section.sectionNotes) {
-                    if(note == null || note.length < 2) continue;
-                    
-                    var noteData:Int = Std.int(note[1]);
-                    var strumTime:Float = note[0];
-                    
-                    // Skip events (noteData < 0 or > 7) and invalid timestamps.
+            var useV2Metadata:Bool = chart.format != null && chart.format.startsWith('psych_v2') && chart.notesV2 != null && chart.notesV2.length > 0;
+
+            if(useV2Metadata)
+            {
+                for(v2Note in chart.notesV2)
+                {
+                    if(v2Note == null) continue;
+
+                    var strumTime:Float = v2Note.t;
+                    var noteData:Int = v2Note.d;
+                    var holdLength:Float = v2Note.l;
+                    if(Math.isNaN(holdLength) || holdLength < 0) holdLength = 0;
+
                     if(noteData < 0 || noteData > 7 || strumTime < 0) continue;
-                    
-                    if(strumTime > lastNoteTime) {
-                        lastNoteTime = strumTime;
+
+                    var noteEnd:Float = strumTime + holdLength;
+                    if(noteEnd > lastNoteTime) {
+                        lastNoteTime = noteEnd;
                     }
-                    
-                    // mustHitSection=true  → player owns lanes 0-3
-                    // mustHitSection=false → player owns lanes 4-7
-                    var isPlayerNote:Bool = section.mustHitSection ? (noteData < 4) : (noteData >= 4);
-                    
-                    if(isPlayerNote) noteCount++;
+
+                    // psych_v2: 0-3 = player lanes, 4-7 = opponent lanes
+                    if(noteData < 4) noteCount++;
+                }
+            }
+            else
+            {
+                for(section in chart.notes) {
+                    if(section == null || section.sectionNotes == null) continue;
+
+                    for(note in section.sectionNotes) {
+                        if(note == null || note.length < 2) continue;
+
+                        var noteData:Int = Std.int(note[1]);
+                        var strumTime:Float = note[0];
+
+                        // Skip events (noteData < 0 or > 7) and invalid timestamps.
+                        if(noteData < 0 || noteData > 7 || strumTime < 0) continue;
+
+                        if(strumTime > lastNoteTime) {
+                            lastNoteTime = strumTime;
+                        }
+
+                        // mustHitSection=true  → player owns lanes 0-3
+                        // mustHitSection=false → player owns lanes 4-7
+                        var isPlayerNote:Bool = section.mustHitSection ? (noteData < 4) : (noteData >= 4);
+
+                        if(isPlayerNote) noteCount++;
+                    }
                 }
             }
             
@@ -1835,28 +1902,46 @@ class FreeplayState extends MusicBeatState {
             
             var sectionDensities:Array<Int> = [];
             var sectionDuration:Float = lastNoteTime / BAR_COUNT;
+            if(sectionDuration <= 0 || Math.isNaN(sectionDuration)) sectionDuration = 1;
             
             for(i in 0...BAR_COUNT) {
                 var sectionStart:Float = i * sectionDuration;
                 var sectionEnd:Float = (i + 1) * sectionDuration;
                 var sectionNoteCount:Int = 0;
-                
-                for(section in chart.notes) {
-                    if(section == null || section.sectionNotes == null) continue;
-                    
-                    for(note in section.sectionNotes) {
-                        if(note == null || note.length < 2) continue;
-                        
-                        var noteData:Int = Std.int(note[1]);
-                        var strumTime:Float = note[0];
-                        
-                        // Skip events (noteData < 0 or > 7) and invalid timestamps.
+
+                if(useV2Metadata)
+                {
+                    for(v2Note in chart.notesV2)
+                    {
+                        if(v2Note == null) continue;
+                        var noteData:Int = v2Note.d;
+                        var strumTime:Float = v2Note.t;
+
                         if(noteData < 0 || noteData > 7 || strumTime < 0) continue;
                         if(strumTime < sectionStart || strumTime >= sectionEnd) continue;
-                        
-                        var isPlayerNote:Bool = section.mustHitSection ? (noteData < 4) : (noteData >= 4);
-                        
-                        if(isPlayerNote) sectionNoteCount++;
+
+                        if(noteData < 4) sectionNoteCount++;
+                    }
+                }
+                else
+                {
+                    for(section in chart.notes) {
+                        if(section == null || section.sectionNotes == null) continue;
+
+                        for(note in section.sectionNotes) {
+                            if(note == null || note.length < 2) continue;
+
+                            var noteData:Int = Std.int(note[1]);
+                            var strumTime:Float = note[0];
+
+                            // Skip events (noteData < 0 or > 7) and invalid timestamps.
+                            if(noteData < 0 || noteData > 7 || strumTime < 0) continue;
+                            if(strumTime < sectionStart || strumTime >= sectionEnd) continue;
+
+                            var isPlayerNote:Bool = section.mustHitSection ? (noteData < 4) : (noteData >= 4);
+
+                            if(isPlayerNote) sectionNoteCount++;
+                        }
                     }
                 }
                 
@@ -2494,6 +2579,100 @@ class FreeplayState extends MusicBeatState {
         FlxG.autoPause = ClientPrefs.data.autoPause;
         if (!FlxG.sound.music.playing && !stopMusicPlay)
             FlxG.sound.playMusic(Paths.music('freakyMenu'));
+    }
+
+    #if mobile
+    function isAnyTouchInDifficultyArea():Bool {
+        for (touch in FlxG.touches.list) {
+            if (touch != null && (touch.pressed || touch.justPressed)) {
+                if (touch.screenY >= 470 && touch.screenY <= 530 && touch.screenX >= PILL_CLIP_X_MIN && touch.screenX <= PILL_CLIP_X_MAX)
+                    return true;
+            }
+        }
+        return false;
+    }
+    #end
+
+    function handleFreeplayPointerPress(x:Float, y:Float):Void {
+        var point = new FlxPoint(x, y);
+
+        if (playIcon != null && playIcon.overlapsPoint(point)) {
+            playSong();
+            return;
+        }
+
+        if ((starIcon != null && starIcon.overlapsPoint(point)) || (starFullIcon != null && starFullIcon.overlapsPoint(point))) {
+            toggleFavorite();
+            return;
+        }
+
+        if (allLevels != null && allLevels.overlapsPoint(point)) {
+            if(showingFavorites) {
+                showingFavorites = false;
+                _visCacheValid = false;
+                refreshSongList();
+                FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
+            }
+            return;
+        }
+
+        if (favorites != null && favorites.overlapsPoint(point)) {
+            if(!showingFavorites) {
+                showingFavorites = true;
+                _visCacheValid = false;
+                refreshSongList();
+                FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
+            }
+            return;
+        }
+
+        var clickedCard:Bool = false;
+        for (i in 0...cardsGroup.members.length) {
+            var card = cardsGroup.members[i];
+            if (card != null && card.visible && card.alpha > 0.1 && card.overlapsPoint(point)) {
+                if(i < songs.length && i != curSelected) {
+                    var visibleIndices:Array<Int> = [];
+                    if(showingFavorites) {
+                        for(si in 0...songs.length) {
+                            if(songs[si].isFavorite) {
+                                visibleIndices.push(si);
+                            }
+                        }
+                    } else {
+                        for(si in 0...songs.length) {
+                            visibleIndices.push(si);
+                        }
+                    }
+
+                    var currentVisIndex:Int = 0;
+                    var targetVisIndex:Int = 0;
+                    for(vi in 0...visibleIndices.length) {
+                        if(visibleIndices[vi] == curSelected) currentVisIndex = vi;
+                        if(visibleIndices[vi] == i) targetVisIndex = vi;
+                    }
+
+                    var change:Int = targetVisIndex - currentVisIndex;
+                    changeSelection(change, true, false);
+                }
+                clickedCard = true;
+                break;
+            }
+        }
+
+        if (!clickedCard) {
+            for (i in 0...diffsGroup.members.length) {
+                var diffIcon = diffsGroup.members[i];
+                if (diffIcon != null && diffIcon.alpha > 0.1 && diffIcon.overlapsPoint(point)) {
+                    var globalIdx:Int = diffIcon.ID;
+                    if (curDifficulty != globalIdx) {
+                        curDifficulty = globalIdx;
+                        changeDiff();
+                        FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
+                    }
+                    break;
+                }
+            }
+        }
     }
 }
 

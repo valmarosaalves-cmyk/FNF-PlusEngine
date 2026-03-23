@@ -38,6 +38,8 @@ class ModsMenuState extends MusicBeatState
 	
 	var buttonToggleMainY:Float = 0; // Posición Y principal para los botones toggle
 	var buttonToggleSecondY:Float = 0; // Posición Y secundaria para el botón oculto
+	var buttonToggleHiddenY:Float = 0; // Posición fuera de pantalla para ocultar con tween
+	var toggleButtonsInitialized:Bool = false;
 
 	var bgTitle:FlxSprite;
 	var bgDescription:FlxSprite;
@@ -121,6 +123,7 @@ class ModsMenuState extends MusicBeatState
 		// Establecer posiciones para los botones toggle
 		buttonToggleMainY = buttonReload.y + buttonReload.bg.height + 20;
 		buttonToggleSecondY = buttonToggleMainY + buttonHeight + 20;
+		buttonToggleHiddenY = FlxG.height + buttonHeight + 40;
 		
 		/*buttonModFolder = new MenuButton(buttonX, buttonToggleMainY, buttonWidth, buttonHeight, "MODS FOLDER", function() {
 			var modFolder = Paths.mods();
@@ -135,16 +138,7 @@ class ModsMenuState extends MusicBeatState
 
 		buttonEnableAll = new MenuButton(buttonX, buttonToggleMainY, buttonWidth, buttonHeight, Language.getPhrase('enable_all_button', 'ENABLE ALL'), function() {
 			buttonEnableAll.ignoreCheck = false;
-			for (mod in modsGroup.members)
-			{
-				if(modsList.disabled.contains(mod.folder))
-				{
-					modsList.disabled.remove(mod.folder);
-					modsList.enabled.push(mod.folder);
-					mod.icon.color = FlxColor.WHITE;
-					mod.text.color = FlxColor.WHITE;
-				}
-			}
+			setAllModsState(true);
 			updateModDisplayData();
 			checkToggleButtons();
 			FlxG.sound.play(Paths.sound('scrollMenu'), 0.6);
@@ -155,16 +149,7 @@ class ModsMenuState extends MusicBeatState
 
 		buttonDisableAll = new MenuButton(buttonX, buttonToggleSecondY, buttonWidth, buttonHeight, Language.getPhrase('disable_all_button', 'DISABLE ALL'), function() {
 			buttonDisableAll.ignoreCheck = false;
-			for (mod in modsGroup.members)
-			{
-				if(modsList.enabled.contains(mod.folder))
-				{
-					modsList.enabled.remove(mod.folder);
-					modsList.disabled.push(mod.folder);
-					mod.icon.color = 0xFFFF6666;
-					mod.text.color = FlxColor.GRAY;
-				}
-			}
+			setAllModsState(false);
 			updateModDisplayData();
 			checkToggleButtons();
 			FlxG.sound.play(Paths.sound('scrollMenu'), 0.6);
@@ -806,25 +791,78 @@ class ModsMenuState extends MusicBeatState
 	{
 		var hasDisabledMods = modsList.disabled.length > 0;
 		var hasEnabledMods = modsList.enabled.length > 0;
-		
-		// Enable All button - siempre en posición principal
-		buttonEnableAll.y = buttonToggleMainY;
-		if (hasDisabledMods) {
-			buttonEnableAll.alpha = 1;
-			buttonEnableAll.visible = buttonEnableAll.enabled = buttonEnableAll.active = true;
-		} else {
-			buttonEnableAll.alpha = 0;
-			buttonEnableAll.visible = buttonEnableAll.enabled = buttonEnableAll.active = false;
+
+		var showEnableAll:Bool = hasDisabledMods;
+		var showDisableAll:Bool = !showEnableAll && hasEnabledMods;
+
+		buttonEnableAll.visible = true;
+		buttonDisableAll.visible = true;
+		buttonEnableAll.alpha = 1;
+		buttonDisableAll.alpha = 1;
+
+		buttonEnableAll.enabled = buttonEnableAll.active = showEnableAll;
+		buttonDisableAll.enabled = buttonDisableAll.active = showDisableAll;
+
+		if (!buttonEnableAll.enabled)
+		{
+			buttonEnableAll.ignoreCheck = false;
+			buttonEnableAll.onFocus = false;
 		}
-		
-		// Disable All button - siempre en posición secundaria
-		buttonDisableAll.y = buttonToggleSecondY;
-		if (hasEnabledMods) {
-			buttonDisableAll.alpha = 1;
-			buttonDisableAll.visible = buttonDisableAll.enabled = buttonDisableAll.active = true;
-		} else {
-			buttonDisableAll.alpha = 0;
-			buttonDisableAll.visible = buttonDisableAll.enabled = buttonDisableAll.active = false;
+		if (!buttonDisableAll.enabled)
+		{
+			buttonDisableAll.ignoreCheck = false;
+			buttonDisableAll.onFocus = false;
+		}
+
+		animateToggleButtons(showEnableAll, !toggleButtonsInitialized);
+		toggleButtonsInitialized = true;
+	}
+
+	function animateToggleButtons(showEnableAll:Bool, instant:Bool = false):Void
+	{
+		var duration:Float = instant ? 0 : 0.2;
+
+		var enableTargetY:Float = showEnableAll ? buttonToggleMainY : buttonToggleHiddenY;
+		var disableTargetY:Float = showEnableAll ? buttonToggleHiddenY : buttonToggleMainY;
+
+		FlxTween.cancelTweensOf(buttonEnableAll);
+		FlxTween.cancelTweensOf(buttonDisableAll);
+
+		if (instant)
+		{
+			buttonEnableAll.y = enableTargetY;
+			buttonDisableAll.y = disableTargetY;
+		}
+		else
+		{
+			FlxTween.tween(buttonEnableAll, {y: enableTargetY}, duration, {ease: FlxEase.quadOut});
+			FlxTween.tween(buttonDisableAll, {y: disableTargetY}, duration, {ease: FlxEase.quadOut});
+		}
+	}
+
+	function setAllModsState(enableAll:Bool):Void
+	{
+		modsList.enabled = [];
+		modsList.disabled = [];
+
+		for (mod in modsGroup.members)
+		{
+			if (mod == null || mod.folder == null || mod.folder.trim().length < 1) continue;
+			if (enableAll) modsList.enabled.push(mod.folder);
+			else modsList.disabled.push(mod.folder);
+		}
+
+		syncAllModVisualStates();
+	}
+
+	function syncAllModVisualStates():Void
+	{
+		for (mod in modsGroup.members)
+		{
+			if (mod == null) continue;
+			var isDisabled:Bool = modsList.disabled.contains(mod.folder);
+			mod.icon.color = isDisabled ? 0xFFFF6666 : FlxColor.WHITE;
+			mod.text.color = isDisabled ? FlxColor.GRAY : FlxColor.WHITE;
 		}
 	}
 

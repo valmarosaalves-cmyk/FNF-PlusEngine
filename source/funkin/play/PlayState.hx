@@ -46,7 +46,7 @@ import funkin.graphics.VideoSprite;
 import funkin.play.components.JudCounter;
 import funkin.play.notes.Note.EventNote;
 import funkin.play.stage.*;
-import funkin.mobile.WavyTimebar;
+import funkin.mobile.backend.native.WavyTimebar;
 import lenin.PreloadedChartNote;
 import lenin.HeavyChartManager;
 import lenin.NoteSpawner;
@@ -436,6 +436,11 @@ class PlayState extends MusicBeatState
 	#if android
 	var nativeTimebarUpdateAccum:Float = 0;
 	var lastNativeTimebarProgress:Float = -1;
+	var nativeWavyTimebarEnabled:Bool = false;
+	var lowEndEventMode:Bool = false;
+	var lowEndEventAccumulator:Float = 0;
+	static inline var LOW_END_EVENT_TICK:Float = 1 / 45;
+	static inline var LOW_END_EVENT_BURST:Int = 6;
 	static inline var NATIVE_TIMEBAR_UPDATE_INTERVAL:Float = 1 / 20; // 20 FPS updates are enough for smooth UI
 	static inline var NATIVE_TIMEBAR_MIN_DELTA:Float = 0.003;
 	#end
@@ -970,7 +975,8 @@ class PlayState extends MusicBeatState
 		timeTxt.alpha = 1; // Alpha siempre visible
 		timeTxt.borderSize = 2;
 		timeTxt.visible = updateTime = showTime;
-		if(ClientPrefs.data.downScroll) timeTxt.y = FlxG.height - 44;
+		if(ClientPrefs.data.downScroll) timeTxt.y = FlxG.height - 48;
+		else timeTxt.y += 6;
 		if(ClientPrefs.data.timeBarType == 'Song Name') timeTxt.text = SONG.song;
 
 		timeBar = new Bar(0, timeTxt.y + (timeTxt.height / 4), 'timeBar', function() return songPercent, 0, 1);
@@ -983,9 +989,16 @@ class PlayState extends MusicBeatState
 		uiGroup.add(timeTxt);
 
 		#if android
-		var showNativeTimebar:Bool = showTime && !ClientPrefs.data.hideHud && !isNotITG;
+		nativeWavyTimebarEnabled = showTime && !ClientPrefs.data.hideHud && !isNotITG && ClientPrefs.data.useNativeWavyTimebar;
+		var showNativeTimebar:Bool = nativeWavyTimebarEnabled;
+		if (nativeWavyTimebarEnabled)
+		{
+			timeBar.visible = false;
+		}
+
+		var timebarWidthPercent:Float = FlxMath.bound(timeBar.width / FlxG.width, 0.2, 1.0);
 		WavyTimebar.initialize();
-		WavyTimebar.setLayout(0.58, timeTxt.y + (timeTxt.height / 4));
+		WavyTimebar.setLayout(timebarWidthPercent, timeBar.y);
 		WavyTimebar.setProgress(0);
 		WavyTimebar.setAlpha(showNativeTimebar ? 1 : 0);
 		if (showNativeTimebar) WavyTimebar.show();
@@ -2748,7 +2761,7 @@ class PlayState extends MusicBeatState
 
 		unspawnNotes.sort(sortByTime);
 		
-		// Heavy Charts Mode: Convertir notas a estructura ligera
+		// Heavy Charts Mode: Convert notes to lightweight structure
 		useHeavyCharts = HeavyChartManager.shouldUseHeavyCharts();
 		if (useHeavyCharts && unspawnNotes.length > 0)
 		{
@@ -2762,6 +2775,11 @@ class PlayState extends MusicBeatState
 		{
 			HeavyChartManager.logChartInfo(songData.song, unspawnNotes.length, false);
 		}
+
+		#if android
+		lowEndEventMode = funkin.mobile.AndroidOptimizer.getCurrentTier() == 0 && eventNotes.length > 80;
+		lowEndEventAccumulator = 0;
+		#end
 		
 		generatedMusic = true;
 		
@@ -3296,7 +3314,7 @@ class PlayState extends MusicBeatState
 
 			#if android
 			nativeTimebarUpdateAccum += elapsed;
-			if (nativeTimebarUpdateAccum >= NATIVE_TIMEBAR_UPDATE_INTERVAL && Math.abs(songPercent - lastNativeTimebarProgress) >= NATIVE_TIMEBAR_MIN_DELTA)
+			if (nativeWavyTimebarEnabled && nativeTimebarUpdateAccum >= NATIVE_TIMEBAR_UPDATE_INTERVAL && Math.abs(songPercent - lastNativeTimebarProgress) >= NATIVE_TIMEBAR_MIN_DELTA)
 			{
 				WavyTimebar.setProgress(songPercent);
 				lastNativeTimebarProgress = songPercent;
@@ -3504,7 +3522,23 @@ class PlayState extends MusicBeatState
 			if (useHeavyCharts && !paused && startedCountdown)
 				spawnHeavyNotes();
 
+				#if android
+				if (lowEndEventMode)
+				{
+					lowEndEventAccumulator += elapsed;
+					if (lowEndEventAccumulator >= LOW_END_EVENT_TICK)
+					{
+						checkEventNote(LOW_END_EVENT_BURST);
+						lowEndEventAccumulator = 0;
+					}
+				}
+				else
+				{
+					checkEventNote();
+				}
+				#else
 				checkEventNote();
+				#end
 			
 			// Break Timer Feature - Show timer when next notes are approaching
 			if (ClientPrefs.data.breakTimer && breakTimerText != null && playerStrums != null && playerStrums.length > 0)
@@ -3928,8 +3962,12 @@ class PlayState extends MusicBeatState
 		return false;
 	}
 
-	public function checkEventNote() {
+	public function checkEventNote(?maxEvents:Int = -1) {
+		var processed:Int = 0;
 		while(eventNotes.length > 0) {
+			if (maxEvents > -1 && processed >= maxEvents)
+				return;
+
 			var leStrumTime:Float = eventNotes[0].strumTime;
 			if(Conductor.songPosition < leStrumTime) {
 				return;
@@ -3945,6 +3983,7 @@ class PlayState extends MusicBeatState
 
 			triggerEvent(eventNotes[0].event, value1, value2, leStrumTime);
 			eventNotes.shift();
+			processed++;
 		}
 	}
 

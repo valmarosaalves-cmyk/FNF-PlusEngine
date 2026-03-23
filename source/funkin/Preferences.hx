@@ -43,6 +43,7 @@ import funkin.ui.title.TitleState;
 	public var middleScroll:Bool = false;
 	public var opponentStrums:Bool = true;
 	public var showFPS:Bool = true;
+	public var vsync:Bool = false;
 	public var fpsDebugLevel:Int = 0; // FPSCounter debug level (persistent)
 	public var showWatermark:Bool = false;
 	public var flashing:Bool = true;
@@ -72,6 +73,9 @@ import funkin.ui.title.TitleState;
 	public var showStateInFPS:Bool = true;
 	public var showEndCountdown:Bool = false; // Enables/disables the end countdown
 	public var endCountdownSeconds:Int = 10;  // End countdown seconds (10-30)
+	#if android
+	public var useNativeWavyTimebar:Bool = true;
+	#end
 	
 	// ========== Modchart Config Options ==========
 	// Camera & 3D Settings
@@ -347,6 +351,18 @@ class Preferences {
 			FlxG.updateFramerate = data.framerate;
 			FlxG.drawFramerate = data.framerate;
 		}
+
+		#if (!html5 && !switch)
+		try
+		{
+			if (FlxG.stage != null && FlxG.stage.application != null && FlxG.stage.application.window != null)
+				Reflect.setProperty(FlxG.stage.application.window, 'vsync', data.vsync);
+		}
+		catch (e:Dynamic)
+		{
+			// Some targets may not expose window vsync.
+		}
+		#end
 
 		if(FlxG.save.data.gameplaySettings != null)
 		{

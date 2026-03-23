@@ -136,8 +136,12 @@ object WavyTimebarManager {
     private var barTopMarginPx: Int = 0
     private val isInitialized = AtomicReference(false)
 
+    private fun clampWidthPercent(value: Float): Float {
+        return value.coerceIn(0.05f, 1f)
+    }
+
     private fun getBarWidthPx(screenWidthPx: Int): Int {
-        return (screenWidthPx * barWidthPercent.coerceIn(0.2f, 1f)).toInt()
+        return (screenWidthPx * clampWidthPercent(barWidthPercent)).toInt()
     }
 
     private fun applyLayoutOnUiThread(activity: android.app.Activity) {
@@ -282,7 +286,7 @@ object WavyTimebarManager {
 
     @JvmStatic
     fun setLayout(widthPercent: Float, yPx: Float) {
-        barWidthPercent = widthPercent.coerceIn(0.2f, 1f)
+        barWidthPercent = clampWidthPercent(widthPercent)
         barTopMarginPx = kotlin.math.max(0, yPx.toInt())
 
         val activity = Extension.mainActivity ?: return

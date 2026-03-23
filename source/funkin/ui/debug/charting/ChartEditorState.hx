@@ -663,7 +663,7 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 			player2: 'dad',
 			gfVersion: 'gf',
 			stage: 'stage',
-			format: 'psych_v1'
+			format: 'psych_v2'
 		};
 		Song.chartPath = null;
 		loadChart(song);
@@ -4504,6 +4504,46 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 		tab_group.add(btn);
 
 		btnY += 20;
+		var btn:PsychUIButton = new PsychUIButton(btnX, btnY, '  Load v2...', function()
+		{
+			if(!fileDialog.completed) return;
+			upperBox.isMinimized = true;
+			upperBox.bg.visible = false;
+
+			fileDialog.open('song.json', 'Open a psych_v2 Chart file', function()
+			{
+				try
+				{
+					var raw:Dynamic = Json.parse(fileDialog.data);
+					if (raw == null || raw.format != 'psych_v2' || raw.notes == null)
+					{
+						showOutput('Error: File loaded is not a valid psych_v2 chart.', true);
+						return;
+					}
+					var loadedSong:SwagSong = Song.downgradeFromV2(raw);
+					var func:Void->Void = function()
+					{
+						loadChart(loadedSong);
+						reloadNotesDropdowns();
+						prepareReload();
+						showOutput('v2 chart loaded successfully!');
+					};
+					if (!ignoreProgressCheckBox.checked)
+						openSubState(new Prompt('Warning: Any unsaved progress will be lost', func));
+					else
+						func();
+				}
+				catch(e:Exception)
+				{
+					showOutput('Error: ${e.message}', true);
+					trace(e.stack);
+				}
+			});
+		}, btnWid);
+		btn.text.alignment = LEFT;
+		tab_group.add(btn);
+
+		btnY += 20;
 		var btn:PsychUIButton = new PsychUIButton(btnX, btnY, '  Update (Legacy)...', function()
 		{
 			if(!fileDialog.completed) return;
@@ -5127,7 +5167,8 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 	function saveChart(canQuickSave:Bool = true)
 	{
 		updateChartData();
-		var chartData:String = PsychJsonPrinter.print(PlayState.SONG, ['sectionNotes', 'events']);
+		var v2:Dynamic = Song.upgradeToV2(PlayState.SONG);
+		var chartData:String = PsychJsonPrinter.print(v2, ['notes', 'events', 'bpmChanges', 'characters']);
 		if(canQuickSave && Song.chartPath != null)
 		{
 			#if mobile

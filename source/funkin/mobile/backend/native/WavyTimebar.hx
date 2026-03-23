@@ -22,7 +22,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-package funkin.mobile;
+package funkin.mobile.backend.native;
 
 #if android
 import lime.system.JNI;

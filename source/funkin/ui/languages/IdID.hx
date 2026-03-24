@@ -209,6 +209,7 @@ class IdID
         "setting_perfect_mode" => "Mode Sempurna",
         "setting_opponent_mode" => "Mode Lawan",
         "setting_no_drop_penalty" => "Tidak Ada Denda",
+        "setting_opponent_drain" => "Penguras Lawan",
 
         // Graphics Settings
         "setting_low_quality" => "Kualitas Rendah",
@@ -294,6 +295,8 @@ class IdID
         "description_health_bar_opacity" => "Seberapa transparan seharusnya bar kesehatan dan ikon-ikon tersebut.",
         "setting_smooth_health_bar" => "Bar Kesehatan Halus",
         "description_smooth_health_bar" => "Jika dicentang, bar kesehatan akan bergerak dengan halus alih-alih bergerak secara tiba-tiba.",
+        "setting_health_bar_overflow" => "Bar Kesehatan Meluap",
+        "description_health_bar_overflow" => "Jika dicentang, ikon kesehatan dapat melampaui tepi bilah saat terjadi lonjakan kesehatan (gaya Mesin JS).",
         "setting_show_watermark" => "Tampilkan Watermark",
         "description_show_watermark" => "Jika dicentang, menampilkan watermark engine di pojok kanan bawah.",
         "setting_vsync" => "VSync",
@@ -442,6 +445,7 @@ class IdID
         "description_hitbox_position" => "Jika dicentang, hitbox akan ditempatkan di bagian bawah layar, jika tidak, akan tetap di bagian atas.",
         "setting_dynamic_controls_color" => "Warna Kontrol Dinamis",
         "description_dynamic_controls_color" => "Jika dicentang, warna kontrol ponsel akan disetel ke warna note di pengaturan Anda.\n(berlaku hanya selama bermain game)",
+        "setting_device_perfomance_info" => "Informasi Kinerja Perangkat",
         "setting_storage_type" => "Jenis Penyimpanan",
         "storage_type_name_app_data" => "Data Aplikasi (Disarankan)",
         "storage_type_name_public" => "Penyimpanan Publik",

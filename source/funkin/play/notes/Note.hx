@@ -488,7 +488,8 @@ class Note extends FlxSprite
 		var skinPostfix:String = getNoteSkinPostfix();
 		var customSkin:String = skin + skinPostfix;
 		// NotITG/Psych skins have no pixel variant - treat them as normal skins on any stage
-		var isSpecialSkin:Bool = skin.toLowerCase().contains('notitg');
+		var skinLower:String = skin.toLowerCase();
+		var isSpecialSkin:Bool = skinLower.contains('notitg') || skinLower.contains('psych');
 		var path:String = (PlayState.isPixelStage && !isSpecialSkin) ? 'pixelUI/' : '';
 		if(customSkin == _lastValidChecked || Paths.fileExists('images/' + path + customSkin + '.png', IMAGE))
 		{
@@ -538,7 +539,7 @@ class Note extends FlxSprite
 		if(animName != null)
 			animation.play(animName, true);
 		
-		// Detectar si es NotITG o Psych y bloquear el shader
+		// Detect NotITG/Psych skins and keep RGB shader disabled for them.
 		if(skin != null)
 		{
 			var skinLower = skin.toLowerCase();
@@ -553,7 +554,7 @@ class Note extends FlxSprite
 			}
 			else
 			{
-				// Desbloquear shader para skins normales
+				// Re-enable shader for normal skins.
 				if(rgbShader != null)
 					rgbShader.forceDisabled = false;
 			}
@@ -637,8 +638,6 @@ class Note extends FlxSprite
 	{
 		super.destroy();
 		_lastValidChecked = '';
-
-		super.destroy();
 	}
 
 	public function followStrumNote(myStrum:StrumNote, fakeCrochet:Float, songSpeed:Float = 1)

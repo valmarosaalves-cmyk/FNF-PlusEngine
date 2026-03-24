@@ -1,53 +1,117 @@
 package funkin.ui.transition;
 
+import flixel.FlxCamera;
+import flixel.text.FlxText;
+import flixel.text.FlxText.FlxTextBorderStyle;
+import flixel.tweens.FlxEase;
+import flixel.tweens.FlxTween;
+import flixel.util.FlxColor;
 import flixel.util.FlxGradient;
-import funkin.ui.debug.TraceDisplay;
-
-#if LUA_ALLOWED
-import funkin.modding.scripting.FunkinLua;
-#end
-
-#if HSCRIPT_ALLOWED
-import funkin.modding.scripting.HScript;
-import crowplexus.hscript.Expr.Error as IrisError;
-import crowplexus.hscript.Printer;
-#end
-
-import funkin.modding.scripting.psychlua.LuaUtils;
-
-#if sys
-import sys.FileSystem;
-#end
+import funkin.ui.mainmenu.MainMenuState;
 
 class CustomFadeTransition extends MusicBeatSubstate {
 	public static var finishCallback:Void->Void;
 	var isTransIn:Bool = false;
+
+	public static var isTransitioning:Bool = false;
+	public static var currentTransition:CustomFadeTransition = null;
+
+	var topDoor:FlxSprite;
+	var bottomDoor:FlxSprite;
+	var waterMark:FlxText;
+	var eventText:FlxText;
+	var iconSprite:FlxSprite;
+
 	var transBlack:FlxSprite;
 	var transGradient:FlxSprite;
 
 	var duration:Float;
-	
-	// CustomFadeTransition specific scripts
-	#if LUA_ALLOWED
-	public static var customTransitionLuaScript:FunkinLua = null;
-	#end
-	
-	#if HSCRIPT_ALLOWED
-	public static var customTransitionScript:HScript = null;
-	#end
-	
-	public function new(duration:Float, isTransIn:Bool)
-	{
+
+	var topDoorTween:FlxTween;
+	var bottomDoorTween:FlxTween;
+	var textTween:FlxTween;
+	var iconTween:FlxTween;
+
+	var isDestroyed:Bool = false;
+	var isClosing:Bool = false;
+	var activeTweens:Array<FlxTween> = [];
+	var transitionId:String;
+
+	static function generateId():String {
+		return 'transition_' + Date.now().getTime() + '_' + Math.floor(Math.random() * 1000);
+	}
+
+	public static function initCustomTransitionScript():Void {
+		// Legacy hook preserved for compatibility.
+	}
+
+	public static function cancelCurrentTransition():Void {
+		if (currentTransition != null && !currentTransition.isDestroyed) {
+			currentTransition.forceClose();
+		}
+
+		isTransitioning = false;
+		currentTransition = null;
+		finishCallback = null;
+	}
+
+	function addTween(tween:FlxTween):FlxTween {
+		if (tween != null) {
+			activeTweens.push(tween);
+		}
+		return tween;
+	}
+
+	public function new(duration:Float = 0.5, isTransIn:Bool) {
 		this.duration = duration;
 		this.isTransIn = isTransIn;
+		this.activeTweens = [];
+		this.transitionId = generateId();
+
+		if (currentTransition != null && currentTransition != this) {
+			cancelCurrentTransition();
+		}
+
+		currentTransition = this;
+		isTransitioning = true;
+
 		super();
 	}
 
-	override function create()
-	{
-		cameras = [FlxG.cameras.list[FlxG.cameras.list.length-1]];
+	override function create() {
+		super.create();
+
+		if (currentTransition != this) {
+			forceClose();
+			return;
+		}
+
+		try {
+			var cam:FlxCamera = new FlxCamera();
+			cam.bgColor = 0x00;
+
+			#if mobile
+			cam.followLerp = 0;
+			cam.pixelPerfectRender = false;
+			#end
+
+			FlxG.cameras.add(cam, false);
+			cameras = [FlxG.cameras.list[FlxG.cameras.list.length - 1]];
+
+			if (ClientPrefs.data.vanillaTransition) {
+				createVanillaTransition();
+			} else {
+				createCustomTransition();
+			}
+		} catch (e:Dynamic) {
+			forceUnlock();
+		}
+	}
+
+	function createVanillaTransition():Void {
 		var width:Int = Std.int(FlxG.width / Math.max(camera.zoom, 0.001));
 		var height:Int = Std.int(FlxG.height / Math.max(camera.zoom, 0.001));
+
 		transGradient = FlxGradient.createGradientFlxSprite(1, height, (isTransIn ? [0x0, FlxColor.BLACK] : [FlxColor.BLACK, 0x0]));
 		transGradient.scale.x = width;
 		transGradient.updateHitbox();
@@ -62,186 +126,348 @@ class CustomFadeTransition extends MusicBeatSubstate {
 		transBlack.screenCenter(X);
 		add(transBlack);
 
-		if(isTransIn)
+		if (isTransIn)
 			transGradient.y = transBlack.y - transBlack.height;
 		else
 			transGradient.y = -transGradient.height;
-
-		super.create();
-		
-		// Set 'this' in scripts for access to transition instance
-		setScriptInstance();
-		
-		// Call scripts onCreate
-		callOnCustomTransitionScript('onCreate', [isTransIn, duration]);
 	}
 
-	override function update(elapsed:Float) {
-		// Call script update - if returns Function_Stop, skip default transition behavior
-		var scriptResult = callOnCustomTransitionScript('onUpdate', [elapsed, isTransIn]);
-		
+	function createCustomTransition():Void {
+		var width:Int = FlxG.width;
+		var height:Int = FlxG.height;
+
+		topDoor = new FlxSprite();
+		topDoor.loadGraphic(Paths.image('ui/transition/transUp'));
+		topDoor.scrollFactor.set();
+		topDoor.setGraphicSize(width, height);
+		topDoor.updateHitbox();
+		topDoor.antialiasing = ClientPrefs.data.antialiasing;
+
+		bottomDoor = new FlxSprite();
+		bottomDoor.loadGraphic(Paths.image('ui/transition/transDown'));
+		bottomDoor.scrollFactor.set();
+		bottomDoor.setGraphicSize(width, height);
+		bottomDoor.updateHitbox();
+		bottomDoor.antialiasing = ClientPrefs.data.antialiasing;
+
+		iconSprite = new FlxSprite();
+		iconSprite.loadGraphic(Paths.image('loading_screen/icon'));
+		iconSprite.scrollFactor.set();
+		iconSprite.scale.set(0.5, 0.5);
+		iconSprite.screenCenter();
+
+		waterMark = new FlxText(0, height - 140, 300, 'Plus Engine\nv${MainMenuState.plusEngineVersion}', 32);
+		waterMark.x = (width - waterMark.width) / 2;
+		waterMark.setFormat(Paths.font("aller.ttf"), 32, FlxColor.WHITE, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		waterMark.scrollFactor.set();
+		waterMark.borderSize = 2;
+
+		eventText = new FlxText(50, height - 60, 300, '', 28);
+		eventText.x = (width - eventText.width) / 2;
+		eventText.setFormat(Paths.font("aller.ttf"), 28, FlxColor.YELLOW, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		eventText.scrollFactor.set();
+		eventText.borderSize = 2;
+
+		if (isTransIn)
+			createTransitionIn(width, height);
+		else
+			createTransitionOut(width, height);
+	}
+
+	override function update(elapsed:Float):Void {
 		super.update(elapsed);
 
-		// If script handled update completely, skip default behavior
-		if(scriptResult == LuaUtils.Function_Stop) return;
-		
-		final height:Float = FlxG.height * Math.max(camera.zoom, 0.001);
-		final targetPos:Float = transGradient.height + 50 * Math.max(camera.zoom, 0.001);
-		if(duration > 0)
-			transGradient.y += (height + targetPos) * elapsed / duration;
-		else
-			transGradient.y = (targetPos) * elapsed;
+		if (ClientPrefs.data.vanillaTransition && transGradient != null) {
+			final height:Float = FlxG.height * Math.max(camera.zoom, 0.001);
+			final targetPos:Float = transGradient.height + 50 * Math.max(camera.zoom, 0.001);
+			if (duration > 0)
+				transGradient.y += (height + targetPos) * elapsed / duration;
+			else
+				transGradient.y = (targetPos) * elapsed;
 
-		if(isTransIn)
-			transBlack.y = transGradient.y + transGradient.height;
-		else
-			transBlack.y = transGradient.y - transBlack.height;
+			if (isTransIn)
+				transBlack.y = transGradient.y + transGradient.height;
+			else
+				transBlack.y = transGradient.y - transBlack.height;
 
-		if(transGradient.y >= targetPos)
-		{
-			// Call script before finishing
-			callOnCustomTransitionScript('onFinish', [isTransIn]);
-			
+			if (transGradient.y >= targetPos)
+				safeClose();
+		}
+	}
+
+	function createTransitionIn(width:Int, height:Int):Void {
+		topDoor.y = 0;
+		bottomDoor.y = 0;
+		iconSprite.alpha = 1;
+
+		waterMark.alpha = 1;
+		eventText.alpha = 1;
+		eventText.text = Language.getPhrase('trans_opening', 'Opening...');
+
+		add(topDoor);
+		add(bottomDoor);
+		add(iconSprite);
+		add(waterMark);
+		add(eventText);
+
+		try {
+			FlxG.sound.play(Paths.sound('FadeTransition'), 0.4);
+		} catch (e:Dynamic) {}
+
+		topDoorTween = addTween(FlxTween.tween(topDoor, {y: -height}, duration, {
+			ease: FlxEase.expoInOut,
+			onStart: function(tween:FlxTween) {
+				if (isValidTransition() && eventText != null)
+					eventText.text = Language.getPhrase('trans_completed', 'Completed!');
+			}
+		}));
+
+		bottomDoorTween = addTween(FlxTween.tween(bottomDoor, {y: height}, duration, {
+			ease: FlxEase.expoInOut,
+			onComplete: function(tween:FlxTween) {
+				if (isValidTransition()) {
+					safeClose();
+				}
+			}
+		}));
+
+		textTween = addTween(FlxTween.tween(waterMark, {y: waterMark.y + 100, alpha: 0}, duration, {
+			ease: FlxEase.expoInOut
+		}));
+
+		addTween(FlxTween.tween(eventText, {y: eventText.y + 100, alpha: 0}, duration, {
+			ease: FlxEase.expoInOut
+		}));
+
+		iconTween = addTween(FlxTween.tween(iconSprite, {alpha: 0}, duration, {
+			ease: FlxEase.expoInOut
+		}));
+	}
+
+	function createTransitionOut(width:Int, height:Int):Void {
+		topDoor.y = -height;
+		bottomDoor.y = height;
+		iconSprite.alpha = 0;
+		eventText.text = Language.getPhrase('trans_loading', 'Loading...');
+
+		var originalWaterMarkY = height - 140;
+		var originalEventTextY = height - 60;
+		waterMark.y = originalWaterMarkY + 100;
+		waterMark.alpha = 0;
+		eventText.y = originalEventTextY + 100;
+		eventText.alpha = 0;
+
+		add(topDoor);
+		add(bottomDoor);
+		add(iconSprite);
+		add(waterMark);
+		add(eventText);
+
+		textTween = addTween(FlxTween.tween(waterMark, {y: originalWaterMarkY, alpha: 1}, duration, {
+			ease: FlxEase.expoInOut
+		}));
+
+		addTween(FlxTween.tween(eventText, {y: originalEventTextY, alpha: 1}, duration, {
+			ease: FlxEase.expoInOut
+		}));
+
+		topDoorTween = addTween(FlxTween.tween(topDoor, {y: 0}, duration, {
+			ease: FlxEase.expoInOut
+		}));
+
+		bottomDoorTween = addTween(FlxTween.tween(bottomDoor, {y: 0}, duration, {
+			ease: FlxEase.expoInOut,
+			onComplete: function(tween:FlxTween) {
+				if (!isValidTransition()) return;
+
+				iconTween = addTween(FlxTween.tween(iconSprite, {alpha: 1}, 0.3, {
+					ease: FlxEase.sineIn,
+					onComplete: function(tween:FlxTween) {
+						if (isValidTransition()) {
+							safeFinishCallback();
+						}
+					}
+				}));
+			}
+		}));
+	}
+
+	function isValidTransition():Bool {
+		return !isDestroyed && !isClosing && currentTransition == this;
+	}
+
+	function forceUnlock():Void {
+		if (currentTransition == this) {
+			isTransitioning = false;
+			currentTransition = null;
+		}
+
+		finishCallback = null;
+		cancelAllTweens();
+
+		if (!isDestroyed) {
+			forceClose();
+		}
+	}
+
+	function forceClose():Void {
+		if (isDestroyed || isClosing) return;
+
+		isClosing = true;
+
+		if (currentTransition == this) {
+			isTransitioning = false;
+			currentTransition = null;
+		}
+
+		cancelAllTweens();
+
+		try {
 			close();
-			if(finishCallback != null) finishCallback();
+		} catch (e:Dynamic) {}
+	}
+
+	function safeFinishCallback():Void {
+		if (!isValidTransition()) return;
+
+		if (currentTransition == this) {
+			isTransitioning = false;
+			currentTransition = null;
+		}
+
+		if (finishCallback != null) {
+			var callback = finishCallback;
 			finishCallback = null;
-		}
-	}
-	
-	public static function initCustomTransitionScript():Void
-	{
-		// Try to load Lua script first
-		#if (LUA_ALLOWED && sys)
-		if(customTransitionLuaScript == null)
-		{
-			#if MODS_ALLOWED
-			var luaPath:String = Paths.modFolders('scripts/CustomFadeTransition.lua');
-			if(!FileSystem.exists(luaPath))
-				luaPath = Paths.getSharedPath('scripts/CustomFadeTransition.lua');
-			#else
-			var luaPath:String = Paths.getSharedPath('scripts/CustomFadeTransition.lua');
-			#end
-			
-			if(FileSystem.exists(luaPath))
-			{
-				trace('Loading CustomFadeTransition Lua Script from: $luaPath');
-				customTransitionLuaScript = new FunkinLua(luaPath);
-				trace('CustomFadeTransition (Lua) initialized successfully');
-			}
-		}
-		#end
-		
-		// Then load HScript
-		if(customTransitionScript != null) return; // Already initialized
-		
-		#if MODS_ALLOWED
-		var scriptPath:String = Paths.modFolders('scripts/CustomFadeTransition.hx');
-		if(scriptPath == null || !FileSystem.exists(scriptPath))
-			scriptPath = Paths.getSharedPath('scripts/CustomFadeTransition.hx');
-		#else
-		var scriptPath:String = Paths.getSharedPath('scripts/CustomFadeTransition.hx');
-		#end
-		
-		if(scriptPath == null || !FileSystem.exists(scriptPath))
-		{
-			trace('No CustomFadeTransition script found');
-			return;
-		}
-		
-		#if HSCRIPT_ALLOWED
-		try
-		{
-			trace('CustomFadeTransition: Loading script from: $scriptPath');
-			customTransitionScript = new HScript(null, scriptPath, null, true);
-			
-			if(customTransitionScript == null)
-			{
-				trace('CustomFadeTransition: Failed to create HScript instance');
-				return;
-			}
-			
-			// Parse and execute
-			customTransitionScript.parse(true);
-			customTransitionScript.execute();
-			
-			trace('CustomFadeTransition script initialized successfully');
-		}
-			catch(e:IrisError)
-			{
-				try {
-					var errorMsg = Printer.errorToString(e, false);
-					trace('CustomFadeTransition Script Error: $errorMsg');
-					if(TraceDisplay.instance != null)
-						TraceDisplay.addHScriptError(errorMsg, scriptPath);
-				} catch(printerError:Dynamic) {
-					trace('CustomFadeTransition: Error while processing IrisError: $printerError');
-				}
-			}
-			catch(e:Dynamic)
-			{
-				trace('CustomFadeTransition Script Error (unexpected): $e');
-				#if HSCRIPT_ALLOWED
-				if(TraceDisplay.instance != null)
-					TraceDisplay.addHScriptError('Unexpected error: $e', scriptPath);
-				#end
-			}
-		#end
-	}
-	
-	// Set this instance in scripts
-	public function setScriptInstance():Void
-	{
-		#if LUA_ALLOWED
-		if(customTransitionLuaScript != null)
-		{
-			customTransitionLuaScript.set('this', this);
-		}
-		#end
-		
-		#if HSCRIPT_ALLOWED
-		if(customTransitionScript != null)
-		{
-			customTransitionScript.set('this', this);
-		}
-		#end
-	}
-	
-	public function callOnCustomTransitionScript(funcToCall:String, args:Array<Dynamic> = null):Dynamic
-	{
-		var returnVal:Dynamic = LuaUtils.Function_Continue;
-		
-		// Call on Lua script first
-		#if LUA_ALLOWED
-		if(customTransitionLuaScript != null)
-		{
-			var ret:Dynamic = customTransitionLuaScript.call(funcToCall, args != null ? args : []);
-			if(ret != null && ret != LuaUtils.Function_Continue)
-				returnVal = ret;
-		}
-		#end
-		
-		// Then call on HScript
-		#if HSCRIPT_ALLOWED
-		if(customTransitionScript != null && customTransitionScript.exists(funcToCall))
-		{
 			try {
-				var callValue = customTransitionScript.call(funcToCall, args);
-				if(callValue != null && callValue.returnValue != null)
-				{
-					var myValue:Dynamic = callValue.returnValue;
-					if(myValue != LuaUtils.Function_Continue)
-						returnVal = myValue;
-				}
-			}
-			catch(e:Dynamic) {
-				trace('CustomFadeTransition Script Error calling $funcToCall: $e');
-				@:privateAccess
-				var fileName = customTransitionScript.origin != null ? customTransitionScript.origin : "CustomFadeTransition";
-				TraceDisplay.addHScriptError('Runtime error in $funcToCall: $e', fileName);
+				callback();
+			} catch (e:Dynamic) {}
+		}
+	}
+
+	function safeClose():Void {
+		if (!isValidTransition()) return;
+
+		isClosing = true;
+
+		if (!ClientPrefs.data.vanillaTransition) {
+			if (currentTransition == this) {
+				isTransitioning = false;
+				currentTransition = null;
 			}
 		}
-		#end
-		
-		return returnVal;
+
+		cancelAllTweens();
+
+		try {
+			close();
+		} catch (e:Dynamic) {}
+	}
+
+	function cancelAllTweens():Void {
+		try {
+			for (tween in activeTweens) {
+				if (tween != null && !tween.finished) {
+					tween.cancel();
+				}
+			}
+			activeTweens = [];
+
+			if (topDoorTween != null) {
+				topDoorTween.cancel();
+				topDoorTween = null;
+			}
+			if (bottomDoorTween != null) {
+				bottomDoorTween.cancel();
+				bottomDoorTween = null;
+			}
+			if (textTween != null) {
+				textTween.cancel();
+				textTween = null;
+			}
+			if (iconTween != null) {
+				iconTween.cancel();
+				iconTween = null;
+			}
+		} catch (e:Dynamic) {}
+	}
+
+	override function close() {
+		if (isDestroyed) return;
+
+		isDestroyed = true;
+		isClosing = true;
+
+		if (currentTransition == this) {
+			isTransitioning = false;
+			currentTransition = null;
+		}
+
+		try {
+			cancelAllTweens();
+
+			if (ClientPrefs.data.vanillaTransition && finishCallback != null) {
+				var callback = finishCallback;
+				finishCallback = null;
+				callback();
+			} else {
+				finishCallback = null;
+			}
+
+			super.close();
+		} catch (e:Dynamic) {
+			isTransitioning = false;
+			currentTransition = null;
+		}
+	}
+
+	override function destroy() {
+		if (isDestroyed) return;
+
+		isDestroyed = true;
+		isClosing = true;
+
+		if (currentTransition == this) {
+			isTransitioning = false;
+			currentTransition = null;
+		}
+
+		try {
+			cancelAllTweens();
+			finishCallback = null;
+
+			if (topDoor != null) {
+				topDoor.destroy();
+				topDoor = null;
+			}
+			if (bottomDoor != null) {
+				bottomDoor.destroy();
+				bottomDoor = null;
+			}
+			if (waterMark != null) {
+				waterMark.destroy();
+				waterMark = null;
+			}
+			if (eventText != null) {
+				eventText.destroy();
+				eventText = null;
+			}
+			if (iconSprite != null) {
+				iconSprite.destroy();
+				iconSprite = null;
+			}
+			if (transBlack != null) {
+				transBlack.destroy();
+				transBlack = null;
+			}
+			if (transGradient != null) {
+				transGradient.destroy();
+				transGradient = null;
+			}
+
+			super.destroy();
+		} catch (e:Dynamic) {
+			isTransitioning = false;
+			currentTransition = null;
+		}
 	}
 }

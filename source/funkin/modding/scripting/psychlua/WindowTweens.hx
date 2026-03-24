@@ -140,7 +140,7 @@ class WindowTweens {
 
     public static function getWindowWidth():Int {
         #if windows
-        return WindowsCPP.getWindowWidth();
+        return Std.int(Capabilities.screenResolutionX);
         #else
         return FlxG.width;
         #end
@@ -148,7 +148,7 @@ class WindowTweens {
 
     public static function getWindowHeight():Int {
         #if windows
-        return WindowsCPP.getWindowHeight();
+        return Std.int(Capabilities.screenResolutionY);
         #else
         return FlxG.height;
         #end
@@ -157,8 +157,8 @@ class WindowTweens {
     public static function centerWindow() {
         #if windows
         var window = Lib.current.stage.window;
-        var screenWidth = WindowsCPP.getScreenWidth();
-        var screenHeight = WindowsCPP.getScreenHeight();
+        var screenWidth = Std.int(Capabilities.screenResolutionX);
+        var screenHeight = Std.int(Capabilities.screenResolutionY);
         window.x = Std.int((screenWidth - window.width) / 2);
         window.y = Std.int((screenHeight - window.height) / 2);
         #end
@@ -204,8 +204,8 @@ class WindowTweens {
     public static function randomizeWindowPosition(minX:Int = 0, maxX:Int = -1, minY:Int = 0, maxY:Int = -1) {
         #if windows
         var window = Lib.current.stage.window;
-        var screenWidth = WindowsCPP.getScreenWidth();
-        var screenHeight = WindowsCPP.getScreenHeight();
+        var screenWidth = Std.int(Capabilities.screenResolutionX);
+        var screenHeight = Std.int(Capabilities.screenResolutionY);
         
         if (maxX == -1) maxX = Std.int(screenWidth - window.width);
         if (maxY == -1) maxY = Std.int(screenHeight - window.height);

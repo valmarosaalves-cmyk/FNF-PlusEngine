@@ -1,14 +1,15 @@
-package states;
+package funkin.ui.freeplay;
 
-import backend.WeekData;
-import backend.Highscore;
-import backend.Song;
-
-import objects.HealthIcon;
-import objects.MusicPlayer;
-
-import options.GameplayChangersSubstate;
-import substates.ResetScoreSubState;
+import funkin.data.story.level.WeekData;
+import funkin.save.Highscore;
+import funkin.data.song.Song;
+import funkin.play.HealthIcon;
+import funkin.ui.options.GameplayChangersSubstate;
+import funkin.play.substates.ResetScoreSubState;
+import funkin.ui.mainmenu.MainMenuState;
+import funkin.ui.story.StoryMenuState;
+import funkin.ui.ErrorState;
+import funkin.ui.debug.MasterEditorMenu;
 
 import flixel.math.FlxMath;
 import flixel.util.FlxDestroyUtil;
@@ -17,9 +18,9 @@ import openfl.utils.Assets;
 
 import haxe.Json;
 
-class FreeplayState extends MusicBeatState
+class FreeplayState_Psych extends MusicBeatState
 {
-	var songs:Array<SongMetadata> = [];
+	var songs:Array<PsychSongMetadata> = [];
 
 	var selector:FlxText;
 	private static var curSelected:Int = 0;
@@ -50,7 +51,7 @@ class FreeplayState extends MusicBeatState
 	var bottomText:FlxText;
 	var bottomBG:FlxSprite;
 
-	var player:MusicPlayer;
+	var player:PsychMusicPlayer;
 
 	override function create()
 	{
@@ -70,9 +71,9 @@ class FreeplayState extends MusicBeatState
 		{
 			FlxTransitionableState.skipNextTransIn = true;
 			persistentUpdate = false;
-			MusicBeatState.switchState(new states.ErrorState("NO WEEKS ADDED FOR FREEPLAY\n\nPress ACCEPT to go to the Week Editor Menu.\nPress BACK to return to Main Menu.",
-				function() MusicBeatState.switchState(new states.editors.WeekEditorState()),
-				function() MusicBeatState.switchState(new states.MainMenuState())));
+			MusicBeatState.switchState(new ErrorState("NO WEEKS ADDED FOR FREEPLAY\n\nPress ACCEPT to go to the Week Editor Menu.\nPress BACK to return to Main Menu.",
+				function() MusicBeatState.switchState(new MasterEditorMenu()),
+				function() MusicBeatState.switchState(new MainMenuState())));
 			return;
 		}
 
@@ -183,24 +184,40 @@ class FreeplayState extends MusicBeatState
 		bottomText.scrollFactor.set();
 		add(bottomText);
 		
-		player = new MusicPlayer(this);
-		add(player);
+		player = new PsychMusicPlayer(this);
 		
 		changeSelection();
 		updateTexts();
 		super.create();
+
+		#if mobile
+		addTouchPad('LEFT_FULL', 'A_B_C_X_Y_Z');
+		addTouchPadCamera();
+		if(touchPad != null)
+		{
+			touchPad.visible = true;
+			touchPad.updateTrackedButtons();
+		}
+		#end
 	}
 
 	override function closeSubState()
 	{
 		changeSelection(0, false);
 		persistentUpdate = true;
+		#if mobile
+		if(touchPad != null)
+		{
+			touchPad.visible = true;
+			touchPad.updateTrackedButtons();
+		}
+		#end
 		super.closeSubState();
 	}
 
 	public function addSong(songName:String, weekNum:Int, songCharacter:String, color:Int)
 	{
-		songs.push(new SongMetadata(songName, weekNum, songCharacter, color));
+		songs.push(new PsychSongMetadata(songName, weekNum, songCharacter, color));
 	}
 
 	function weekIsLocked(name:String):Bool
@@ -239,7 +256,7 @@ class FreeplayState extends MusicBeatState
 			ratingSplit[1] += '0';
 
 		var shiftMult:Int = 1;
-		if(FlxG.keys.pressed.SHIFT) shiftMult = 3;
+		if(FlxG.keys.pressed.SHIFT || (touchPad != null && touchPad.buttonZ != null && touchPad.buttonZ.pressed)) shiftMult = 3;
 
 		if (!player.playingMusic)
 		{
@@ -260,25 +277,27 @@ class FreeplayState extends MusicBeatState
 					changeSelection();
 					holdTime = 0;	
 				}
-				if (controls.UI_UP_P)
+				if (controls.UI_UP_P || (touchPad != null && touchPad.buttonUp != null && touchPad.buttonUp.justPressed))
 				{
 					changeSelection(-shiftMult);
 					holdTime = 0;
 				}
-				if (controls.UI_DOWN_P)
+				if (controls.UI_DOWN_P || (touchPad != null && touchPad.buttonDown != null && touchPad.buttonDown.justPressed))
 				{
 					changeSelection(shiftMult);
 					holdTime = 0;
 				}
 
-				if(controls.UI_DOWN || controls.UI_UP)
+				var songUpHeld:Bool = controls.UI_UP || (touchPad != null && touchPad.buttonUp != null && touchPad.buttonUp.pressed);
+				var songDownHeld:Bool = controls.UI_DOWN || (touchPad != null && touchPad.buttonDown != null && touchPad.buttonDown.pressed);
+				if(songDownHeld || songUpHeld)
 				{
 					var checkLastHold:Int = Math.floor((holdTime - 0.5) * 10);
 					holdTime += elapsed;
 					var checkNewHold:Int = Math.floor((holdTime - 0.5) * 10);
 
 					if(holdTime > 0.5 && checkNewHold - checkLastHold > 0)
-						changeSelection((checkNewHold - checkLastHold) * (controls.UI_UP ? -shiftMult : shiftMult));
+						changeSelection((checkNewHold - checkLastHold) * (songUpHeld ? -shiftMult : shiftMult));
 				}
 
 				if(FlxG.mouse.wheel != 0)
@@ -288,19 +307,19 @@ class FreeplayState extends MusicBeatState
 				}
 			}
 
-			if (controls.UI_LEFT_P)
+			if (controls.UI_LEFT_P || (touchPad != null && touchPad.buttonLeft != null && touchPad.buttonLeft.justPressed))
 			{
 				changeDiff(-1);
 				_updateSongLastDifficulty();
 			}
-			else if (controls.UI_RIGHT_P)
+			else if (controls.UI_RIGHT_P || (touchPad != null && touchPad.buttonRight != null && touchPad.buttonRight.justPressed))
 			{
 				changeDiff(1);
 				_updateSongLastDifficulty();
 			}
 		}
 
-		if (controls.BACK)
+		if (controls.BACK || (touchPad != null && touchPad.buttonB != null && touchPad.buttonB.justPressed))
 		{
 			if (player.playingMusic)
 			{
@@ -323,12 +342,12 @@ class FreeplayState extends MusicBeatState
 			}
 		}
 
-		if(FlxG.keys.justPressed.CONTROL && !player.playingMusic)
+		if((FlxG.keys.justPressed.CONTROL || (touchPad != null && touchPad.buttonC != null && touchPad.buttonC.justPressed)) && !player.playingMusic)
 		{
 			persistentUpdate = false;
 			openSubState(new GameplayChangersSubstate());
 		}
-		else if(FlxG.keys.justPressed.SPACE)
+		else if(FlxG.keys.justPressed.SPACE || (touchPad != null && touchPad.buttonX != null && touchPad.buttonX.justPressed))
 		{
 			if(instPlaying != curSelected && !player.playingMusic)
 			{
@@ -403,7 +422,7 @@ class FreeplayState extends MusicBeatState
 				player.pauseOrResume(!player.playing);
 			}
 		}
-		else if (controls.ACCEPT && !player.playingMusic)
+		else if ((controls.ACCEPT || (touchPad != null && touchPad.buttonA != null && touchPad.buttonA.justPressed)) && !player.playingMusic)
 		{
 			persistentUpdate = false;
 			var songLowercase:String = Paths.formatToSongPath(songs[curSelected].songName);
@@ -443,6 +462,7 @@ class FreeplayState extends MusicBeatState
 				Paths.freeGraphicsFromMemory();
 			}
 			LoadingState.prepareToSong();
+			LoadingState.returnState = new FreeplayState_Psych();
 			LoadingState.loadAndSwitchState(new PlayState());
 			#if !SHOW_LOADING_SCREEN FlxG.sound.music.stop(); #end
 			stopMusicPlay = true;
@@ -452,7 +472,7 @@ class FreeplayState extends MusicBeatState
 			DiscordClient.loadModRPC();
 			#end
 		}
-		else if(controls.RESET && !player.playingMusic)
+		else if((controls.RESET || (touchPad != null && touchPad.buttonY != null && touchPad.buttonY.justPressed)) && !player.playingMusic)
 		{
 			persistentUpdate = false;
 			openSubState(new ResetScoreSubState(songs[curSelected].songName, curDifficulty, songs[curSelected].songCharacter));
@@ -607,7 +627,7 @@ class FreeplayState extends MusicBeatState
 	}	
 }
 
-class SongMetadata
+class PsychSongMetadata
 {
 	public var songName:String = "";
 	public var week:Int = 0;
@@ -624,5 +644,47 @@ class SongMetadata
 		this.color = color;
 		this.folder = Mods.currentModDirectory;
 		if(this.folder == null) this.folder = '';
+	}
+}
+
+class PsychMusicPlayer
+{
+	public var playingMusic:Bool = false;
+	public var curTime:Float = 0;
+
+	var state:FreeplayState_Psych;
+
+	public var playing(get, never):Bool;
+	inline function get_playing():Bool
+		return FlxG.sound.music != null && FlxG.sound.music.playing;
+
+	public function new(state:FreeplayState_Psych)
+	{
+		this.state = state;
+	}
+
+	public function switchPlayMusic():Void
+	{
+		// Legacy Psych Freeplay does not need extra HUD widgets for preview controls.
+	}
+
+	public function pauseOrResume(?resume:Bool = false):Void
+	{
+		if (FlxG.sound.music == null)
+			return;
+
+		var shouldPlay:Bool = resume || !FlxG.sound.music.playing;
+		if (shouldPlay)
+		{
+			FlxG.sound.music.play();
+			if (FreeplayState_Psych.vocals != null) FreeplayState_Psych.vocals.play();
+			if (FreeplayState_Psych.opponentVocals != null) FreeplayState_Psych.opponentVocals.play();
+		}
+		else
+		{
+			FlxG.sound.music.pause();
+			if (FreeplayState_Psych.vocals != null) FreeplayState_Psych.vocals.pause();
+			if (FreeplayState_Psych.opponentVocals != null) FreeplayState_Psych.opponentVocals.pause();
+		}
 	}
 }

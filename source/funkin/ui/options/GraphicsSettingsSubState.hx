@@ -86,6 +86,12 @@ class GraphicsSettingsSubState extends BaseOptionsMenu
 		addOption(option);
 
 		#if !html5 //Apparently other framerates isn't correctly supported on Browser? Probably it has some V-Sync shit enabled by default, idk
+		var option:Option = new Option('VSync',
+			'If checked, enables VSync. This may reduce tearing and cap frame pacing to the display refresh rate.\nYou may need to restart the game for full effect.',
+			'vsync',
+			BOOL);
+		addOption(option);
+
 		var option:Option = new Option('Framerate',
 			"Pretty self explanatory, isn't it?",
 			'framerate',

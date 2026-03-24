@@ -2,12 +2,20 @@ package funkin.util;
 
 import openfl.utils.Assets;
 import lime.utils.Assets as LimeAssets;
+#if android
+import lime.system.JNI;
+#end
 
 #if cpp
 @:cppFileCode('#include <thread>')
 #end
 class CoolUtil
 {
+	#if android
+	private static var showMessageBox_jni:Dynamic = null;
+	private static var showCrashScreen_jni:Dynamic = null;
+	#end
+
 	// Legacy update checker variables (forwarded to UpdateManager for compatibility)
 	public static var hasUpdate(get, never):Bool;
 	public static var latestVersion(get, never):String;
@@ -197,11 +205,63 @@ class CoolUtil
 
 	public static function showPopUp(message:String, title:String):Void
 	{
-		/*#if android
-		AndroidTools.showAlertDialog(title, message, {name: "OK", func: null}, null);
-		#else*/
+		#if android
+		try
+		{
+			if (showMessageBox_jni == null)
+			{
+				showMessageBox_jni = JNI.createStaticMethod(
+					'com/leninasto/plusengine/PlusEngineExtension',
+					'showMessageBox',
+					'(Ljava/lang/String;Ljava/lang/String;)V'
+				);
+			}
+
+			showMessageBox_jni(title, message);
+		}
+		catch (e:Dynamic)
+		{
+			trace('[CoolUtil] Native showPopUp failed: ' + e);
+			FlxG.stage.window.alert(message, title);
+		}
+		#else
 		FlxG.stage.window.alert(message, title);
-		//#end
+		#end
+	}
+
+	/**
+	 * Show crash screen with full error details (Android only).
+	 * This displays a native activity with the crash information.
+	 * @param errorTitle Short error title
+	 * @param errorMessage Brief error message  
+	 * @param stackTrace Full stack trace
+	 */
+	public static function showCrashScreen(errorTitle:String, errorMessage:String, stackTrace:String):Void
+	{
+		#if android
+		try
+		{
+			if (showCrashScreen_jni == null)
+			{
+				showCrashScreen_jni = JNI.createStaticMethod(
+					'com/leninasto/plusengine/PlusEngineExtension',
+					'showCrashScreen',
+					'(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V'
+				);
+			}
+
+			showCrashScreen_jni(errorTitle, errorMessage, stackTrace);
+		}
+		catch (e:Dynamic)
+		{
+			trace('[CoolUtil] Native showCrashScreen failed: ' + e);
+			// Fallback to popup
+			showPopUp('$errorTitle\n$errorMessage\n\n$stackTrace', "Critical Error");
+		}
+		#else
+		// On non-Android platforms, use regular popup
+		showPopUp('$errorTitle\n$errorMessage\n\n$stackTrace', errorTitle);
+		#end
 	}
 
 	#if cpp

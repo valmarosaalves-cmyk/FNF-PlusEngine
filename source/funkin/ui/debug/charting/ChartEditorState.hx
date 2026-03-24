@@ -24,6 +24,8 @@ import funkin.ui.debug.charting.components.VSlice.VSliceMetadata;
 import funkin.ui.debug.charting.components.VSlice.VSliceChart;
 import funkin.ui.debug.charting.components.VSlice.VSliceNote;
 import funkin.ui.debug.charting.components.VSlice.PsychPackage;
+import funkin.ui.debug.charting.components.CodenameEngine.CodenameChart;
+import funkin.ui.debug.charting.components.CodenameEngine.CodenameMetaData;
 import funkin.ui.debug.charting.components.Prompt.BasePrompt;
 import funkin.ui.debug.charting.components.*;
 
@@ -36,6 +38,8 @@ import funkin.play.character.Character;
 import funkin.play.HealthIcon;
 import funkin.play.notes.Note;
 import funkin.play.notes.StrumNote;
+
+import funkin.ui.mainmenu.MainMenuState;
 
 using DateTools;
 
@@ -659,7 +663,7 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 			player2: 'dad',
 			gfVersion: 'gf',
 			stage: 'stage',
-			format: 'psych_v1'
+			format: 'psych_v2'
 		};
 		Song.chartPath = null;
 		loadChart(song);
@@ -708,6 +712,7 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 		gameOverRetryInputText.text = PlayState.SONG.gameOverEnd;
 
 		noRGBCheckBox.checked = (PlayState.SONG.disableNoteRGB == true);
+		useModchartsCheckBox.checked = (PlayState.SONG.useModcharts == true);
 
 		noteTextureInputText.text = PlayState.SONG.arrowSkin;
 		noteSplashesInputText.text = PlayState.SONG.splashSkin;
@@ -2753,6 +2758,7 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 	var gameOverLoopInputText:PsychUIInputText;
 	var gameOverRetryInputText:PsychUIInputText;
 	var noRGBCheckBox:PsychUICheckBox;
+	var useModchartsCheckBox:PsychUICheckBox;
 	var noteTextureInputText:PsychUIInputText;
 	var noteSplashesInputText:PsychUIInputText;
 	function addDataTab()
@@ -2791,7 +2797,14 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 
 		objY += 35;
 		noRGBCheckBox = new PsychUICheckBox(objX, objY, 'Disable Note RGB', 100, updateNotesRGB);
-		
+
+		objY += 24;
+		useModchartsCheckBox = new PsychUICheckBox(objX, objY, 'Use Modcharts', 100, function()
+		{
+			PlayState.SONG.useModcharts = useModchartsCheckBox.checked;
+			if (!useModchartsCheckBox.checked) Reflect.deleteField(PlayState.SONG, 'useModcharts');
+		});
+
 		objY += 40;
 		noteTextureInputText = new PsychUIInputText(objX, objY, 120, '');
 		noteTextureInputText.unfocus = function()
@@ -2841,6 +2854,7 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 		tab_group.add(gameOverLoopInputText);
 		tab_group.add(gameOverRetryInputText);
 		tab_group.add(noRGBCheckBox);
+		tab_group.add(useModchartsCheckBox);
 
 		tab_group.add(new FlxText(noteTextureInputText.x, noteTextureInputText.y - 15, 100, 'Note Texture:'));
 		tab_group.add(new FlxText(noteSplashesInputText.x, noteSplashesInputText.y - 15, 120, 'Note Splashes Texture:'));
@@ -4241,6 +4255,173 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 		tab_group.add(btn);
 
 		btnY += 20;
+		var btn:PsychUIButton = new PsychUIButton(btnX, btnY, '  Codename to Psych...', function()
+		{
+			if(!fileDialog.completed) return;
+			upperBox.isMinimized = true;
+			upperBox.bg.visible = false;
+
+			fileDialog.open('normal.json', 'Open a Codename Engine Chart file', function()
+			{
+				var chartData:Dynamic = null;
+				try { chartData = Json.parse(fileDialog.data); } catch(e:Exception) {}
+
+				if(chartData == null || chartData.codenameChart == null || !chartData.codenameChart || chartData.strumLines == null)
+				{
+					showOutput('Error: File loaded is not a valid Codename Engine chart.', true);
+					return;
+				}
+
+				// Extract the difficulty name from the filename (e.g. "normal.json" → "normal")
+				var chartFilePath:String = fileDialog.path.replace('\\', '/');
+				var diffName:String = chartFilePath.substring(chartFilePath.lastIndexOf('/')+1, chartFilePath.lastIndexOf('.'));
+				if(diffName == null || diffName.length < 1) diffName = 'normal';
+
+				var chart:CodenameChart = cast chartData;
+				var needsMeta:Bool = (chart.meta == null || Reflect.field(chart.meta, 'bpm') == null);
+
+				var doConversion = function(?extraMeta:CodenameMetaData)
+				{
+					try
+					{
+						var pack:PsychPackage = CodenameEngine.convertToPsych(chart, extraMeta, diffName);
+						if(pack.difficulties == null || !pack.difficulties.exists(diffName))
+						{
+							showOutput('Error: Conversion failed.', true);
+							return;
+						}
+
+						var chartSong:SwagSong = pack.difficulties.get(diffName);
+						var defaultDiff:String = Paths.formatToSongPath(Difficulty.getDefault());
+						var diffPostfix:String = (diffName != defaultDiff) ? '-$diffName' : '';
+						var outFileName:String = Paths.formatToSongPath(chartSong.song) + diffPostfix + '.json';
+
+						fileDialog.openDirectory('Save Converted Psych JSON', function()
+						{
+							var path:String = fileDialog.path.replace('\\', '/');
+							if(!path.endsWith('/')) path += '/';
+
+							overwriteSavedSomething = false;
+							overwriteCheck(path + outFileName, outFileName,
+								PsychJsonPrinter.print(chartSong, ['sectionNotes', 'events']),
+								function()
+								{
+									if(pack.events != null)
+									{
+										overwriteCheck(path + 'events.json', 'events.json',
+											PsychJsonPrinter.print(pack.events, ['events']),
+											function()
+											{
+												if(overwriteSavedSomething)
+													showOutput('Files saved successfully to: ${fileDialog.path}!');
+											}, true);
+									}
+									else if(overwriteSavedSomething)
+										showOutput('File saved successfully to: ${fileDialog.path}!');
+								}, true);
+						});
+					}
+					catch(e:Exception)
+					{
+						showOutput('Error: ${e.message}', true);
+						trace(e.stack);
+					}
+				};
+
+				if(needsMeta)
+				{
+					fileDialog.open('meta.json', 'Open the Codename Engine meta.json file', function()
+					{
+						var meta:CodenameMetaData = null;
+						try { meta = cast Json.parse(fileDialog.data); } catch(e:Exception) {}
+						doConversion(meta);
+					});
+				}
+				else
+				{
+					doConversion(null);
+				}
+			});
+		},btnWid);
+		btn.text.alignment = LEFT;
+		tab_group.add(btn);
+
+		btnY += 20;
+		var btn:PsychUIButton = new PsychUIButton(btnX, btnY, '  NightmareVision to Psych...', function()
+		{
+			if(!fileDialog.completed) return;
+			upperBox.isMinimized = true;
+			upperBox.bg.visible = false;
+
+			// Credits: Nightmare Vision by DuskieWhy
+			// https://github.com/DuskieWhy/NightmareVision
+			fileDialog.open('songname.json', 'Open a Nightmare Vision Chart file', function()
+			{
+				var filePath:String = fileDialog.path.replace('\\', '/');
+				var fileName:String = filePath.substring(filePath.lastIndexOf('/')+1, filePath.lastIndexOf('.'));
+
+				var loadedChart:SwagSong = null;
+				try
+				{
+					// NMV uses {"song": {...}} wrapping identical to Psych 0.x;
+					// Song.parseJSON handles unwrapping and format conversion automatically.
+					loadedChart = Song.parseJSON(fileDialog.data, fileName);
+				}
+				catch(e:Exception)
+				{
+					showOutput('Error parsing chart: ${e.message}', true);
+					return;
+				}
+
+				if(loadedChart == null || !Reflect.hasField(loadedChart, 'song'))
+				{
+					showOutput('Error: File loaded is not a valid Nightmare Vision chart.', true);
+					return;
+				}
+
+				// Warn about non-standard key counts
+				var keys:Int   = Reflect.hasField(loadedChart, 'keys')   ? cast Reflect.field(loadedChart, 'keys')   : 4;
+				var lanes:Int  = Reflect.hasField(loadedChart, 'lanes')  ? cast Reflect.field(loadedChart, 'lanes')  : 2;
+				if(keys != 4 || lanes != 2)
+					showOutput('Warning: chart uses $keys keys, $lanes lanes. Only 4K/2-lane charts convert correctly.');
+
+				Reflect.setField(loadedChart, 'format', 'psych_v1_convert');
+				Reflect.setField(loadedChart, 'generatedBy',
+					'Psych Engine v${MainMenuState.psychEngineVersion} - Chart Editor NMV Importer (https://github.com/DuskieWhy/NightmareVision)');
+
+				// Determine output file name from the song field
+				var defaultDiff:String = Paths.formatToSongPath(Difficulty.getDefault());
+				var songFmt:String = Paths.formatToSongPath(loadedChart.song);
+				// Detect difficulty suffix in filename (e.g. "bopeebo-hard" → diff = "hard")
+				var detectedDiff:String = defaultDiff;
+				for (d in Difficulty.list)
+				{
+					var ds:String = Paths.formatToSongPath(d);
+					if(fileName.endsWith('-' + ds)) { detectedDiff = ds; break; }
+				}
+				var diffPostfix:String = (detectedDiff != defaultDiff) ? '-$detectedDiff' : '';
+				var outFileName:String = songFmt + diffPostfix + '.json';
+
+				fileDialog.openDirectory('Save Converted Psych JSON', function()
+				{
+					var path:String = fileDialog.path.replace('\\', '/');
+					if(!path.endsWith('/')) path += '/';
+
+					overwriteSavedSomething = false;
+					overwriteCheck(path + outFileName, outFileName,
+						PsychJsonPrinter.print(loadedChart, ['sectionNotes', 'events']),
+						function()
+						{
+							if(overwriteSavedSomething)
+								showOutput('File saved successfully to: ${fileDialog.path}!');
+						}, true);
+				});
+			});
+		},btnWid);
+		btn.text.alignment = LEFT;
+		tab_group.add(btn);
+
+		btnY += 20;
 		var btn:PsychUIButton = new PsychUIButton(btnX, btnY, '  V-Slice to Psych...', function()
 		{
 			if(!fileDialog.completed) return;
@@ -4321,7 +4502,47 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 		},btnWid);
 		btn.text.alignment = LEFT;
 		tab_group.add(btn);
-		
+
+		btnY += 20;
+		var btn:PsychUIButton = new PsychUIButton(btnX, btnY, '  Load v2...', function()
+		{
+			if(!fileDialog.completed) return;
+			upperBox.isMinimized = true;
+			upperBox.bg.visible = false;
+
+			fileDialog.open('song.json', 'Open a psych_v2 Chart file', function()
+			{
+				try
+				{
+					var raw:Dynamic = Json.parse(fileDialog.data);
+					if (raw == null || raw.format != 'psych_v2' || raw.notes == null)
+					{
+						showOutput('Error: File loaded is not a valid psych_v2 chart.', true);
+						return;
+					}
+					var loadedSong:SwagSong = Song.downgradeFromV2(raw);
+					var func:Void->Void = function()
+					{
+						loadChart(loadedSong);
+						reloadNotesDropdowns();
+						prepareReload();
+						showOutput('v2 chart loaded successfully!');
+					};
+					if (!ignoreProgressCheckBox.checked)
+						openSubState(new Prompt('Warning: Any unsaved progress will be lost', func));
+					else
+						func();
+				}
+				catch(e:Exception)
+				{
+					showOutput('Error: ${e.message}', true);
+					trace(e.stack);
+				}
+			});
+		}, btnWid);
+		btn.text.alignment = LEFT;
+		tab_group.add(btn);
+
 		btnY += 20;
 		var btn:PsychUIButton = new PsychUIButton(btnX, btnY, '  Update (Legacy)...', function()
 		{
@@ -4946,7 +5167,8 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 	function saveChart(canQuickSave:Bool = true)
 	{
 		updateChartData();
-		var chartData:String = PsychJsonPrinter.print(PlayState.SONG, ['sectionNotes', 'events']);
+		var v2:Dynamic = Song.upgradeToV2(PlayState.SONG);
+		var chartData:String = PsychJsonPrinter.print(v2, ['notes', 'events', 'bpmChanges', 'characters']);
 		if(canQuickSave && Song.chartPath != null)
 		{
 			#if mobile

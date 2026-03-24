@@ -16,6 +16,8 @@ class EnUS
         // Gameplay
         "score_text" => "Score: {1} | {2}: {3} | Rating: {4} | TPS: {5}/{6}",
         "score_text_instakill" => "Score: {1} | Rating: {2} | TPS: {3}/{4}",
+        "score_text_legacy" => "Score: {1} | Misses: {2} | Rating: {3}",
+        "score_text_instakill_legacy" => "Score: {1} | Rating: {2}",
         "botplay" => "Botplay",
         "misses" => "Misses",
         "combo_breaks" => "Combo Breaks",

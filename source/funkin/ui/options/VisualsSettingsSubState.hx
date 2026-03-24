@@ -131,6 +131,14 @@ class VisualsSettingsSubState extends BaseOptionsMenu
 		    BOOL);
 		addOption(option);
 
+		#if android
+		var option:Option = new Option('EXPERIMENTAL Native Wavy Time Bar',
+			'WARNING: (Feature Experimental) If enabled, uses the Android native wavy time bar and hides the engine time bar fill.',
+			'useNativeWavyTimebar',
+			BOOL);
+		addOption(option);
+		#end
+
 		var option:Option = new Option('Flashing Lights',
 			"Uncheck this if you're sensitive to flashing lights!",
 			'flashing',
@@ -146,6 +154,12 @@ class VisualsSettingsSubState extends BaseOptionsMenu
 		var option:Option = new Option('Score Text Grow on Hit',
 			"If unchecked, disables the Score text growing\neverytime you hit a note.",
 			'scoreZoom',
+			BOOL);
+		addOption(option);
+
+		var option:Option = new Option('Time Text Bump',
+			'If unchecked, disables the time text bump animation on beat.',
+			'timeBump',
 			BOOL);
 		addOption(option);
 		
@@ -172,7 +186,13 @@ class VisualsSettingsSubState extends BaseOptionsMenu
 			'smoothHealthBar',
 			BOOL);
 		addOption(option);
-		
+
+		var option:Option = new Option('Health Bar Overflow',
+			'If checked, health icons can go outside the bar edges on health spikes (JS Engine style).',
+			'smoothHPBug',
+			BOOL);
+		addOption(option);
+
 		var option:Option = new Option('Show Watermark',
 			'If checked, shows the watermark on screen.',
 			'showWatermark',

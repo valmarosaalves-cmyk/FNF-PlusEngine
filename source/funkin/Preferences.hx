@@ -43,6 +43,7 @@ import funkin.ui.title.TitleState;
 	public var middleScroll:Bool = false;
 	public var opponentStrums:Bool = true;
 	public var showFPS:Bool = true;
+	public var vsync:Bool = false;
 	public var fpsDebugLevel:Int = 0; // FPSCounter debug level (persistent)
 	public var showWatermark:Bool = false;
 	public var flashing:Bool = true;
@@ -65,13 +66,16 @@ import funkin.ui.title.TitleState;
 	public var hideSustainSplash:Bool = false;
 	public var showKeyViewer:Bool = false;
 	public var iconBounceType:String = 'Default';
-	public var judgementCounter:Bool = true;
+	public var judgementCounter:Bool = false;
 	public var showCombo:Bool = true;
 	public var comboInGame:Bool = false;
 	public var useFreakyFont:Bool = false;
 	public var showStateInFPS:Bool = true;
 	public var showEndCountdown:Bool = false; // Enables/disables the end countdown
 	public var endCountdownSeconds:Int = 10;  // End countdown seconds (10-30)
+	#if android
+	public var useNativeWavyTimebar:Bool = false;
+	#end
 	
 	// ========== Modchart Config Options ==========
 	// Camera & 3D Settings
@@ -112,9 +116,12 @@ import funkin.ui.title.TitleState;
 	public var timeBarType:String = 'Time Left';
 	public var shadedTimeBar:Bool = false;
 	public var scoreZoom:Bool = true;
+	public var timeBump:Bool = false;
 	public var noReset:Bool = false;
 	public var healthBarAlpha:Float = 1;
 	public var smoothHealthBar:Bool = true;
+	public var smoothHPBug:Bool = false;
+	public var usePsychScoreText:Bool = true;
 	public var hitsoundVolume:Float = 0;
 	public var hitSounds:String = "None";
 	public var hitsoundType:String = "None";
@@ -141,6 +148,7 @@ import funkin.ui.title.TitleState;
 		'instakill' => false,
 		'practice' => false,
 		'botplay' => false,
+		'opponentdrain' => false, // JS Engine-style: opponent note hits drain player health
 		'opponentplay' => false,
 		'perfect' => false, // Perfect Mode - insta-kill on any judgement below Sick
 		'nodroppenalty' => false // Hold drops don't cause misses
@@ -160,6 +168,7 @@ import funkin.ui.title.TitleState;
 	public var loadingScreen:Bool = true;
 	public var language:String = 'en-US';
 	public var abbreviateScore:Bool = true;
+	public var newfreeplay:Bool = true;
 	public var heavyCharts:Bool = false; // Heavy Charts Mode for heavy charts
 	public var vanillaTransition:Bool = false; // Use vanilla Psych Engine transition instead of custom
 	
@@ -345,6 +354,18 @@ class Preferences {
 			FlxG.updateFramerate = data.framerate;
 			FlxG.drawFramerate = data.framerate;
 		}
+
+		#if (!html5 && !switch)
+		try
+		{
+			if (FlxG.stage != null && FlxG.stage.application != null && FlxG.stage.application.window != null)
+				Reflect.setProperty(FlxG.stage.application.window, 'vsync', data.vsync);
+		}
+		catch (e:Dynamic)
+		{
+			// Some targets may not expose window vsync.
+		}
+		#end
 
 		if(FlxG.save.data.gameplaySettings != null)
 		{

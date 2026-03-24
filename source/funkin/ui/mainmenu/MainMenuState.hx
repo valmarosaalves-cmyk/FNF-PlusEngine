@@ -21,7 +21,7 @@ class MainMenuState extends MusicBeatState
 	public static var fnfVersion:String = '0.2.8';
 	public static var plusEngineBaseVersion:String = '1.2.7'; // Stable semantic version
 	#if DEV_BUILD
-	public static var devUpdate:String = 'Build 450'; // Build xxx or Beta x
+	public static var devUpdate:String = 'Build 0'; // Build xxx or Beta x
 	public static var plusEngineVersion:String = plusEngineBaseVersion + ' (' + devUpdate + ')';
 	#else
 	public static var plusEngineVersion:String = plusEngineBaseVersion;
@@ -57,8 +57,20 @@ class MainMenuState extends MusicBeatState
 	var _analyzer:SpectralAnalyzer = null;
 	var _analyzerLevels:Array<funkin.vis.dsp.SpectralAnalyzer.Bar> = null;
 	var _needsAnalyzerInit:Bool = false;
-	static inline var VIZ_BAR_COUNT:Int = 256;
+	#if mobile
+	static inline var VIZ_BAR_COUNT:Int = 96;
+	static inline var VIZ_UPDATE_INTERVAL:Float = 1 / 45;
+	#else
+	static inline var VIZ_BAR_COUNT:Int = 160;
+	static inline var VIZ_UPDATE_INTERVAL:Float = 1 / 60;
+	#end
 	static inline var VIZ_BAR_MAX_H:Int = 240;
+	static inline var VIZ_BAR_FILL:Float = 0.62;
+	static inline var VIZ_MIN_H:Float = 2;
+	static inline var VIZ_SMOOTH_SPEED:Float = 18;
+	var _vizUpdateAccum:Float = 0.0;
+	var _vizTargetHeights:Array<Float> = [];
+	var _vizCurrentHeights:Array<Float> = [];
 	#end
 
 	static var showOutdatedWarning:Bool = true;
@@ -93,16 +105,19 @@ class MainMenuState extends MusicBeatState
 		#if funkin.vis
 		_vizBars = new FlxTypedGroup<FlxSprite>();
 		var vizBarW:Int = Std.int(FlxG.width / VIZ_BAR_COUNT);
+		var vizDrawW:Int = Std.int(Math.max(1, vizBarW * VIZ_BAR_FILL));
+		var vizOffsetX:Float = (vizBarW - vizDrawW) * 0.5;
 		for(i in 0...VIZ_BAR_COUNT) {
 			var vbar = new FlxSprite();
-			vbar.makeGraphic(vizBarW - 1, VIZ_BAR_MAX_H, FlxColor.WHITE);
-			vbar.setGraphicSize(vizBarW - 1, 2);
-			vbar.updateHitbox();
-			vbar.x = i * vizBarW;
+			vbar.makeGraphic(vizDrawW, VIZ_BAR_MAX_H, FlxColor.WHITE);
+			vbar.x = i * vizBarW + vizOffsetX;
 			vbar.y = FlxG.height - 2;
+			vbar.scale.y = 2 / VIZ_BAR_MAX_H;
 			vbar.alpha = 0.0;
 			vbar.scrollFactor.set();
 			_vizBars.add(vbar);
+			_vizTargetHeights.push(VIZ_MIN_H);
+			_vizCurrentHeights.push(VIZ_MIN_H);
 		}
 		add(_vizBars);
 		_needsAnalyzerInit = true;
@@ -220,8 +235,9 @@ class MainMenuState extends MusicBeatState
 				// Adjust dB range for better sensitivity
 				_analyzer.minDb = -80;
 				_analyzer.maxDb = -15;
-				#if !web
-				// Higher FFT size for better frequency resolution
+				#if mobile
+				_analyzer.fftN = 256;
+				#elseif !web
 				_analyzer.fftN = 512;
 				#end
 				_needsAnalyzerInit = false;
@@ -229,28 +245,36 @@ class MainMenuState extends MusicBeatState
 		}
 		if(_vizBars != null) {
 			var vizBarW:Int = Std.int(FlxG.width / VIZ_BAR_COUNT);
-			if(_analyzer != null) {
-				_analyzerLevels = _analyzer.getLevels(_analyzerLevels);
-				for(i in 0..._vizBars.members.length) {
-					var vbar = _vizBars.members[i];
-					if(vbar == null) continue;
-					var level:Float = (i < _analyzerLevels.length) ? _analyzerLevels[i].value : 0.0;
-					var h:Int = Std.int(Math.max(2, level * VIZ_BAR_MAX_H));
-					vbar.setGraphicSize(vizBarW - 1, h);
-					vbar.updateHitbox();
-					vbar.x = i * vizBarW;
-					vbar.y = FlxG.height - h;
-					vbar.alpha = 1.0;
+			var vizOffsetX:Float = (vizBarW - Std.int(Math.max(1, vizBarW * VIZ_BAR_FILL))) * 0.5;
+			_vizUpdateAccum += elapsed;
+
+			if (_vizUpdateAccum >= VIZ_UPDATE_INTERVAL)
+			{
+				_vizUpdateAccum = 0;
+				if(_analyzer != null) {
+					_analyzerLevels = _analyzer.getLevels(_analyzerLevels);
+					for(i in 0..._vizBars.members.length) {
+						var level:Float = (i < _analyzerLevels.length) ? _analyzerLevels[i].value : 0.0;
+						_vizTargetHeights[i] = Math.max(VIZ_MIN_H, level * VIZ_BAR_MAX_H);
+					}
+				} else {
+					for(i in 0..._vizBars.members.length)
+						_vizTargetHeights[i] = VIZ_MIN_H;
 				}
-			} else {
-				for(i in 0..._vizBars.members.length) {
-					var vbar = _vizBars.members[i];
-					if(vbar == null) continue;
-					vbar.setGraphicSize(vizBarW - 1, 2);
-					vbar.updateHitbox();
-					vbar.y = FlxG.height - 2;
-					vbar.alpha = 1.0;
-				}
+			}
+
+			var lerpFactor:Float = 1 - Math.exp(-elapsed * VIZ_SMOOTH_SPEED);
+			for(i in 0..._vizBars.members.length) {
+				var vbar = _vizBars.members[i];
+				if(vbar == null) continue;
+				var curH:Float = _vizCurrentHeights[i];
+				var targetH:Float = _vizTargetHeights[i];
+				curH = FlxMath.lerp(targetH, curH, 1 - lerpFactor);
+				_vizCurrentHeights[i] = curH;
+				vbar.scale.y = curH / VIZ_BAR_MAX_H;
+				vbar.x = i * vizBarW + vizOffsetX;
+				vbar.y = FlxG.height - curH;
+				vbar.alpha = 1.0;
 			}
 		}
 		#end
@@ -403,8 +427,10 @@ class MainMenuState extends MusicBeatState
 						case 'story_mode':
 						MusicBeatState.switchState(new funkin.ui.story.StoryMenuState());
 					case 'freeplay':
-						MusicBeatState.switchState(new funkin.ui.freeplay.FreeplayState());
-
+						if (ClientPrefs.data.newfreeplay)
+							MusicBeatState.switchState(new funkin.ui.freeplay.FreeplayState());
+						else
+							MusicBeatState.switchState(new funkin.ui.freeplay.FreeplayState_Psych());
 					#if MODS_ALLOWED
 					case 'mods':
 						MusicBeatState.switchState(new funkin.modding.ModsMenuState());

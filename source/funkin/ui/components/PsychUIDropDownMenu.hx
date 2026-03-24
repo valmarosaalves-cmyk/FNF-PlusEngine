@@ -1,6 +1,9 @@
 package funkin.ui.components;
 
 import funkin.ui.components.PsychUIBox.UIStyleData;
+#if android
+import funkin.mobile.backend.native.AndroidNativeDropDown;
+#end
 
 class PsychUIDropDownMenu extends PsychUIInputText
 {
@@ -93,10 +96,65 @@ class PsychUIDropDownMenu extends PsychUIInputText
 	var _prevMouseY:Float = 0;
 	var _touchDragDist:Float = 0;
 	#end
+	#if android
+	var waitingNativeSelection:Bool = false;
+	inline function tryOpenNativeDropDown():Bool
+	{
+		if(list == null || list.length <= 0)
+			return false;
+
+		var nativeSelectedIndex:Int = selectedIndex >= 0 ? selectedIndex : 0;
+		if(AndroidNativeDropDown.show('Select option', list, nativeSelectedIndex))
+		{
+			waitingNativeSelection = true;
+			PsychUIInputText.focusOn = null;
+			FlxG.stage.window.textInputEnabled = false;
+			showDropDown(false);
+			return true;
+		}
+
+		return false;
+	}
+	#end
 	override function update(elapsed:Float)
 	{
+		#if android
+		if(FlxG.mouse.justPressed)
+		{
+			var pressedButton:Bool = FlxG.mouse.overlaps(button, camera);
+			var pressedField:Bool = FlxG.mouse.overlaps(behindText, camera);
+
+			if(pressedButton || pressedField)
+			{
+				button.animation.play('pressed', true);
+				if(tryOpenNativeDropDown())
+				{
+					return;
+				}
+			}
+		}
+		#end
+
 		var lastFocus = PsychUIInputText.focusOn;
 		super.update(elapsed);
+
+		#if android
+		if(waitingNativeSelection)
+		{
+			var nativeSelection:Int = AndroidNativeDropDown.pollSelection();
+			if(nativeSelection >= 0)
+			{
+				waitingNativeSelection = false;
+				if(nativeSelection < list.length)
+					clickedOn(nativeSelection, list[nativeSelection]);
+			}
+			else if(nativeSelection == AndroidNativeDropDown.CANCELED || !AndroidNativeDropDown.isDialogVisible())
+			{
+				waitingNativeSelection = false;
+			}
+		}
+		#end
+
 		if(FlxG.mouse.justPressed)
 		{
 			if(FlxG.mouse.overlaps(button, camera))

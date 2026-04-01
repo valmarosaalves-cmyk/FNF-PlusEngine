@@ -524,6 +524,9 @@ jobs:
           fi
 
           {
+            echo "> [!WARNING]"
+            echo "> **This is an automated development build.** It may contain bugs, crashes, or incomplete features. It is not recommended for general use."
+            echo ""
             echo "## Changes since $TAG_DISPLAY"
             echo ""
             git log "${FROM}..HEAD" --pretty=format:"- **%s** (\`%h\`) — %an" --no-merges
@@ -535,28 +538,33 @@ jobs:
 
           cat release_notes.md
 
+      - name: Package artifacts
+        run: |
+          BUILD_DATE=$(date -u '+%Y-%m-%d %H:%M UTC')
+          echo "BUILD_DATE=${BUILD_DATE}" >> $GITHUB_ENV
+          # Zip each platform folder using the friendly release names
+          [ -d artifacts/windowsBuild32  ] && zip -jr artifacts/PlusEngine-Windows-x32.zip  artifacts/windowsBuild32/
+          [ -d artifacts/windowsBuild64  ] && zip -jr artifacts/PlusEngine-Windows-x64.zip  artifacts/windowsBuild64/
+          [ -d artifacts/macBuildIntel   ] && zip -jr artifacts/PlusEngine-Mac-Intel.zip     artifacts/macBuildIntel/
+          [ -d artifacts/macBuildARM     ] && zip -jr artifacts/PlusEngine-Mac-ARM.zip       artifacts/macBuildARM/
+          [ -d artifacts/linuxBuild64    ] && zip -jr artifacts/PlusEngine-Linux-x64.zip     artifacts/linuxBuild64/
+          [ -d artifacts/androidBuild    ] && zip -jr artifacts/PlusEngine-Android-x64-v7a.zip artifacts/androidBuild/
+          [ -d artifacts/iOSBuild        ] && zip -jr artifacts/PlusEngine-iOS.zip           artifacts/iOSBuild/
+
       - name: Delete previous dev pre-release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release delete dev-build --yes --cleanup-tag 2>/dev/null || true
+        run: gh release delete dev-build --yes --cleanup-tag 2>/dev/null || true
 
       - name: Publish dev pre-release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: dev-build
+          name: "Dev Build — ${{ env.BUILD_DATE }}"
+          prerelease: true
+          target_commitish: ${{ github.sha }}
+          body_path: release_notes.md
+          files: artifacts/PlusEngine-*.zip
+          make_latest: false
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          BUILD_DATE=$(date -u '+%Y-%m-%d %H:%M UTC')
-          # Prefix each file with its artifact folder name to avoid name collisions
-          # (e.g. artifacts/Android/readme.txt -> artifacts/Android_readme.txt)
-          find artifacts -mindepth 2 -type f | while IFS= read -r file; do
-            dir=$(basename "$(dirname "$file")")
-            name=$(basename "$file")
-            mv "$file" "artifacts/${dir}_${name}"
-          done
-          mapfile -d '' FILES < <(find artifacts -maxdepth 1 -type f -print0)
-          gh release create dev-build \
-            --prerelease \
-            --title "Dev Build — ${BUILD_DATE}" \
-            --notes-file release_notes.md \
-            --target "${{ github.sha }}" \
-            "${FILES[@]}"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

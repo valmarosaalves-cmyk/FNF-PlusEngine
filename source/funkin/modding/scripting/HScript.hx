@@ -1253,6 +1253,11 @@ class CustomInterp extends crowplexus.hscript.Interp
 			return v;
 		}
 
+		// Check user-defined scripted classes
+		if (customClasses.exists(id)) {
+			return customClasses.get(id);
+		}
+
 		// Check parent instance fields (Psych Engine compatibility)
 		if(parentInstance != null && _instanceFields.contains(id)) {
 			var v = Reflect.getProperty(parentInstance, id);
@@ -1290,6 +1295,10 @@ class CustomInterp extends crowplexus.hscript.Interp
 			return null;
 		}
 		
+		// Scripted class instance: route all field access through hget()
+		if ((o is funkin.modding.scripting.ScriptedClass.IScriptCustomBehaviour))
+			return cast(o, funkin.modding.scripting.ScriptedClass.IScriptCustomBehaviour).hget(field);
+
 		// Verificar si es un Map primero (compatible con SScript)
 		// Importante: Acceder a métodos del Map como 'exists', 'get', 'set', etc.
 		if (Std.isOfType(o, haxe.Constraints.IMap)) {
@@ -1411,6 +1420,10 @@ class CustomInterp extends crowplexus.hscript.Interp
 			return value;
 		}
 		
+		// Scripted class instance: route all field writes through hset()
+		if ((o is funkin.modding.scripting.ScriptedClass.IScriptCustomBehaviour))
+			return cast(o, funkin.modding.scripting.ScriptedClass.IScriptCustomBehaviour).hset(field, value);
+
 		// Verificar si es un Map primero (compatible con SScript)
 		if (Std.isOfType(o, haxe.Constraints.IMap)) {
 			var map:haxe.Constraints.IMap<String, Dynamic> = cast o;

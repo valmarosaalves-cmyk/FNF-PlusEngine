@@ -543,13 +543,13 @@ jobs:
           BUILD_DATE=$(date -u '+%Y-%m-%d %H:%M UTC')
           echo "BUILD_DATE=${BUILD_DATE}" >> $GITHUB_ENV
           # Zip each platform folder using the friendly release names
-          [ -d artifacts/windowsBuild32  ] && zip -jr artifacts/PlusEngine-Windows-x32.zip  artifacts/windowsBuild32/
-          [ -d artifacts/windowsBuild64  ] && zip -jr artifacts/PlusEngine-Windows-x64.zip  artifacts/windowsBuild64/
-          [ -d artifacts/macBuildIntel   ] && zip -jr artifacts/PlusEngine-Mac-Intel.zip     artifacts/macBuildIntel/
-          [ -d artifacts/macBuildARM     ] && zip -jr artifacts/PlusEngine-Mac-ARM.zip       artifacts/macBuildARM/
-          [ -d artifacts/linuxBuild64    ] && zip -jr artifacts/PlusEngine-Linux-x64.zip     artifacts/linuxBuild64/
-          [ -d artifacts/androidBuild    ] && zip -jr artifacts/PlusEngine-Android-x64-v7a.zip artifacts/androidBuild/
-          [ -d artifacts/iOSBuild        ] && zip -jr artifacts/PlusEngine-iOS.zip           artifacts/iOSBuild/
+          [ -d artifacts/windowsBuild32  ] && zip -r artifacts/PlusEngine-Windows-x32.zip  artifacts/windowsBuild32/
+          [ -d artifacts/windowsBuild64  ] && zip -r artifacts/PlusEngine-Windows-x64.zip  artifacts/windowsBuild64/
+          [ -d artifacts/macBuildIntel   ] && zip -r artifacts/PlusEngine-Mac-Intel.zip     artifacts/macBuildIntel/
+          [ -d artifacts/macBuildARM     ] && zip -r artifacts/PlusEngine-Mac-ARM.zip       artifacts/macBuildARM/
+          [ -d artifacts/linuxBuild64    ] && zip -r artifacts/PlusEngine-Linux-x64.zip     artifacts/linuxBuild64/
+          [ -d artifacts/androidBuild    ] && zip -r artifacts/PlusEngine-Android-x64-v7a.zip artifacts/androidBuild/
+          [ -d artifacts/iOSBuild        ] && zip -r artifacts/PlusEngine-iOS.zip           artifacts/iOSBuild/
 
       - name: Delete previous dev pre-release
         env:

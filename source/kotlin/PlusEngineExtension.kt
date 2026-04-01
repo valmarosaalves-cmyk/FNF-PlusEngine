@@ -255,16 +255,7 @@ class PlusEngineExtension : Extension() {
             activity.getSharedPreferences("FolderPermissions", android.content.Context.MODE_PRIVATE)
                 .edit()
                 .remove(key)
-                .apply()       openFolderLegacy(activity, folder, requestCode)
-                }
-                
-            } catch (e: Exception) {
-                android.util.Log.e("PlusEngine", "Failed to open folder with SAF: ${e.message}")
-                e.printStackTrace()
-                
-                // Fallback to legacy method
-                openFolderLegacy(activity, folder, requestCode)
-            }
+                .apply()
         }
         
         /**

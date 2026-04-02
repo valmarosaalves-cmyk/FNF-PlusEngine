@@ -30,7 +30,7 @@ Mesin berbasis Psych 1.0.4 dengan modcharts seperti NotITG dan kompatibel dengan
 <a href="https://github.com/Psych-Plus-Team/FNF-PlusEngine/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=Psych-Plus-Team/FNF-PlusEngine" />
 </a>
-
+Dibuat dengan (contrib.rocks)[https://contrib.rocks/].
 Kontribusi sangat diharapkan! Jika Anda memiliki ide, perbaikan, atau pembaruan, silakan fork repositori ini dan buka pull request.
 
 > Proyek ini dapat mengalami bug, perbaikan, pembaruan, dan perubahan.

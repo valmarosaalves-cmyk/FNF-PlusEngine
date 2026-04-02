@@ -92,6 +92,7 @@ class Main extends Sprite
 		#end
 		// iOS doesn't need working directory change either
 		#end
+		funkin.util.NativeCrashHandler.install(); // SEH filter for C++ level crashes (ACCESS_VIOLATION, STACK_OVERFLOW)
 		funkin.util.CrashHandler.init();
 		
 		// Initialize optimization systems EARLY

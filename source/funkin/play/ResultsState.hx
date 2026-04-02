@@ -59,6 +59,9 @@ class ResultsState extends MusicBeatState
     var graphSprite:OFLSprite;
     var graphBackground:FlxSprite;
 
+    /** Shared params for ScriptableState overrides that can't receive constructor arguments. */
+    public static var pendingParams:Dynamic = null;
+
     static var use24HourFormat:Null<Bool> = true;
     static var dateFormat:String = "MM/DD/YYYY";
     static var timeFormat:String = "HH:mm";
@@ -67,6 +70,7 @@ class ResultsState extends MusicBeatState
     {
         super();
         this.params = params;
+        ResultsState.pendingParams = params;
 
         LocaleUtils.loadDeviceDateTimeSettings();
     }

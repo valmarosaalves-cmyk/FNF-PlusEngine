@@ -58,6 +58,17 @@ class MusicBeatState extends BaseMusicBeatState
 	public var scriptsAllowed:Bool = true;
 	public var scriptName:String = null;
 
+	// Companion script — loaded automatically alongside any hardcoded state.
+	// Path: scripts/states/{ClassName}.hx (or .lua), searched in mod → global mods → assets/shared.
+	// Scripts use  onCreate / onCreatePost / onUpdate / onUpdatePost / onDestroy
+	// and beat/step/section callbacks — same pattern as ALE-Psych's scriptCallbackCall.
+	#if HSCRIPT_ALLOWED
+	public var companionScript:HScript = null;
+	#end
+	#if LUA_ALLOWED
+	public var companionLuaScript:FunkinLua = null;
+	#end
+
 	// Optional constructor used by CustomState to pass script configuration
 	public function new(?scriptsAllowed:Bool = false, ?scriptName:String = null)
 	{
@@ -101,6 +112,17 @@ class MusicBeatState extends BaseMusicBeatState
 		}
 		FlxTransitionableState.skipNextTransOut = false;
 		timePassedOnState = 0;
+
+		// Auto-load companion script for this specific state class.
+		// Skipped for ScriptableState/CustomState (they handle their own scripts),
+		// and when running inside them as sub-instances.
+		#if (HSCRIPT_ALLOWED && sys)
+		var isScriptDriven:Bool = (this is funkin.modding.ScriptableState) || (this is funkin.modding.CustomState);
+		if (!isScriptDriven)
+			_loadCompanionScript();
+		#end
+
+		callOnCompanionScript('onCreate');
 	}
 
 	public static var traceDisplay:TraceDisplay;
@@ -142,12 +164,17 @@ class MusicBeatState extends BaseMusicBeatState
 		callOnGlobalScript('onUpdate', [elapsed]);
 		// Call MusicBeatState-specific script
 		callOnMusicBeatStateScript('onUpdate', [elapsed]);
+		// Call companion script pre-update
+		callOnCompanionScript('onUpdate', [elapsed]);
 		
 		stagesFunc(function(stage:BaseStage) {
 			stage.update(elapsed);
 		});
 
 		super.update(elapsed);
+
+		// Companion post-update (fires after all logic)
+		callOnCompanionScript('onUpdatePost', [elapsed]);
 	}
 
 	public static function switchState(nextState:FlxState = null) {
@@ -157,6 +184,13 @@ class MusicBeatState extends BaseMusicBeatState
 			resetState();
 			return;
 		}
+
+		// Check if a mod script overrides this state before switching.
+		// Only applies on sys targets with mods and HScript support.
+		#if (HSCRIPT_ALLOWED && MODS_ALLOWED && sys)
+		var scriptOverride = funkin.modding.ScriptableState.tryOverride(nextState);
+		if (scriptOverride != null) nextState = scriptOverride;
+		#end
 
 		// Call scripts before switching - they can stop the default transition
 		var globalResult = callOnGlobalScript('onSwitchState', [Type.getClassName(Type.getClass(nextState))]);
@@ -222,27 +256,209 @@ class MusicBeatState extends BaseMusicBeatState
 		return cast(FlxG.state, MusicBeatState);
 	}
 
+	// Bridge static methods — Haxe does not inherit static fields,
+	// so these delegate to the definitions in BaseMusicBeatState.
+	public static function getVariables():Map<String, Dynamic>
+		return BaseMusicBeatState.getVariables();
+
+	public static function getVideoHandlers():Map<String, Dynamic>
+		return BaseMusicBeatState.getVideoHandlers();
+
 	override public function stepHit():Void
 	{
 		callOnGlobalScript('onStepHit', [curStep]);
 		callOnMusicBeatStateScript('onStepHit', [curStep]);
+		callOnCompanionScript('onStepHit', [curStep]);
 		super.stepHit();
+		callOnCompanionScript('onStepHitPost', [curStep]);
 	}
 
 	override public function beatHit():Void
 	{
 		callOnGlobalScript('onBeatHit', [curBeat]);
 		callOnMusicBeatStateScript('onBeatHit', [curBeat]);
+		callOnCompanionScript('onBeatHit', [curBeat]);
 		super.beatHit();
+		callOnCompanionScript('onBeatHitPost', [curBeat]);
 	}
 
 	override public function sectionHit():Void
 	{
 		callOnGlobalScript('onSectionHit', [curSection]);
 		callOnMusicBeatStateScript('onSectionHit', [curSection]);
+		callOnCompanionScript('onSectionHit', [curSection]);
 		super.sectionHit();
+		callOnCompanionScript('onSectionHitPost', [curSection]);
 	}
-	
+
+	override function destroy():Void
+	{
+		callOnCompanionScript('onDestroy');
+
+		#if HSCRIPT_ALLOWED
+		if (companionScript != null)
+		{
+			companionScript.destroy();
+			companionScript = null;
+		}
+		#end
+		#if LUA_ALLOWED
+		if (companionLuaScript != null)
+		{
+			companionLuaScript.stop();
+			companionLuaScript = null;
+		}
+		#end
+
+		super.destroy();
+	}
+
+	// ─── Companion script helpers ──────────────────────────────────────────────
+
+	#if (HSCRIPT_ALLOWED && sys)
+	/**
+	 * Loads the companion script for the current state class.
+	 * Search order: active mod → global mods → assets/shared.
+	 * File: scripts/states/{ClassName}.hx (and .lua if LUA_ALLOWED).
+	 */
+	function _loadCompanionScript():Void
+	{
+		// Get simple class name from the fully-qualified one
+		var fullName:String = Type.getClassName(Type.getClass(this));
+		var parts = fullName.split('.');
+		var clsName:String = parts[parts.length - 1];
+		var rel:String = 'scripts/states/$clsName.hx';
+
+		var path:String = null;
+
+		#if MODS_ALLOWED
+		// modFolders checks currentModDirectory then global mods in priority order
+		var modded:String = Paths.modFolders(rel);
+		if (FileSystem.exists(modded)) path = modded;
+		#end
+
+		if (path == null)
+		{
+			var shared:String = Paths.getSharedPath(rel);
+			if (FileSystem.exists(shared)) path = shared;
+		}
+
+		#if LUA_ALLOWED
+		// Also check for a Lua companion
+		var luaRel:String = 'scripts/states/$clsName.lua';
+		var luaPath:String = null;
+		#if MODS_ALLOWED
+		var moddedLua:String = Paths.modFolders(luaRel);
+		if (FileSystem.exists(moddedLua)) luaPath = moddedLua;
+		#end
+		if (luaPath == null)
+		{
+			var sharedLua:String = Paths.getSharedPath(luaRel);
+			if (FileSystem.exists(sharedLua)) luaPath = sharedLua;
+		}
+		if (luaPath != null)
+		{
+			try { companionLuaScript = new FunkinLua(luaPath); }
+			catch(e:Dynamic) { trace('[CompanionScript] Lua error in $luaPath: $e'); }
+		}
+		#end
+
+		if (path == null) return;
+
+		try
+		{
+			companionScript = new HScript(null, path);
+
+			// Expose useful variables — 'game' points to the actual hardcoded state
+			companionScript.set('game',         this);
+			companionScript.set('add',          this.add);
+			companionScript.set('remove',       this.remove);
+			companionScript.set('insert',       this.insert);
+			companionScript.set('openSubState', this.openSubState);
+
+			// Shared/static var helpers (same API as CustomState)
+			companionScript.set('setSharedVar', function(n:String, v:Dynamic) {
+				MusicBeatState.globalVariables.set(n, v);
+				variables.set(n, v);
+				return v;
+			});
+			companionScript.set('getSharedVar', function(n:String, ?def:Dynamic = null):Dynamic {
+				if (MusicBeatState.globalVariables.exists(n)) return MusicBeatState.globalVariables.get(n);
+				if (variables.exists(n)) return variables.get(n);
+				return def;
+			});
+			companionScript.set('setStaticVar', function(n:String, v:Dynamic) {
+				MusicBeatState.staticVariables.set(n, v); return v;
+			});
+			companionScript.set('getStaticVar', function(n:String, ?def:Dynamic = null):Dynamic
+				return MusicBeatState.staticVariables.exists(n) ? MusicBeatState.staticVariables.get(n) : def);
+
+			trace('[CompanionScript] Loaded for state "$clsName": $path');
+		}
+		catch(e:crowplexus.hscript.Expr.Error)
+		{
+			var msg = crowplexus.hscript.Printer.errorToString(e, false);
+			trace('[CompanionScript] HScript error in $path:\n$msg');
+			if (funkin.ui.debug.TraceDisplay.instance != null)
+				funkin.ui.debug.TraceDisplay.addHScriptError(msg, path);
+		}
+		catch(e:Dynamic)
+		{
+			trace('[CompanionScript] Failed to load $path: $e');
+		}
+	}
+	#end
+
+	/**
+	 * Calls a callback on the companion script(s).
+	 * On HScript: tries `onXxx` then bare `xxx` (CustomState convention).
+	 * On Lua: calls the function directly.
+	 */
+	public function callOnCompanionScript(funcName:String, args:Array<Dynamic> = null):Dynamic
+	{
+		if (args == null) args = [];
+		var ret:Dynamic = LuaUtils.Function_Continue;
+
+		#if LUA_ALLOWED
+		if (companionLuaScript != null)
+		{
+			var v = companionLuaScript.call(funcName, args);
+			if (v != null && v != LuaUtils.Function_Continue) ret = v;
+		}
+		#end
+
+		#if HSCRIPT_ALLOWED
+		if (companionScript != null)
+		{
+			try
+			{
+				// Try bare name first (onCreate), then try without 'on' prefix as fallback
+				var fn:String = companionScript.exists(funcName) ? funcName : null;
+				if (fn == null && funcName.startsWith('on'))
+				{
+					var bare = funcName.charAt(2).toLowerCase() + funcName.substr(3);
+					if (companionScript.exists(bare)) fn = bare;
+				}
+				if (fn != null)
+				{
+					var callValue = companionScript.call(fn, args);
+					if (callValue != null && callValue.returnValue != null && callValue.returnValue != LuaUtils.Function_Continue)
+						ret = callValue.returnValue;
+				}
+			}
+			catch(e:Dynamic)
+			{
+				trace('[CompanionScript] Error calling $funcName: $e');
+				@:privateAccess
+				var fileName = companionScript.origin != null ? companionScript.origin : "CompanionScript";
+				funkin.ui.debug.TraceDisplay.addHScriptError('Runtime error in $funcName: $e', fileName);
+			}
+		}
+		#end
+
+		return ret;
+	}
+
 	// Global Script Management
 	public static function clearAllSharedVars():Void
 	{

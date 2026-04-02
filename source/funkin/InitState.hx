@@ -1,6 +1,7 @@
 package funkin;
 
 #if (HSCRIPT_ALLOWED && MODS_ALLOWED)
+import funkin.modding.ScriptableState;
 import funkin.modding.CustomState;
 #end
 import funkin.modding.Mods;
@@ -38,18 +39,29 @@ class InitialState extends MusicBeatState
 		#if !html5
 		FlxG.autoPause = ClientPrefs.data.autoPause;
 		#end
-		
-		// Check if top mod has custom state scripts
+
+		// ScriptableState.tryCreate checks mods then engine assets automatically.
+		// CustomState is kept as a fallback for old flat-callback scripts.
 		#if (HSCRIPT_ALLOWED && MODS_ALLOWED)
-		if (CustomState.hasScript('FlashingState')) {
+		var flashingScript = ScriptableState.tryCreate('FlashingState');
+		if (flashingScript != null) {
+			MusicBeatState.switchState(flashingScript);
+			return;
+		} else if (CustomState.hasScript('FlashingState')) {
 			MusicBeatState.switchState(new CustomState('FlashingState'));
+			return;
+		}
+
+		var titleScript = ScriptableState.tryCreate('TitleState');
+		if (titleScript != null) {
+			MusicBeatState.switchState(titleScript);
 			return;
 		} else if (CustomState.hasScript('TitleState')) {
 			MusicBeatState.switchState(new CustomState('TitleState'));
 			return;
 		}
 		#end
-		
+
 		// No mod states found, use default TitleState
 		MusicBeatState.switchState(new TitleState());
 	}

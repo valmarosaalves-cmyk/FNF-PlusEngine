@@ -121,7 +121,9 @@ class BaseMusicBeatSubstate extends FlxSubState
 
 	override function update(elapsed:Float):Void
 	{
-		if (!persistentUpdate) MusicBeatState.timePassedOnState += elapsed;
+		// Only track time here if the parent state is NOT also updating to avoid double-counting
+		if (!persistentUpdate && (FlxG.state == null || !FlxG.state.persistentUpdate))
+			MusicBeatState.timePassedOnState += elapsed;
 
 		var oldStep:Int = curStep;
 		updateCurStep();

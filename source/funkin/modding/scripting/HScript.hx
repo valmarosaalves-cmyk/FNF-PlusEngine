@@ -315,7 +315,17 @@ class HScript extends Iris
 
 		// Some very commonly used classes
 		set('Type', Type);
+		set('Reflect', Reflect);
+		set('Lambda', Lambda);
+		set('Json', haxe.Json);
+		set('TJSON', tjson.TJSON);
+		set('Array', Array);
+		set('EReg', EReg);
+		set('IntMap', haxe.ds.IntMap);
 		set('Map', haxe.ds.StringMap);
+		set('StringMap', haxe.ds.StringMap);
+		set('ObjectMap', haxe.ds.ObjectMap);
+		set('FlxSave', flixel.util.FlxSave);
 		#if sys
 		set('File', File);
 		set('FileSystem', FileSystem);
@@ -369,6 +379,7 @@ class HScript extends Iris
 		set('Discord', funkin.api.discord.DiscordClient);
 		#end
 		set('CustomState', funkin.modding.CustomState);
+		set('ScriptableState', funkin.modding.ScriptableState);
 		set('PlayState', PlayState);
 		set('TitleState', funkin.ui.title.TitleState);
 		set('MainMenuState', funkin.ui.mainmenu.MainMenuState);
@@ -377,8 +388,46 @@ class HScript extends Iris
 		set('LoadingState', funkin.ui.LoadingState);
 		set('CreditsState', funkin.ui.credits.CreditsState);
 		set('AchievementsMenuState', funkin.ui.AchievementsMenuState);
+		set('FlashingState', funkin.ui.FlashingState);
+		set('OptionsState', funkin.ui.options.OptionsState);
+		set('ResultsState', funkin.play.ResultsState);
+		set('AttachedSprite', funkin.play.AttachedSprite);
+		set('MenuItem', funkin.ui.MenuItem);
+		set('MenuCharacter', funkin.ui.MenuCharacter);
+		set('FlxTransitionableState', flixel.addons.transition.FlxTransitionableState);
 		set('MusicBeatState', MusicBeatState);
 		set('GameplayChangersSubstate', funkin.ui.options.GameplayChangersSubstate);
+		set('CoolUtil', funkin.util.CoolUtil);
+		set('Cursor', funkin.input.Cursor);
+		set('ColorblindFilter', funkin.graphics.shaders.ColorblindFilter);
+		set('ColorSwap', funkin.graphics.shaders.ColorSwap);
+		set('WindowMode', funkin.util.WindowMode);
+		set('StageData', funkin.data.stage.StageData);
+		set('NotesColorSubState', funkin.ui.options.NotesColorSubState);
+		set('ControlsSubState', funkin.ui.options.ControlsSubState);
+		set('GraphicsSettingsSubState', funkin.ui.options.GraphicsSettingsSubState);
+		set('VisualsSettingsSubState', funkin.ui.options.VisualsSettingsSubState);
+		set('GameplaySettingsSubState', funkin.ui.options.GameplaySettingsSubState);
+		set('LegacySettingsSubState', funkin.ui.options.LegacySettingsSubState);
+		set('NoteOffsetState', funkin.ui.options.NoteOffsetState);
+		set('Mods', funkin.modding.Mods);
+		set('ModsMenuState', funkin.modding.ModsMenuState);
+		set('FlxObject', flixel.FlxObject);
+		set('TEXT',   cast openfl.utils.AssetType.TEXT);
+		set('IMAGE',  cast openfl.utils.AssetType.IMAGE);
+		set('SOUND',  cast openfl.utils.AssetType.SOUND);
+		set('MUSIC',  cast openfl.utils.AssetType.MUSIC);
+		set('BINARY', cast openfl.utils.AssetType.BINARY);
+		set('FONT',   cast openfl.utils.AssetType.FONT);
+		set('X',        cast flixel.util.FlxAxes.X);
+		set('Y',        cast flixel.util.FlxAxes.Y);
+		set('XY',       cast flixel.util.FlxAxes.XY);
+		set('LEFT',     cast flixel.text.FlxText.FlxTextAlign.LEFT);
+		set('RIGHT',    cast flixel.text.FlxText.FlxTextAlign.RIGHT);
+		set('CENTER',   cast flixel.text.FlxText.FlxTextAlign.CENTER);
+		set('JUSTIFY',  cast flixel.text.FlxText.FlxTextAlign.JUSTIFY);
+		set('CENTERED', funkin.ui.Alignment.CENTERED);
+		set('Alignment', CustomAlignment);
 		set('Paths', Paths);
 		set('Conductor', Conductor);
 		set('ClientPrefs', ClientPrefs);
@@ -830,6 +879,37 @@ class HScript extends Iris
 		return null;
 	}
 
+	/**
+	 * Returns the ScriptClassHandler for a user-defined class by name,
+	 * or null if the script did not define such a class.
+	 * Used by ScriptableState to find and instantiate scripted state classes.
+	 */
+	public function getScriptedClass(name:String):funkin.modding.scripting.ScriptedClass.ScriptClassHandler {
+		@:privateAccess
+		var v:Dynamic = interp.customClasses.get(name);
+		if (v != null && (v is funkin.modding.scripting.ScriptedClass.ScriptClassHandler))
+			return cast v;
+		return null;
+	}
+
+	/**
+	 * Executes an additional HScript file in this same interpreter context,
+	 * so variables and functions from it become available to the main script.
+	 * Used to inject a shared preset before loading a state script.
+	 */
+	public function executeFile(path:String):Void
+	{
+		#if sys
+		if (!sys.FileSystem.exists(path)) return;
+		var code:String = sys.io.File.getContent(path);
+		@:privateAccess
+		{
+			var expr = parser.parseString(code, path);
+			interp.execute(expr);
+		}
+		#end
+	}
+
 	override public function destroy()
 	{
 		origin = null;
@@ -873,12 +953,14 @@ class CustomFlxG {
 	public static var signals(get, never):Dynamic;
 	public static var random(get, never):Dynamic;
 	public static var log(get, never):Dynamic;
-	// Exposes FlxG.scaleMode so scripts can access FlxG.scaleMode.scale.x / .y
 	public static var scaleMode(get, never):Dynamic;
-	// Exposes FlxG.elapsed so scripts can use frame-rate independent lerp calculations
 	public static var elapsed(get, never):Float;
-	// Exposes FlxG.bitmap for direct access to bitmap cache and _cache field
 	public static var bitmap(get, never):Dynamic;
+	public static var save(get, never):Dynamic;
+	public static var fixedTimestep(get, set):Bool;
+	public static var timeScale(get, set):Float;
+	public static var drawFramerate(get, never):Int;
+	public static var updateFramerate(get, never):Int;
 	
 	// Getters
 	static function get_state():Dynamic return FlxG.state;
@@ -903,6 +985,13 @@ class CustomFlxG {
 		// Return a wrapper that exposes both BitmapFrontEnd methods and _cache
 		return BitmapFrontEndWrapper.instance;
 	}
+	static function get_save():Dynamic return FlxG.save;
+	static function get_fixedTimestep():Bool return FlxG.fixedTimestep;
+	static function set_fixedTimestep(v:Bool):Bool return FlxG.fixedTimestep = v;
+	static function get_timeScale():Float return FlxG.timeScale;
+	static function set_timeScale(v:Float):Float return FlxG.timeScale = v;
+	static function get_drawFramerate():Int return FlxG.drawFramerate;
+	static function get_updateFramerate():Int return FlxG.updateFramerate;
 
 	// Compatibility functions for old mods
 	public static function addChildBelowMouse(object:Dynamic, ?IndexModifier:Int = 0):Void {
@@ -1066,6 +1155,13 @@ class CustomFlxPoint {
 	public static inline function weak(x:Float = 0, y:Float = 0):flixel.math.FlxBasePoint {
 		return flixel.math.FlxPoint.weak(x, y);
 	}
+}
+
+// Wrapper for funkin.ui.Alignment so scripts can use Alignment.LEFT / Alignment.CENTERED etc.
+class CustomAlignment {
+	public static var LEFT(default,    null):funkin.ui.Alignment = funkin.ui.Alignment.LEFT;
+	public static var CENTERED(default, null):funkin.ui.Alignment = funkin.ui.Alignment.CENTERED;
+	public static var RIGHT(default,   null):funkin.ui.Alignment = funkin.ui.Alignment.RIGHT;
 }
 
 @:privateAccess(flixel.system.frontEnds.BitmapFrontEnd)

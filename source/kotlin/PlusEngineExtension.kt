@@ -57,6 +57,42 @@ class PlusEngineExtension : Extension() {
      * Used to track when folder browser is closed and to save granted URIs
      */
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
+        // Handle native file picker result
+        if (requestCode == REQUEST_CODE_FILE_PICKER) {
+            if (resultCode == Activity.RESULT_OK && data?.data != null) {
+                val uri = data.data!!
+                val activity = Extension.mainActivity
+                if (activity != null) {
+                    try {
+                        // Copy selected file to a temp path accessible from Haxe
+                        val cursor = activity.contentResolver.query(uri, null, null, null, null)
+                        var displayName = "picked_file"
+                        cursor?.use {
+                            if (it.moveToFirst()) {
+                                val nameIdx = it.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                                if (nameIdx >= 0) displayName = it.getString(nameIdx)
+                            }
+                        }
+                        val tempDir = java.io.File(activity.cacheDir, "filepicker")
+                        tempDir.mkdirs()
+                        val tempFile = java.io.File(tempDir, displayName)
+                        activity.contentResolver.openInputStream(uri)?.use { input ->
+                            tempFile.outputStream().use { output -> input.copyTo(output) }
+                        }
+                        pickedFilePath = tempFile.absolutePath
+                    } catch (e: Exception) {
+                        android.util.Log.e("PlusEngine", "File picker: failed to copy file", e)
+                        pickedFilePath = ""
+                    }
+                }
+            } else {
+                // Cancelled or failed
+                pickedFilePath = ""
+            }
+            onFolderClosedCallback?.invoke(requestCode)
+            return true
+        }
+
         // Check if user granted permission to a folder
         if (resultCode == Activity.RESULT_OK && data != null) {
             val treeUri = data.data
@@ -77,9 +113,14 @@ class PlusEngineExtension : Extension() {
         const val REQUEST_CODE_MODS_FOLDER = 1002
         const val REQUEST_CODE_SAVES_FOLDER = 1003
         const val REQUEST_CODE_LOGS_FOLDER = 1004
-        
+        const val REQUEST_CODE_FILE_PICKER = 2001
+
         // Callback for when folder is closed
         private var onFolderClosedCallback: ((Int) -> Unit)? = null
+
+        // Stores the absolute path of the last file selected via openFilePicker()
+        // Empty string = no file selected yet / picker was cancelled
+        private var pickedFilePath: String = ""
         
         // Cache for granted URIs (stores the tree URI after user grants permission)
         private val grantedUris = mutableMapOf<String, Uri>()
@@ -377,6 +418,105 @@ class PlusEngineExtension : Extension() {
             openFolderInSystemExplorer("$basePath/logs", REQUEST_CODE_LOGS_FOLDER)
         }
         
+        /**
+         * Open a native file picker dialog that allows the user to select
+         * a JSON or XML file from device storage.
+         * 
+         * After the user picks a file (or cancels), the result is stored
+         * internally. Call getPickedFilePath() to retrieve the absolute path.
+         * An empty string means the picker was cancelled or an error occurred.
+         */
+        @JvmStatic
+        fun openFilePicker() {
+            val activity = Extension.mainActivity ?: return
+            activity.runOnUiThread {
+                val intent = android.content.Intent(android.content.Intent.ACTION_OPEN_DOCUMENT).apply {
+                    addCategory(android.content.Intent.CATEGORY_OPENABLE)
+                    // Accept both JSON and XML MIME types
+                    type = "*/*"
+                    putExtra(
+                        android.content.Intent.EXTRA_MIME_TYPES,
+                        arrayOf("application/json", "text/xml", "application/xml", "text/plain")
+                    )
+                    // Start in the app's files directory if possible
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                        val baseDir = activity.getExternalFilesDir(null)
+                        if (baseDir != null) {
+                            putExtra(
+                                android.provider.DocumentsContract.EXTRA_INITIAL_URI,
+                                androidx.core.content.FileProvider.getUriForFile(
+                                    activity,
+                                    "${activity.packageName}.provider",
+                                    baseDir
+                                ).also {}
+                            )
+                        }
+                    }
+                }
+                // Reset previous result before opening
+                pickedFilePath = ""
+                activity.startActivityForResult(intent, REQUEST_CODE_FILE_PICKER)
+            }
+        }
+
+        /**
+         * Returns the absolute path of the file selected by openFilePicker().
+         * Returns an empty string if no file has been picked yet or the picker
+         * was cancelled.
+         */
+        @JvmStatic
+        fun getPickedFilePath(): String = pickedFilePath
+
+        /**
+         * Clears the stored file path so subsequent calls to getPickedFilePath()
+         * return an empty string until the user picks a new file.
+         */
+        @JvmStatic
+        fun clearPickedFile() {
+            pickedFilePath = ""
+        }
+
+        /**
+         * Open a native file picker dialog that allows the user to select
+         * a JSON or XML file from device storage.
+         *
+         * After the user picks a file (or cancels), the result is stored
+         * internally. Call getPickedFilePath() to retrieve the absolute path.
+         * An empty string means the picker was cancelled or an error occurred.
+         */
+        @JvmStatic
+        fun openFilePicker() {
+            val activity = Extension.mainActivity ?: return
+            activity.runOnUiThread {
+                val intent = android.content.Intent(android.content.Intent.ACTION_OPEN_DOCUMENT).apply {
+                    addCategory(android.content.Intent.CATEGORY_OPENABLE)
+                    type = "*/*"
+                    putExtra(
+                        android.content.Intent.EXTRA_MIME_TYPES,
+                        arrayOf("application/json", "text/xml", "application/xml", "text/plain")
+                    )
+                }
+                pickedFilePath = ""
+                activity.startActivityForResult(intent, REQUEST_CODE_FILE_PICKER)
+            }
+        }
+
+        /**
+         * Returns the absolute path of the file selected by openFilePicker().
+         * Returns an empty string if no file has been picked yet or the picker was cancelled.
+         */
+        @JvmStatic
+        fun getPickedFilePath(): String = pickedFilePath
+
+        /**
+         * Clears the stored file path so subsequent calls to getPickedFilePath()
+         * return an empty string until the user picks a new file.
+         */
+        @JvmStatic
+        fun clearPickedFile() {
+            pickedFilePath = ""
+        }
+
         /**
          * Get app's external files directory path
          */

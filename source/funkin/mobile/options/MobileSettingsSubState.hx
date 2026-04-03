@@ -67,9 +67,9 @@ class MobileSettingsSubState extends BaseOptionsMenu
 		addOption(option);
 
 		option = new Option('Infinity Display',
-			'Extends the viewport vertically for modern screens\nwhile keeping the game in 16:9 for mod compatibility.\nTouchpad controls will adjust automatically.',
+			'Fills the screen on wide phones (18:9, 20:9) by showing more\nof the game world. Mods that hardcode 1280x720 still work.\nControls adjust automatically.',
 			'infinityDisplay', BOOL);
-		option.onChange = () -> FlxG.scaleMode = new flixel.system.scaleModes.MobileScaleMode();
+		option.onChange = () -> FlxG.scaleMode = new MobileScaleMode();
 		addOption(option);
 		#end
 

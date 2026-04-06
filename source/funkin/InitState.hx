@@ -1,6 +1,6 @@
 package funkin;
 
-#if (HSCRIPT_ALLOWED && MODS_ALLOWED)
+#if (HSCRIPT_ALLOWED && MODS_ALLOWED && !mobile)
 import funkin.modding.ScriptableState;
 import funkin.modding.CustomState;
 #end
@@ -42,7 +42,7 @@ class InitialState extends MusicBeatState
 
 		// ScriptableState.tryCreate checks mods then engine assets automatically.
 		// CustomState is kept as a fallback for old flat-callback scripts.
-		#if (HSCRIPT_ALLOWED && MODS_ALLOWED)
+		#if (HSCRIPT_ALLOWED && MODS_ALLOWED && !mobile)
 		var flashingScript = ScriptableState.tryCreate('FlashingState');
 		if (flashingScript != null) {
 			MusicBeatState.switchState(flashingScript);

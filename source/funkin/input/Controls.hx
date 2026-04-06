@@ -173,8 +173,9 @@ class Controls
 
 	private function touchPadPressed(keys:Array<MobileInputID>):Bool
 	{
-		if (keys != null && requestedInstance.touchPad != null)
-			if (requestedInstance.touchPad.anyPressed(keys) == true)
+		var inst = requestedInstance;
+		if (keys != null && inst != null && inst.touchPad != null)
+			if (inst.touchPad.anyPressed(keys) == true)
 				return true;
 
 		return false;
@@ -182,8 +183,9 @@ class Controls
 
 	private function touchPadJustPressed(keys:Array<MobileInputID>):Bool
 	{
-		if (keys != null && requestedInstance.touchPad != null)
-			if (requestedInstance.touchPad.anyJustPressed(keys) == true)
+		var inst = requestedInstance;
+		if (keys != null && inst != null && inst.touchPad != null)
+			if (inst.touchPad.anyJustPressed(keys) == true)
 				return true;
 
 		return false;
@@ -191,8 +193,9 @@ class Controls
 
 	private function touchPadJustReleased(keys:Array<MobileInputID>):Bool
 	{
-		if (keys != null && requestedInstance.touchPad != null)
-			if (requestedInstance.touchPad.anyJustReleased(keys) == true)
+		var inst = requestedInstance;
+		if (keys != null && inst != null && inst.touchPad != null)
+			if (inst.touchPad.anyJustReleased(keys) == true)
 				return true;
 
 		return false;
@@ -200,8 +203,9 @@ class Controls
 
 	private function mobileCPressed(keys:Array<MobileInputID>):Bool
 	{
-		if (keys != null && requestedMobileC != null)
-			if (requestedMobileC.instance.anyPressed(keys))
+		var mobile = requestedMobileC;
+		if (keys != null && mobile != null && mobile.instance != null)
+			if (mobile.instance.anyPressed(keys))
 				return true;
 
 		return false;
@@ -209,8 +213,9 @@ class Controls
 
 	private function mobileCJustPressed(keys:Array<MobileInputID>):Bool
 	{
-		if (keys != null && requestedMobileC != null)
-			if (requestedMobileC.instance.anyJustPressed(keys))
+		var mobile = requestedMobileC;
+		if (keys != null && mobile != null && mobile.instance != null)
+			if (mobile.instance.anyJustPressed(keys))
 				return true;
 
 		return false;
@@ -218,8 +223,9 @@ class Controls
 
 	private function mobileCJustReleased(keys:Array<MobileInputID>):Bool
 	{
-		if (keys != null && requestedMobileC != null)
-			if (requestedMobileC.instance.anyJustReleased(keys))
+		var mobile = requestedMobileC;
+		if (keys != null && mobile != null && mobile.instance != null)
+			if (mobile.instance.anyJustReleased(keys))
 				return true;
 
 		return false;
@@ -237,7 +243,9 @@ class Controls
 	@:noCompletion
 	private function get_requestedMobileC():IMobileControls
 	{
-		return requestedInstance.mobileControls;
+		var inst = requestedInstance;
+		if (inst == null) return null;
+		return inst.mobileControls;
 	}
 
 	@:noCompletion

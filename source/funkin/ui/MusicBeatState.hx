@@ -186,8 +186,8 @@ class MusicBeatState extends BaseMusicBeatState
 		}
 
 		// Check if a mod script overrides this state before switching.
-		// Only applies on sys targets with mods and HScript support.
-		#if (HSCRIPT_ALLOWED && MODS_ALLOWED && sys)
+		// Only applies on sys targets with mods and HScript support (not mobile).
+		#if (HSCRIPT_ALLOWED && MODS_ALLOWED && sys && !mobile)
 		var scriptOverride = funkin.modding.ScriptableState.tryOverride(nextState);
 		if (scriptOverride != null) nextState = scriptOverride;
 		#end

@@ -139,7 +139,11 @@ class MusicBeatSubstate extends BaseMusicBeatSubstate
 
 	override function destroy()
 	{
-		if (instance == this) instance = null;
+		if (instance == this)
+		{
+			controls.isInSubstate = false;
+			instance = null;
+		}
 		#if HSCRIPT_ALLOWED
 		if (companionScript != null)
 		{

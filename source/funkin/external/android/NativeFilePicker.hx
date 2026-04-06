@@ -1,8 +1,8 @@
 package funkin.external.android;
 
 /**
- * Native Android file picker — lets the user pick a JSON or XML file
- * from device storage using the system document picker (ACTION_OPEN_DOCUMENT).
+ * Native Android file picker — lets the user pick a text-based file
+ * from the engine storage using the native Plus Explorer activity.
  *
  * Usage:
  *   1. Call NativeFilePicker.open() to launch the picker.
@@ -26,8 +26,8 @@ class NativeFilePicker
   static inline final CLASS = 'com/leninasto/plusengine/PlusEngineExtension';
 
   /**
-   * Opens the system file picker dialog.
-   * Only JSON and XML files are selectable by the user.
+  * Opens the native engine file picker dialog.
+  * Files are selected from the app storage and returned to Haxe.
    */
   public static function open():Void
   {
@@ -43,8 +43,9 @@ class NativeFilePicker
   }
 
   /**
-   * Returns the absolute path of the file selected by the last open() call.
+   * Returns the display name (filename) of the last picked file.
    * Returns "" while the picker is open, if cancelled, or before any pick.
+   * Use getPickedContent() to get the actual file contents.
    */
   public static function getPickedPath():String
   {
@@ -59,9 +60,42 @@ class NativeFilePicker
   }
 
   /**
-   * Clears the internally stored path.
-   * Call this after handling getPickedPath() so getPickedPath() returns ""
-   * until the user makes a new selection.
+   * Returns the raw text content of the last picked file.
+   * The content is read directly from the ContentResolver (no filesystem access needed).
+   * Returns "" if no file has been picked, the picker was cancelled, or reading failed.
+   */
+  public static function getPickedContent():String
+  {
+    #if android
+    final jni:Null<Dynamic> = JNIUtil.createStaticMethod(CLASS, 'getPickedFileContent', '()Ljava/lang/String;');
+    if (jni != null)
+      return (jni() : String) ?? '';
+    return '';
+    #else
+    return '';
+    #end
+  }
+
+  /**
+   * Returns the current picker state.
+   * 0 = waiting/no result, 1 = success, -1 = cancelled, -2 = error.
+   */
+  public static function getStatus():Int
+  {
+    #if android
+    final jni:Null<Dynamic> = JNIUtil.createStaticMethod(CLASS, 'getPickedFileStatus', '()I');
+    if (jni != null)
+      return (jni() : Int);
+    return 0;
+    #else
+    return 0;
+    #end
+  }
+
+  /**
+   * Clears both the stored file name and content.
+   * Call this after handling the result so getPickedPath() / getPickedContent()
+   * return "" until the user makes a new selection.
    */
   public static function clear():Void
   {

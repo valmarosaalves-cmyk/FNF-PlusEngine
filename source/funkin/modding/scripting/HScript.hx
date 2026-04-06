@@ -23,6 +23,7 @@ import crowplexus.hscript.Tools;
 import crowplexus.iris.utils.UsingEntry;
 
 import haxe.ValueException;
+import openfl.utils.Assets as OpenFlAssets;
 
 typedef HScriptInfos = {
 	> haxe.PosInfos,
@@ -228,7 +229,13 @@ class HScript extends Iris
 		{
 			var f:String = file.replace('\\', '/');
 			if(f.contains('/') && !f.contains('\n')) {
-				scriptThing = File.getContent(f);
+				#if sys
+				if (sys.FileSystem.exists(f))
+					scriptThing = File.getContent(f);
+				else
+				#end
+				if (OpenFlAssets.exists(f))
+					scriptThing = OpenFlAssets.getText(f);
 				scriptName = f;
 			}
 		}
@@ -960,15 +967,20 @@ class HScript extends Iris
 	 */
 	public function executeFile(path:String):Void
 	{
+		var code:String = null;
 		#if sys
-		if (!sys.FileSystem.exists(path)) return;
-		var code:String = sys.io.File.getContent(path);
+		if (sys.FileSystem.exists(path))
+			code = sys.io.File.getContent(path);
+		#end
+		// Fallback: read from OpenFL assets (APK builds)
+		if (code == null && OpenFlAssets.exists(path))
+			code = OpenFlAssets.getText(path);
+		if (code == null) return;
 		@:privateAccess
 		{
 			var expr = parser.parseString(code, path);
 			interp.execute(expr);
 		}
-		#end
 	}
 
 	override public function destroy()

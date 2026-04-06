@@ -726,6 +726,8 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 
 	var fileDialog:FileDialogHandler = new FileDialogHandler();
 	var lastFocus:PsychUIInputText;
+	// 0 = none, 1 = v1-to-v2, 2 = v2-to-v1
+	#if mobile var _mobileConvertPending:Int = 0; #end
 
 	var autoSaveTime:Float = 0;
 	var autoSaveCap:Int = 2; //in minutes
@@ -753,6 +755,78 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 			{
 				dragDropOverlay.visible = false;
 				dragDropText.visible = false;
+			}
+		}
+		#end
+
+		#if mobile
+		// Poll native file picker result for convert operations.
+		// The picker exposes an explicit status to avoid silent failures.
+		var _pickedStatus:Int = funkin.external.android.NativeFilePicker.getStatus();
+		if (_pickedStatus != 0 && _mobileConvertPending != 0)
+		{
+			var pending:Int = _mobileConvertPending;
+			_mobileConvertPending = 0;
+			var _pickedPath:String = funkin.external.android.NativeFilePicker.getPickedPath();
+			var fileData:String = funkin.external.android.NativeFilePicker.getPickedContent();
+			funkin.external.android.NativeFilePicker.clear();
+			trace('[ChartEditorState] Mobile picker result status: ' + _pickedStatus + ', file: ' + _pickedPath);
+
+			if (_pickedStatus == -1)
+			{
+				showOutput('File selection cancelled.', true);
+			}
+			else if (_pickedStatus == -2)
+			{
+				showOutput('Error: Could not read the selected file.', true);
+			}
+			else if (fileData == null || fileData == '')
+			{
+				showOutput('Error: Could not read file "$_pickedPath". Try again.', true);
+			}
+			else
+			{
+				var savePath:String = funkin.mobile.backend.StorageUtil.getStorageDirectory() + 'saves/';
+				try
+				{
+					if (StringTools.startsWith(fileData, '\ufeff'))
+						fileData = fileData.substr(1);
+					fileData = StringTools.trim(fileData);
+
+					if (pending == 1) // v1 to v2
+					{
+						var jsonData:Dynamic = Json.parse(fileData);
+						var loadedChart:SwagSong = Song.parseJSON(Json.stringify(jsonData), 'conversion', 'psych_v1', true);
+						if (loadedChart == null) { showOutput('Error: Invalid chart format!', true); }
+						else
+						{
+							var v2Chart:Dynamic = Song.upgradeToV2(loadedChart);
+							var chartName:String = Paths.formatToSongPath(loadedChart.song) + '-v2.json';
+							StorageUtil.saveContent(chartName, PsychJsonPrinter.print(v2Chart, ['notes', 'events', 'bpmChanges', 'characters']));
+							trace('[ChartEditorState] Converted mobile chart (v1 -> v2) to: ' + savePath + chartName);
+							showOutput('Converted and saved to: $savePath$chartName');
+						}
+					}
+					else // v2 to v1
+					{
+						var raw:Dynamic = Json.parse(fileData);
+						if (raw == null || raw.format != 'psych_v2') { showOutput('Error: File is not a psych_v2 chart!', true); }
+						else
+						{
+							var v1Chart:SwagSong = Song.downgradeFromV2(raw);
+							v1Chart.format = 'psych_v1';
+							var chartName:String = Paths.formatToSongPath(v1Chart.song) + '-v1.json';
+							StorageUtil.saveContent(chartName, PsychJsonPrinter.print(v1Chart, ['notes', 'events']));
+							trace('[ChartEditorState] Converted mobile chart (v2 -> v1) to: ' + savePath + chartName);
+							showOutput('Converted and saved to: $savePath$chartName');
+						}
+					}
+				}
+				catch (e:Exception)
+				{
+					showOutput('Error: ${e.message}', true);
+					trace(e.stack);
+				}
 			}
 		}
 		#end
@@ -4545,94 +4619,6 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 
 		btnY++;
 		btnY += 20;
-		var btn:PsychUIButton = new PsychUIButton(btnX, btnY, '  Convert v1 to v2...', function()
-		{
-			if(!fileDialog.completed) return;
-			upperBox.isMinimized = true;
-			upperBox.bg.visible = false;
-
-			fileDialog.open('song.json', 'Open a psych_v1 chart file to convert', function()
-			{
-				try
-				{
-					var jsonData:Dynamic = Json.parse(fileDialog.data);
-					var loadedChart:SwagSong = Song.parseJSON(Json.stringify(jsonData), 'conversion', 'psych_v1', true);
-					
-					if(loadedChart == null)
-					{
-						showOutput('Error: Invalid chart format!', true);
-						return;
-					}
-
-					// Convert to v2
-					var v2Chart:Dynamic = Song.upgradeToV2(loadedChart);
-					var chartName:String = Paths.formatToSongPath(loadedChart.song) + '-v2.json';
-
-					#if mobile
-					StorageUtil.saveContent(chartName, PsychJsonPrinter.print(v2Chart, ['notes', 'events', 'bpmChanges', 'characters']));
-					showOutput('Chart converted and saved as: $chartName');
-					#else
-					fileDialog.save(chartName, PsychJsonPrinter.print(v2Chart, ['notes', 'events', 'bpmChanges', 'characters']),
-						function() showOutput('Chart converted and saved to: ${fileDialog.path}'),
-						null,
-						function() showOutput('Error on saving converted chart!', true));
-					#end
-				}
-				catch(e:Exception)
-				{
-					showOutput('Error: ${e.message}', true);
-					trace(e.stack);
-				}
-			});
-		}, btnWid);
-		btn.text.alignment = LEFT;
-		tab_group.add(btn);
-
-		btnY += 20;
-		var btn:PsychUIButton = new PsychUIButton(btnX, btnY, '  Convert v2 to v1...', function()
-		{
-			if(!fileDialog.completed) return;
-			upperBox.isMinimized = true;
-			upperBox.bg.visible = false;
-
-			fileDialog.open('song.json', 'Open a psych_v2 chart file to convert', function()
-			{
-				try
-				{
-					var raw:Dynamic = Json.parse(fileDialog.data);
-					if (raw == null || raw.format != 'psych_v2')
-					{
-						showOutput('Error: File is not a psych_v2 chart!', true);
-						return;
-					}
-
-					// Convert to v1
-					var v1Chart:SwagSong = Song.downgradeFromV2(raw);
-					v1Chart.format = 'psych_v1';
-					var chartName:String = Paths.formatToSongPath(v1Chart.song) + '-v1.json';
-
-					#if mobile
-					StorageUtil.saveContent(chartName, PsychJsonPrinter.print(v1Chart, ['notes', 'events']));
-					showOutput('Chart converted and saved as: $chartName');
-					#else
-					fileDialog.save(chartName, PsychJsonPrinter.print(v1Chart, ['notes', 'events']),
-						function() showOutput('Chart converted and saved to: ${fileDialog.path}'),
-						null,
-						function() showOutput('Error on saving converted chart!', true));
-					#end
-				}
-				catch(e:Exception)
-				{
-					showOutput('Error: ${e.message}', true);
-					trace(e.stack);
-				}
-			});
-		}, btnWid);
-		btn.text.alignment = LEFT;
-		tab_group.add(btn);
-
-		btnY++;
-		btnY += 20;
 		var btn:PsychUIButton = new PsychUIButton(btnX, btnY, '  Update (Legacy)...', function()
 		{
 			if(!fileDialog.completed) return;
@@ -4677,6 +4663,93 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 		btn.text.alignment = LEFT;
 		tab_group.add(btn);
 		#end
+
+		btnY++;
+		btnY += 20;
+		var btn:PsychUIButton = new PsychUIButton(btnX, btnY, '  Convert v1 to v2...', function()
+		{
+			upperBox.isMinimized = true;
+			upperBox.bg.visible = false;
+
+			#if mobile
+			// Launch the system file picker (ACTION_OPEN_DOCUMENT); result is polled in update()
+			trace('[ChartEditorState] Opening mobile picker for v1 -> v2 conversion');
+			funkin.external.android.NativeFilePicker.clear();
+			_mobileConvertPending = 1;
+			funkin.external.android.NativeFilePicker.open();
+			#else
+			if (!fileDialog.completed) return;
+			fileDialog.open('song.json', 'Open a psych_v1 chart file to convert', function()
+			{
+				try
+				{
+					var jsonData:Dynamic = Json.parse(fileDialog.data);
+					var loadedChart:SwagSong = Song.parseJSON(Json.stringify(jsonData), 'conversion', 'psych_v1', true);
+					if (loadedChart == null)
+					{
+						showOutput('Error: Invalid chart format!', true);
+						return;
+					}
+					var v2Chart:Dynamic = Song.upgradeToV2(loadedChart);
+					var chartName:String = Paths.formatToSongPath(loadedChart.song) + '-v2.json';
+					fileDialog.save(chartName, PsychJsonPrinter.print(v2Chart, ['notes', 'events', 'bpmChanges', 'characters']),
+						function() showOutput('Chart converted and saved to: ${fileDialog.path}'),
+						null,
+						function() showOutput('Error on saving converted chart!', true));
+				}
+				catch (e:Exception)
+				{
+					showOutput('Error: ${e.message}', true);
+					trace(e.stack);
+				}
+			});
+			#end
+		}, btnWid);
+		btn.text.alignment = LEFT;
+		tab_group.add(btn);
+
+		btnY += 20;
+		var btn:PsychUIButton = new PsychUIButton(btnX, btnY, '  Convert v2 to v1...', function()
+		{
+			upperBox.isMinimized = true;
+			upperBox.bg.visible = false;
+
+			#if mobile
+			// Launch the system file picker (ACTION_OPEN_DOCUMENT); result is polled in update()
+			trace('[ChartEditorState] Opening mobile picker for v2 -> v1 conversion');
+			funkin.external.android.NativeFilePicker.clear();
+			_mobileConvertPending = 2;
+			funkin.external.android.NativeFilePicker.open();
+			#else
+			if (!fileDialog.completed) return;
+			fileDialog.open('song.json', 'Open a psych_v2 chart file to convert', function()
+			{
+				try
+				{
+					var raw:Dynamic = Json.parse(fileDialog.data);
+					if (raw == null || raw.format != 'psych_v2')
+					{
+						showOutput('Error: File is not a psych_v2 chart!', true);
+						return;
+					}
+					var v1Chart:SwagSong = Song.downgradeFromV2(raw);
+					v1Chart.format = 'psych_v1';
+					var chartName:String = Paths.formatToSongPath(v1Chart.song) + '-v1.json';
+					fileDialog.save(chartName, PsychJsonPrinter.print(v1Chart, ['notes', 'events']),
+						function() showOutput('Chart converted and saved to: ${fileDialog.path}'),
+						null,
+						function() showOutput('Error on saving converted chart!', true));
+				}
+				catch (e:Exception)
+				{
+					showOutput('Error: ${e.message}', true);
+					trace(e.stack);
+				}
+			});
+			#end
+		}, btnWid);
+		btn.text.alignment = LEFT;
+		tab_group.add(btn);
 
 		btnY++;
 		btnY += 20;

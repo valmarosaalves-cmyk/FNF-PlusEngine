@@ -299,7 +299,7 @@ function update(elapsed:Float) {
 
         // Mobile exit button
         if (isMobile && touchPad != null && touchPad.buttonX != null && touchPad.buttonX.justPressed) {
-            lime.system.System.exit(0);
+            Sys.exit(0);
         }
     }
 }

@@ -44,6 +44,7 @@ import funkin.ui.MusicBeatState;
 import funkin.ui.debug.TraceDisplay;
 import funkin.modding.Mods;
 import funkin.modding.scripting.psychlua.LuaUtils;
+import openfl.utils.Assets as OpenFlAssets;
 
 #if HSCRIPT_ALLOWED
 import funkin.modding.scripting.HScript;
@@ -93,9 +94,9 @@ class ScriptableState extends MusicBeatState
 	 */
 	public static function findScript(name:String):Null<String>
 	{
-		#if sys
 		var rel:String = 'scripts/states/$name.hx';
 
+		#if sys
 		#if MODS_ALLOWED
 		// modFolders already applies currentModDirectory then globalMods priority
 		var modded:String = Paths.modFolders(rel);
@@ -105,6 +106,11 @@ class ScriptableState extends MusicBeatState
 		var shared:String = Paths.getSharedPath(rel);
 		if (FileSystem.exists(shared)) return shared;
 		#end
+
+		// Fallback: scripts bundled inside the APK
+		var assetPath:String = Paths.getSharedPath(rel);
+		if (OpenFlAssets.exists(assetPath)) return assetPath;
+
 		return null;
 	}
 
@@ -457,7 +463,7 @@ class ScriptableState extends MusicBeatState
 	}
 	#end
 
-	#if (HSCRIPT_ALLOWED && sys)
+	#if HSCRIPT_ALLOWED
 	/**
 	 * Finds the shared state preset file in the standard search order:
 	 *   mods/{currentMod}/scripts/states/_statePreset.hx
@@ -468,6 +474,7 @@ class ScriptableState extends MusicBeatState
 	{
 		var rel:String = 'scripts/states/_statePreset.hx';
 
+		#if sys
 		#if MODS_ALLOWED
 		var modded:String = Paths.modFolders(rel);
 		if (FileSystem.exists(modded)) return modded;
@@ -475,6 +482,11 @@ class ScriptableState extends MusicBeatState
 
 		var shared:String = Paths.getSharedPath(rel);
 		if (FileSystem.exists(shared)) return shared;
+		#end
+
+		// Fallback: preset bundled inside the APK
+		var assetPath:String = Paths.getSharedPath(rel);
+		if (OpenFlAssets.exists(assetPath)) return assetPath;
 
 		return null;
 	}

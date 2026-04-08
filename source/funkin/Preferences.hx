@@ -184,6 +184,7 @@ import funkin.ui.title.TitleState;
 	public var useLegacyFont:Bool = true; // Use legacy VCR font instead of Phantom font
 	public var legacyShaderInit:Bool = false; // Use Psych 0.7.3 shader initialization (glslVersion parameter, direct FlxRuntimeShader)
 	public var autoConvertChartsToV2:Bool = false; // Automatically convert psych_v1 charts to psych_v2 format when loading
+	public var useScriptableCustomStates:Bool = false; // Allow scripted state overrides through ScriptableState and CustomState
 }
 
 class Preferences {

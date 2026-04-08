@@ -81,7 +81,7 @@ class MaterialTabs extends FlxSpriteGroup
 			add(container);
 
 			var label = new FlxText(tabX, 0, tabWidth, tabs[i], tabType == PRIMARY ? LABEL_SIZE_PRIMARY : LABEL_SIZE_SECONDARY);
-			label.setFormat(Paths.font("phantom.ttf"), tabType == PRIMARY ? LABEL_SIZE_PRIMARY : LABEL_SIZE_SECONDARY, MD3Theme.onSurfaceVariant, CENTER);
+			label.setFormat(Paths.font("inter.otf"), tabType == PRIMARY ? LABEL_SIZE_PRIMARY : LABEL_SIZE_SECONDARY, MD3Theme.onSurfaceVariant, CENTER);
 			label.antialiasing = ClientPrefs.data.antialiasing;
 			label.y = (TAB_HEIGHT - label.height) / 2;
 			tabLabels.push(label);

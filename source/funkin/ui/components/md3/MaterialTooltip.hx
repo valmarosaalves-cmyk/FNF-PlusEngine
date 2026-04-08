@@ -82,7 +82,7 @@ class MaterialTooltip extends FlxSpriteGroup
 
 		// Label
 		messageText = new FlxText(PADDING_H, PADDING_V, labelW + 2, text, LABEL_SIZE);
-		messageText.setFormat(Paths.font("phantom.ttf"), LABEL_SIZE, MD3Theme.inverseOnSurface, LEFT);
+		messageText.setFormat(Paths.font("inter.otf"), LABEL_SIZE, MD3Theme.inverseOnSurface, LEFT);
 		messageText.antialiasing = ClientPrefs.data.antialiasing;
 		add(messageText);
 

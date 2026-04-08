@@ -125,7 +125,7 @@ class MaterialFAB extends FlxSpriteGroup
 		if (isExtended)
 		{
 			labelText = new FlxText(EXTENDED_PADDING_H + iconSize + 8, 0, 0, label, LABEL_SIZE);
-			labelText.setFormat(Paths.font("phantom.ttf"), LABEL_SIZE, MD3Theme.onTertiaryContainer, LEFT);
+			labelText.setFormat(Paths.font("inter.otf"), LABEL_SIZE, MD3Theme.onTertiaryContainer, LEFT);
 			labelText.antialiasing = ClientPrefs.data.antialiasing;
 			labelText.y = (containerH - labelText.height) / 2;
 			add(labelText);

@@ -98,7 +98,7 @@ class MaterialRadioButton extends FlxSpriteGroup
 		{
 			trace('[MaterialRadioButton] creating labelText');
 			labelText = new FlxText(ICON_SIZE + LABEL_SPACING, 0, 0, label, 14);
-			labelText.setFormat(Paths.font("phantom.ttf"), 14, MD3Theme.onSurfaceVariant, LEFT);
+			labelText.setFormat(Paths.font("inter.otf"), 14, MD3Theme.onSurfaceVariant, LEFT);
 			labelText.antialiasing = ClientPrefs.data.antialiasing;
 			labelText.y = (ICON_SIZE - labelText.height) / 2;
 			add(labelText);

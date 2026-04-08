@@ -46,7 +46,7 @@ class MaterialBadge extends FlxSpriteGroup
 		add(background);
 
 		labelText = new FlxText(0, 0, 0, "", LABEL_SIZE);
-		labelText.setFormat(Paths.font("phantom.ttf"), LABEL_SIZE, LABEL_COLOR, CENTER);
+		labelText.setFormat(Paths.font("inter.otf"), LABEL_SIZE, LABEL_COLOR, CENTER);
 		labelText.antialiasing = ClientPrefs.data.antialiasing;
 		add(labelText);
 

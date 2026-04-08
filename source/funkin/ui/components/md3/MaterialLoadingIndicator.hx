@@ -3,6 +3,7 @@ package funkin.ui.components.md3;
 import flixel.FlxSprite;
 import flixel.group.FlxSpriteGroup;
 import flixel.util.FlxColor;
+import openfl.display.Shape;
 
 /**
  * Material Design 3 Loading Indicator
@@ -35,29 +36,27 @@ class MaterialLoadingIndicator extends FlxSpriteGroup
 	var _indicator:FlxSprite;
 
 	// Animation state
-	var _morphTimer:Float = 0;
-	var _spinAngle:Float  = 0;
-	var _lastCorner:Float = -1;
+	var _spinTravel:Float = 0;
+	var _spinAngle:Float = 0;
+	var _shapeIndex:Int = 0;
+	var _lastTurn:Int = -1;
+	var _lastLobes:Float = -1;
+	var _lastAmplitude:Float = -1;
+	var _lastSecondary:Float = -1;
+	var _lastSoftness:Float = -1;
+	var _lastPhase:Float = -1;
 
-	/**
-	 * 5-entry shape keyframes (entry[4] == entry[0] to close the loop).
-	 *
-	 * CORNERS  corner radius fraction of indicatorSize/2 (0.5=circle, 0.08=near-square)
-	 * SCALE_X  horizontal stretch via sprite scale
-	 * SCALE_Y  vertical stretch via sprite scale
-	 * ROT_OFF  extra rotation on top of base spin (degrees)
-	 *
-	 * Moderate scale values (max 1.30) keep the morph organic without
-	 * reading as a distracting "squash and stretch".
-	 */
-	static var CORNERS:Array<Float> = [0.50, 0.50, 0.50, 0.50, 0.50];
-	static var SCALE_X:Array<Float>  = [1.00, 1.28, 1.00, 0.78, 1.00];
-	static var SCALE_Y:Array<Float>  = [1.00, 0.78, 1.00, 1.28, 1.00];
-	static var ROT_OFF:Array<Float>  = [0.0,  10.0, 25.0, -10.0, 0.0];
+	// Circular shape family. Each turn advances to the next preset.
+	// The values are tuned to stay recognizably round instead of collapsing into random blobs.
+	static var LOBES:Array<Int> =       [0, 4, 6, 7, 9, 12, 8, 5];
+	static var AMPLITUDES:Array<Float> = [0.00, 0.16, 0.12, 0.10, 0.08, 0.06, 0.14, 0.18];
+	static var SECONDARY:Array<Float> =  [0.00, 0.02, 0.03, 0.02, 0.02, 0.01, 0.04, 0.05];
+	static var SOFTNESS:Array<Float> =   [1.00, 0.94, 0.96, 0.97, 0.98, 0.99, 0.92, 0.88];
+	static var PHASE_OFF:Array<Float> =  [0.00, 0.78, 0.35, 0.18, 0.52, 0.00, 0.64, 0.30];
 
-	// 0.72 cycles/s → each transition lasts ~0.35 s; four distinct shapes per loop
-	static inline var MORPH_SPEED:Float = 0.72;
-	static inline var SPIN_SPEED:Float  = 90.0; // base continuous rotation (degrees/s)
+	static inline var SPIN_SPEED:Float = 248.0;
+	static inline var SHAPE_MORPH_PORTION:Float = 0.36;
+	static inline var TAU:Float = 6.283185307179586;
 
 	public function new(x:Float = 0, y:Float = 0, size:Int = 48, showContainer:Bool = false)
 	{
@@ -79,7 +78,7 @@ class MaterialLoadingIndicator extends FlxSpriteGroup
 
 		_indicator = new FlxSprite(0, 0);
 		_indicator.makeGraphic(size, size, FlxColor.TRANSPARENT, true);
-		_redrawShape(size * 0.5); // start as circle
+		_redrawShape(LOBES[0], AMPLITUDES[0], SECONDARY[0], SOFTNESS[0], PHASE_OFF[0]);
 		add(_indicator);
 	}
 
@@ -87,48 +86,88 @@ class MaterialLoadingIndicator extends FlxSpriteGroup
 	{
 		super.update(elapsed);
 
-		_morphTimer += elapsed;
-		_spinAngle   = (_spinAngle + elapsed * SPIN_SPEED) % 360;
+		_spinTravel += elapsed * SPIN_SPEED;
+		_spinAngle = _spinTravel % 360;
 
-		var steps:Int    = CORNERS.length - 1; // 7 transitions
-		var cycleT:Float = (_morphTimer * MORPH_SPEED) % 1.0;
-		var pos:Float    = cycleT * steps;
-		var idx:Int      = Std.int(pos);
-		if (idx >= steps) idx = steps - 1;
-		var t:Float = _smoothstep(pos - idx);
-
-		var corner:Float = _lerp(CORNERS[idx], CORNERS[idx + 1], t) * indicatorSize * 0.5;
-		var sx:Float     = _lerp(SCALE_X[idx],  SCALE_X[idx + 1],  t);
-		var sy:Float     = _lerp(SCALE_Y[idx],  SCALE_Y[idx + 1],  t);
-		var rotOff:Float = _lerp(ROT_OFF[idx],  ROT_OFF[idx + 1],  t);
-
-		// Only redraw the BitmapData when the corner radius changes visibly
-		if (Math.abs(corner - _lastCorner) > 0.5)
+		var turn:Int = Std.int(_spinTravel / 360);
+		if (turn != _lastTurn)
 		{
-			_lastCorner = corner;
-			_redrawShape(corner);
+			_lastTurn = turn;
+			_shapeIndex = turn % LOBES.length;
 		}
 
-		// Scale and angle are cheap — update every frame.
-		// Flixel rotates/scales around the sprite's frame center, so the
-		// visual center stays fixed regardless of scale values.
-		_indicator.scale.x = sx;
-		_indicator.scale.y = sy;
-		_indicator.angle   = _spinAngle + rotOff;
+		var previousIndex = ((_shapeIndex - 1) + LOBES.length) % LOBES.length;
+		var turnT:Float = (_spinTravel % 360) / 360;
+		var morphT:Float = turnT <= SHAPE_MORPH_PORTION ? _smoothstep(turnT / SHAPE_MORPH_PORTION) : 1.0;
+
+		var lobes = _lerp(LOBES[previousIndex], LOBES[_shapeIndex], morphT);
+		var amplitude = _lerp(AMPLITUDES[previousIndex], AMPLITUDES[_shapeIndex], morphT);
+		var secondary = _lerp(SECONDARY[previousIndex], SECONDARY[_shapeIndex], morphT);
+		var softness = _lerp(SOFTNESS[previousIndex], SOFTNESS[_shapeIndex], morphT);
+		var phaseOffset = _lerp(PHASE_OFF[previousIndex], PHASE_OFF[_shapeIndex], morphT);
+
+		if (Math.abs(lobes - _lastLobes) > 0.02
+			|| Math.abs(amplitude - _lastAmplitude) > 0.01
+			|| Math.abs(secondary - _lastSecondary) > 0.01
+			|| Math.abs(softness - _lastSoftness) > 0.01
+			|| Math.abs(phaseOffset - _lastPhase) > 0.01)
+		{
+			_lastLobes = lobes;
+			_lastAmplitude = amplitude;
+			_lastSecondary = secondary;
+			_lastSoftness = softness;
+			_lastPhase = phaseOffset;
+			_redrawShape(lobes, amplitude, secondary, softness, phaseOffset);
+		}
+
+		_indicator.angle = _spinAngle;
 	}
 
 	// -----------------------------------------------------------------------
 	// Private helpers
 	// -----------------------------------------------------------------------
 
-	function _redrawShape(cornerRadius:Float):Void
+	function _redrawShape(lobes:Float, amplitude:Float, secondary:Float, softness:Float, phaseOffset:Float):Void
 	{
-		var s:Int        = indicatorSize;
+		var frame:Int = indicatorSize;
+		var center = frame * 0.5;
+		var baseRadius = frame * 0.33;
 		var col:FlxColor = showContainer ? ON_CONTAINER_COLOR : ACTIVE_COLOR;
-		var bmp          = _indicator.pixels;
-		bmp.fillRect(bmp.rect, FlxColor.TRANSPARENT);
-		_drawFilledRoundedRect(_indicator, s, s, Std.int(cornerRadius), col);
+
+		_indicator.makeGraphic(frame, frame, FlxColor.TRANSPARENT, true);
+		var shape = new Shape();
+		shape.graphics.beginFill(col & 0xFFFFFF, ((col >> 24) & 0xFF) / 255);
+
+		var steps = 96;
+		for (i in 0...steps + 1)
+		{
+			var t = i / steps;
+			var angle = t * TAU;
+			var primaryWave = lobes <= 0.01 ? 0.0 : Math.sin(angle * lobes + phaseOffset);
+			var secondaryWave = lobes <= 0.01 ? 0.0 : Math.sin(angle * lobes * 0.5 + phaseOffset * 1.7);
+			var normalizedPrimary = primaryWave >= 0 ? Math.pow(primaryWave, softness) : -Math.pow(-primaryWave, softness);
+			var radius = baseRadius * (1.0 + normalizedPrimary * amplitude + secondaryWave * secondary);
+			var px = center + Math.cos(angle) * radius;
+			var py = center + Math.sin(angle) * radius;
+
+			if (i == 0)
+				shape.graphics.moveTo(px, py);
+			else
+				shape.graphics.lineTo(px, py);
+		}
+
+		shape.graphics.endFill();
+		_indicator.pixels.fillRect(_indicator.pixels.rect, FlxColor.TRANSPARENT);
+		_indicator.pixels.draw(shape, null, null, null, null, true);
 		_indicator.dirty = true;
+	}
+
+	public function getDebugLayout():String
+	{
+		return 'group=(' + x + ', ' + y + ')'
+			+ ' indicator=(' + _indicator.x + ', ' + _indicator.y + ', ' + _indicator.width + 'x' + _indicator.height + ')'
+			+ ' angle=' + _indicator.angle
+			+ ' shape=(' + _lastLobes + ', ' + _lastAmplitude + ', ' + _lastSoftness + ')';
 	}
 
 	function _drawFilledCircle(sprite:FlxSprite, size:Int, color:FlxColor):Void
@@ -145,44 +184,6 @@ class MaterialLoadingIndicator extends FlxSpriteGroup
 				if (dx * dx + dy * dy <= r * r)
 					bmp.setPixel32(px, py, color);
 			}
-		sprite.dirty = true;
-	}
-
-	function _drawFilledRoundedRect(sprite:FlxSprite, width:Int, height:Int, radius:Int, color:FlxColor):Void
-	{
-		var bmp      = sprite.pixels;
-		var r:Int    = Std.int(Math.min(radius, Math.min(width, height) / 2));
-		for (py in 0...height)
-		{
-			for (px in 0...width)
-			{
-				var inShape:Bool = true;
-				var dx:Float;
-				var dy:Float;
-				if (px < r && py < r)
-				{
-					dx = r - px - 0.5; dy = r - py - 0.5;
-					inShape = (dx * dx + dy * dy) <= r * r;
-				}
-				else if (px >= width - r && py < r)
-				{
-					dx = px - (width - r) + 0.5; dy = r - py - 0.5;
-					inShape = (dx * dx + dy * dy) <= r * r;
-				}
-				else if (px < r && py >= height - r)
-				{
-					dx = r - px - 0.5; dy = py - (height - r) + 0.5;
-					inShape = (dx * dx + dy * dy) <= r * r;
-				}
-				else if (px >= width - r && py >= height - r)
-				{
-					dx = px - (width - r) + 0.5; dy = py - (height - r) + 0.5;
-					inShape = (dx * dx + dy * dy) <= r * r;
-				}
-				if (inShape)
-					bmp.setPixel32(px, py, color);
-			}
-		}
 		sprite.dirty = true;
 	}
 

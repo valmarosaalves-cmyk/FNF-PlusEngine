@@ -223,6 +223,14 @@ class GameplaySettingsSubState extends BaseOptionsMenu
 		addOption(option);
 		option.onChange = onChangeHeavyCharts;
 
+		#if (HSCRIPT_ALLOWED && MODS_ALLOWED && sys && !mobile)
+		var option:Option = new Option('Use Scriptable/Custom States',
+			"If checked, modded state overrides through ScriptableState and CustomState\ncan replace hardcoded states when a matching script exists.\nDisabled by default for safer vanilla behavior.",
+			'useScriptableCustomStates',
+			BOOL);
+		addOption(option);
+		#end
+
 		super();
 	}
 

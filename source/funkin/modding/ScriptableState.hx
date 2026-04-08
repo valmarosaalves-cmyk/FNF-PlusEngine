@@ -60,12 +60,16 @@ import sys.FileSystem;
 
 class ScriptableState extends MusicBeatState
 {
+	static var _bypassNextOverrideFor:Map<String, Bool> = [];
+
 	// Singleton reference — scripts can access the current ScriptableState via
 	// `ScriptableState.instance` or through the `game` variable exposed in the script.
 	public static var instance:ScriptableState;
 
 	// Name used to find the script file (scripts/states/{stateName}.hx).
 	public var stateName:String;
+	var _fallbackState:flixel.FlxState;
+	var _fallbackTriggered:Bool = false;
 
 	#if HSCRIPT_ALLOWED
 	var _script:HScript;
@@ -77,10 +81,11 @@ class ScriptableState extends MusicBeatState
 	var _inScriptUpdate:Bool = false;
 	#end
 
-	public function new(name:String)
+	public function new(name:String, ?fallbackState:flixel.FlxState)
 	{
 		super();
 		stateName = name;
+		_fallbackState = fallbackState;
 	}
 
 	// ─── Static helpers ────────────────────────────────────────────────────────
@@ -118,6 +123,9 @@ class ScriptableState extends MusicBeatState
 	public static function hasScript(name:String):Bool
 		return findScript(name) != null;
 
+	public static inline function overridesEnabled():Bool
+		return ClientPrefs.data.useScriptableCustomStates;
+
 	/**
 	 * Returns a ScriptableState for `name` if a script exists, otherwise `fallback`.
 	 * Use this when explicitly switching to a potentially-scriptable state.
@@ -127,7 +135,9 @@ class ScriptableState extends MusicBeatState
 	public static function tryCreate(name:String, ?fallback:flixel.FlxState):flixel.FlxState
 	{
 		#if (HSCRIPT_ALLOWED && sys)
-		if (hasScript(name)) return new ScriptableState(name);
+		if (!overridesEnabled()) return fallback;
+		if (_consumeOverrideBypass(name)) return fallback;
+		if (hasScript(name)) return new ScriptableState(name, fallback);
 		#end
 		return fallback;
 	}
@@ -140,6 +150,7 @@ class ScriptableState extends MusicBeatState
 	public static function tryOverride(state:flixel.FlxState):Null<ScriptableState>
 	{
 		#if (HSCRIPT_ALLOWED && sys && MODS_ALLOWED)
+		if (!overridesEnabled()) return null;
 		if ((state is ScriptableState)) return null; // prevent infinite redirect
 		var fullName:String = Type.getClassName(Type.getClass(state));
 		// Extract the simple class name (TitleState from funkin.ui.title.TitleState)
@@ -147,9 +158,17 @@ class ScriptableState extends MusicBeatState
 		var simpleName:String = parts[parts.length - 1];
 		// PlayState has its own rich scripting system — never intercept it here.
 		if (simpleName == 'PlayState') return null;
-		if (hasScript(simpleName)) return new ScriptableState(simpleName);
+		if (_consumeOverrideBypass(simpleName)) return null;
+		if (hasScript(simpleName)) return new ScriptableState(simpleName, state);
 		#end
 		return null;
+	}
+
+	static function _consumeOverrideBypass(name:String):Bool
+	{
+		if (!_bypassNextOverrideFor.exists(name)) return false;
+		_bypassNextOverrideFor.remove(name);
+		return true;
 	}
 
 	// ─── Lifecycle ─────────────────────────────────────────────────────────────
@@ -176,8 +195,18 @@ class ScriptableState extends MusicBeatState
 
 		#if (HSCRIPT_ALLOWED && sys)
 		var path:String = findScript(stateName);
-		if (path != null)
-			_loadScript(path);
+		if (path == null)
+		{
+			if (_switchToFallback('script file not found')) return;
+		}
+		else if (!_loadScript(path))
+		{
+			if (_switchToFallback('script failed to load')) return;
+		}
+		else if (!_hasScriptEntry())
+		{
+			if (_switchToFallback('script has no create entry')) return;
+		}
 		#end
 
 		_callOnScript('create', []);
@@ -296,7 +325,7 @@ class ScriptableState extends MusicBeatState
 	// ─── Script loading ────────────────────────────────────────────────────────
 
 	#if HSCRIPT_ALLOWED
-	function _loadScript(path:String):Void
+	function _loadScript(path:String):Bool
 	{
 		try
 		{
@@ -393,6 +422,8 @@ class ScriptableState extends MusicBeatState
 					}
 				}
 			}
+
+			return true;
 		}
 		catch (e:IrisError)
 		{
@@ -405,6 +436,28 @@ class ScriptableState extends MusicBeatState
 		{
 			trace('[ScriptableState] Failed to load $path: $e');
 		}
+
+		return false;
+	}
+
+	function _hasScriptEntry():Bool
+	{
+		if (_scriptedObj != null) return _scriptedObj.hasMethod('create');
+		if (_script == null) return false;
+
+		return _script.exists('onCreate')
+			|| _script.exists('create');
+	}
+
+	function _switchToFallback(reason:String):Bool
+	{
+		if (_fallbackTriggered || _fallbackState == null) return false;
+
+		_fallbackTriggered = true;
+		_bypassNextOverrideFor.set(stateName, true);
+		trace('[ScriptableState:$stateName] Falling back to hardcoded state: ' + reason);
+		MusicBeatState.switchState(_fallbackState);
+		return true;
 	}
 	#end
 

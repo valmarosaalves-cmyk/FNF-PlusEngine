@@ -125,7 +125,7 @@ class MaterialBox extends FlxSpriteGroup
 
 		// Title text
 		titleText = new FlxText(TITLE_PADDING, 0, width - TITLE_PADDING * 2 - CLOSE_AREA, title, TITLE_FONT_SIZE);
-		titleText.setFormat(Paths.font("phantom.ttf"), TITLE_FONT_SIZE, MD3Theme.onSurface, LEFT);
+		titleText.setFormat(Paths.font("inter.otf"), TITLE_FONT_SIZE, MD3Theme.onSurface, LEFT);
 		titleText.antialiasing = ClientPrefs.data.antialiasing;
 		titleText.y = (TITLE_BAR_HEIGHT - titleText.height) / 2;
 		add(titleText);

@@ -104,14 +104,14 @@ class FilledTextField extends FlxSpriteGroup
 		// Create label text (relative to group)
 		labelYPos = LABEL_Y_NORMAL;
 		labelText = new FlxText(PADDING_HORIZONTAL, 0, fieldWidth - PADDING_HORIZONTAL * 2, this.label, 16);
-		labelText.setFormat(Paths.font("phantom.ttf"), 16, LABEL_COLOR, LEFT);
+		labelText.setFormat(Paths.font("inter.otf"), 16, LABEL_COLOR, LEFT);
 		labelText.antialiasing = ClientPrefs.data.antialiasing;
 		labelText.offset.y = -labelYPos; // Use negative offset to position downward
 		add(labelText);
 		
 		// Create input text (relative to group)
 		inputText = new FlxText(PADDING_HORIZONTAL, 28, fieldWidth - PADDING_HORIZONTAL * 2, "", 16);
-		inputText.setFormat(Paths.font("phantom.ttf"), 16, TEXT_COLOR, LEFT);
+		inputText.setFormat(Paths.font("inter.otf"), 16, TEXT_COLOR, LEFT);
 		inputText.antialiasing = ClientPrefs.data.antialiasing;
 		inputText.alpha = 0;
 		add(inputText);
@@ -125,7 +125,7 @@ class FilledTextField extends FlxSpriteGroup
 		
 		// Create supporting text (relative to group)
 		supportingText = new FlxText(PADDING_HORIZONTAL, FIELD_HEIGHT + 4, fieldWidth - PADDING_HORIZONTAL * 2, "", 12);
-		supportingText.setFormat(Paths.font("phantom.ttf"), 12, SUPPORTING_COLOR, LEFT);
+		supportingText.setFormat(Paths.font("inter.otf"), 12, SUPPORTING_COLOR, LEFT);
 		supportingText.antialiasing = ClientPrefs.data.antialiasing;
 		add(supportingText);
 		

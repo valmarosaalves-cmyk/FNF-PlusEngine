@@ -10,6 +10,7 @@ import funkin.ui.Language;
 import lime.app.Application;
 import flixel.FlxG;
 import funkin.util.CoolUtil;
+import funkin.ui.FlashingState;
 import funkin.ui.title.TitleState;
 
 /**
@@ -43,22 +44,27 @@ class InitialState extends MusicBeatState
 		// ScriptableState.tryCreate checks mods then engine assets automatically.
 		// CustomState is kept as a fallback for old flat-callback scripts.
 		#if (HSCRIPT_ALLOWED && MODS_ALLOWED && !mobile)
-		var flashingScript = ScriptableState.tryCreate('FlashingState');
-		if (flashingScript != null) {
-			MusicBeatState.switchState(flashingScript);
-			return;
-		} else if (CustomState.hasScript('FlashingState')) {
-			MusicBeatState.switchState(new CustomState('FlashingState'));
-			return;
-		}
+		if (ScriptableState.overridesEnabled()) {
+			var shouldAskFlashing = FlxG.save.data != null && FlxG.save.data.flashing == null && !FlashingState.leftState;
+			if (shouldAskFlashing) {
+				var flashingScript = ScriptableState.tryCreate('FlashingState', new FlashingState());
+				if (flashingScript != null) {
+					MusicBeatState.switchState(flashingScript);
+					return;
+				} else if (CustomState.hasScript('FlashingState')) {
+					MusicBeatState.switchState(new CustomState('FlashingState'));
+					return;
+				}
+			}
 
-		var titleScript = ScriptableState.tryCreate('TitleState');
-		if (titleScript != null) {
-			MusicBeatState.switchState(titleScript);
-			return;
-		} else if (CustomState.hasScript('TitleState')) {
-			MusicBeatState.switchState(new CustomState('TitleState'));
-			return;
+			var titleScript = ScriptableState.tryCreate('TitleState', new TitleState());
+			if (titleScript != null) {
+				MusicBeatState.switchState(titleScript);
+				return;
+			} else if (CustomState.hasScript('TitleState')) {
+				MusicBeatState.switchState(new CustomState('TitleState'));
+				return;
+			}
 		}
 		#end
 

@@ -118,7 +118,7 @@ class MaterialChip extends FlxSpriteGroup
 		// Label text
 		var labelOffsetX:Float = leftPad + (hasCheck ? CHECK_SIZE + 8 : 0);
 		labelText = new FlxText(labelOffsetX, 0, labelW + 2, label, LABEL_SIZE);
-		labelText.setFormat(Paths.font("phantom.ttf"), LABEL_SIZE, TEXT_COLOR, LEFT);
+		labelText.setFormat(Paths.font("inter.otf"), LABEL_SIZE, TEXT_COLOR, LEFT);
 		labelText.antialiasing = ClientPrefs.data.antialiasing;
 		labelText.y = (CHIP_HEIGHT - labelText.height) / 2;
 		add(labelText);

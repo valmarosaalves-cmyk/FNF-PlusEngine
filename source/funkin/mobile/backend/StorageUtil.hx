@@ -20,7 +20,7 @@ class StorageUtil
 		// This is the recommended approach for modern Android versions
 		return haxe.io.Path.addTrailingSlash(AndroidContext.getExternalFilesDir());
 		#elseif ios
-		return lime.system.System.documentsDirectory;
+		return Path.addTrailingSlash(LimeSystem.documentsDirectory);
 		#else
 		return Sys.getCwd();
 		#end

@@ -95,6 +95,7 @@ class PsychUIDropDownMenu extends PsychUIInputText
 	var _touchScrollAccum:Float = 0;
 	var _prevMouseY:Float = 0;
 	var _touchDragDist:Float = 0;
+	var _touchDidScroll:Bool = false;
 	#end
 	#if android
 	var waitingNativeSelection:Bool = false;
@@ -183,6 +184,8 @@ class PsychUIDropDownMenu extends PsychUIInputText
 				_prevMouseY = FlxG.mouse.y;
 				_touchScrollAccum = 0;
 				_touchDragDist = 0;
+				_touchDidScroll = false;
+				PsychUIDropDownItem.suppressReleaseClick = false;
 			}
 			else if (FlxG.mouse.pressed)
 			{
@@ -191,15 +194,29 @@ class PsychUIDropDownMenu extends PsychUIInputText
 				_touchScrollAccum += dy;
 				_prevMouseY = FlxG.mouse.y;
 				PsychUIDropDownItem.isDragging = _touchDragDist > 8;
+				if(PsychUIDropDownItem.isDragging)
+				{
+					_touchDidScroll = true;
+					PsychUIDropDownItem.suppressReleaseClick = true;
+				}
 				while (_touchScrollAccum > 30) { wheel--; _touchScrollAccum -= 30; }
 				while (_touchScrollAccum < -30) { wheel++; _touchScrollAccum += 30; }
 			}
 			else if (FlxG.mouse.justReleased)
 			{
 				PsychUIDropDownItem.isDragging = false;
+				if(_touchDidScroll)
+					PsychUIDropDownItem.suppressReleaseClick = true;
 			}
 			#end
-			if(wheel != 0) showDropDown(true, curScroll - wheel, _curFilter);
+			if(wheel != 0)
+			{
+				#if mobile
+				_touchDidScroll = true;
+				PsychUIDropDownItem.suppressReleaseClick = true;
+				#end
+				showDropDown(true, curScroll - wheel, _curFilter);
+			}
 		}
 	}
 
@@ -223,6 +240,10 @@ class PsychUIDropDownMenu extends PsychUIInputText
 		{
 			text = selectedLabel;
 			_curFilter = null;
+			#if mobile
+			_touchDidScroll = false;
+			PsychUIDropDownItem.suppressReleaseClick = false;
+			#end
 		}
 
 		curScroll = Std.int(Math.max(0, Math.min(onlyAllowed != null ? (onlyAllowed.length - 1) : (list.length - 1), scroll)));
@@ -342,6 +363,9 @@ class PsychUIDropDownItem extends FlxSpriteGroup
 	public var onClick:Void->Void;
 	public var forceNextUpdate:Bool = false;
 	public static var isDragging:Bool = false;
+	#if mobile
+	public static var suppressReleaseClick:Bool = false;
+	#end
 	override function update(elapsed:Float)
 	{
 		super.update(elapsed);
@@ -356,7 +380,7 @@ class PsychUIDropDownItem extends FlxSpriteGroup
 			forceNextUpdate = false;
 
 			#if mobile
-			if(overlapped && FlxG.mouse.justReleased && !isDragging)
+			if(overlapped && FlxG.mouse.justReleased && !isDragging && !suppressReleaseClick)
 			#else
 			if(overlapped && FlxG.mouse.justPressed)
 			#end

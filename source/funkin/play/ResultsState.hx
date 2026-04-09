@@ -335,7 +335,10 @@ class ResultsState extends MusicBeatState
             if (params.isWeek != null && params.isWeek == true) {
                 MusicBeatState.switchState(new StoryMenuState());
             } else {
-                MusicBeatState.switchState(new FreeplayState());
+                if (ClientPrefs.data.newfreeplay)
+					MusicBeatState.switchState(new FreeplayState());
+				else
+					MusicBeatState.switchState(new funkin.ui.freeplay.FreeplayState_Psych());
             }
         }
     }

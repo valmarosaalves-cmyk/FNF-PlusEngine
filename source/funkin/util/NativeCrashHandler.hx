@@ -214,19 +214,32 @@ static bool NativeCrashHandler_Install()
 #endif // NATIVE_CRASH_HANDLER_CPP
 ')
 #end
+
+#if (ios && cpp)
+@:buildXml('
+<files id="haxe">
+    <file name="source/funkin/util/ios/NativeCrashHandlerIOS.mm" />
+</files>
+')
+@:headerCode('
+extern "C" bool NativeCrashHandlerIOS_Install();
+')
+#end
 class NativeCrashHandler
 {
 	/**
-	 * Installs the native C++ SEH crash handler.
+     * Installs the native platform crash handler.
 	 * Must be called as early as possible in Main.hx — ideally before any
 	 * other code runs — so it catches crashes in all subsequent code.
 	 *
-	 * On non-Windows / non-cpp targets this is a no-op.
+     * On unsupported targets this is a no-op.
 	 */
 	public static function install():Void
 	{
 		#if (windows && cpp)
 		untyped __cpp__('NativeCrashHandler_Install()');
+        #elseif (ios && cpp)
+        untyped __cpp__('NativeCrashHandlerIOS_Install()');
 		#end
 	}
 }

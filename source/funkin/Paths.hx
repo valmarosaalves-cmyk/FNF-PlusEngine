@@ -870,10 +870,26 @@ class Paths
 	public static function readDirectory(directory:String):Array<String>
 	{
 		#if MODS_ALLOWED
-		// Legacy mode: direct FileSystem access (Psych 0.7.3 style)
-		if (ClientPrefs.data.legacyFileSystemAccess)
+		// Try filesystem first (works for mod directories and desktop assets)
+		if(FileSystem.exists(directory))
 			return FileSystem.readDirectory(directory);
-		return FileSystem.readDirectory(directory);
+
+		// Fallback: list APK-embedded assets by prefix (needed on Android for base game assets)
+		#if android
+		var prefix:String = directory.endsWith('/') ? directory : directory + '/';
+		var filenames:Array<String> = [];
+		for(asset in Assets.list())
+		{
+			if(!asset.startsWith(prefix)) continue;
+			var remainder:String = asset.substr(prefix.length);
+			var name:String = remainder.split('/')[0];
+			if(name.length > 0 && !filenames.contains(name))
+				filenames.push(name);
+		}
+		return filenames;
+		#else
+		return [];
+		#end
 		#else
 		var dirs:Array<String> = [];
 		for(dir in Assets.list().filter(folder -> folder.startsWith(directory)))

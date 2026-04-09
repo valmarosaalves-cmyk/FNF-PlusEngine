@@ -94,9 +94,14 @@ class Mods
 	inline public static function directoriesWithFile(path:String, fileToFind:String, mods:Bool = true)
 	{
 		var foldersToCheck:Array<String> = [];
-		//Main folder
-		if(FileSystem.exists(path + fileToFind))
-			foldersToCheck.push(path + fileToFind);
+		// Main folder - check filesystem first, then fall back to APK assets (needed on Android)
+		var mainPath:String = path + fileToFind;
+		if(FileSystem.exists(mainPath))
+			foldersToCheck.push(mainPath);
+		#if android
+		else if(Lambda.exists(Assets.list(), f -> f.startsWith(mainPath)))
+			foldersToCheck.push(mainPath);
+		#end
 
 		// Week folder
 		if(Paths.currentLevel != null && Paths.currentLevel != path)

@@ -733,6 +733,11 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 	var autoSaveCap:Int = 2; //in minutes
 	var backupLimit:Int = 10;
 
+	// On Android, relative paths are not writable, so we need the full scoped storage path.
+	var backupDir(get, never):String;
+	inline function get_backupDir():String
+		return #if android StorageUtil.getStorageDirectory() + 'backups' #else 'backups' #end;
+
 	var lastBeatHit:Int = 0;
 	override function update(elapsed:Float)
 	{
@@ -862,12 +867,12 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 				Reflect.setField(songCopy, '__original_path', Song.chartPath);
 				var dataToSave:String = haxe.Json.stringify(songCopy);
 				//trace(chartName, dataToSave);
-				if(!FileSystem.isDirectory('backups')) FileSystem.createDirectory('backups');
-				File.saveContent('backups/$chartName.$BACKUP_EXT', dataToSave);
+				if(!FileSystem.isDirectory(backupDir)) FileSystem.createDirectory(backupDir);
+				File.saveContent('$backupDir/$chartName.$BACKUP_EXT', dataToSave);
 
 				if(backupLimit > 0)
 				{
-					var files:Array<String> = Paths.readDirectory('backups/').filter((file:String) -> file.endsWith('.$BACKUP_EXT'));
+					var files:Array<String> = Paths.readDirectory('$backupDir/').filter((file:String) -> file.endsWith('.$BACKUP_EXT'));
 					if(files.length > backupLimit)
 					{
 						var incorrect:Array<String> = [];
@@ -904,7 +909,7 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 							//trace('removed $file');
 							try
 							{
-								FileSystem.deleteFile('backups/$file');
+								FileSystem.deleteFile('$backupDir/$file');
 							}
 							catch(e:Exception) {}
 						}
@@ -3817,13 +3822,13 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 			upperBox.isMinimized = true;
 			upperBox.bg.visible = false;
 
-			if(!FileSystem.exists('backups/'))
+			if(!FileSystem.exists(backupDir))
 			{
 				showOutput('The "backups" folder does not exist.', true);
 				return;
 			}
 			
-			var fileList:Array<String> = Paths.readDirectory('backups/').filter((file:String) -> file.endsWith('.$BACKUP_EXT'));
+			var fileList:Array<String> = Paths.readDirectory('$backupDir/').filter((file:String) -> file.endsWith('.$BACKUP_EXT'));
 			if(fileList.length < 1)
 			{
 				showOutput('No autosave files found.', true);
@@ -3853,7 +3858,7 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 					var btn:PsychUIButton = new PsychUIButton(0, radioGrp.y + radioGrp.height + 20, 'Load', function()
 					{
 						var autosaveName:String = fileList[radioGrp.checked];
-						var path:String = 'backups/$autosaveName';
+						var path:String = '$backupDir/$autosaveName';
 						state.close();
 
 						if(FileSystem.exists(path))

@@ -38,8 +38,6 @@ class MaterialDialog extends FlxSpriteGroup
 	var dismissBaseY:Float = 0;
 	var focusedAction:Int = 1;
 
-	static inline var SCRIM_COLOR:FlxColor = 0x52000000;
-
 	// Animation
 	var openTween:FlxTween;
 	var scrimTween:FlxTween;
@@ -78,7 +76,7 @@ class MaterialDialog extends FlxSpriteGroup
 
 		// Scrim (full-screen overlay)
 		scrim = new FlxSprite(0, 0);
-		scrim.makeGraphic(screenW, screenH, SCRIM_COLOR);
+		scrim.makeGraphic(screenW, screenH, MD3Theme.scrimColor());
 		scrim.alpha = 0;
 		add(scrim);
 
@@ -147,6 +145,7 @@ class MaterialDialog extends FlxSpriteGroup
 
 	function _onThemeChange():Void
 	{
+		if (scrim != null) scrim.makeGraphic(FlxG.width, FlxG.height, MD3Theme.scrimColor());
 		if (panel != null) panel.color = MD3Theme.surfaceContainerHigh;
 		if (titleText != null) titleText.color = MD3Theme.onSurface;
 		if (bodyText != null) bodyText.color = MD3Theme.onSurfaceVariant;

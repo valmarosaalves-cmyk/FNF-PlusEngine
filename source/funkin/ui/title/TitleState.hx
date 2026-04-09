@@ -106,7 +106,7 @@ class TitleState extends MusicBeatState
 		#elseif CHARTING
 		MusicBeatState.switchState(new ChartEditorState());
 		#elseif TEST
-		MusicBeatState.switchState(new funkin.ui.debug.MD3TestState());
+		MusicBeatState.switchState(new funkin.ui.debug.isolated.MD3IsolatedComponentState());
 		#else
 		if(FlxG.save.data.flashing == null && !FlashingState.leftState)
 		{

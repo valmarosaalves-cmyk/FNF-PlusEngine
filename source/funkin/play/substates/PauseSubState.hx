@@ -205,21 +205,20 @@ class PauseSubState extends MusicBeatSubstate
 	{
 		OptionsMenuTheme.syncAccent();
 		var palette = OptionsMenuTheme.current();
-		var blackTheme = OptionsMenuTheme.isDark();
-		var backdropColor = blackTheme ? 0xFF070809 : 0xFF120C19;
-		var panelSurfaceColor = blackTheme ? 0xFF101216 : 0xFFF9F5FC;
-		var panelHeaderColor = blackTheme ? 0xFF171A1F : 0xFFFFFBFF;
-		var panelOutlineColor = blackTheme ? 0xFF2A2E36 : 0x24FFFFFF;
-		var metaColor = blackTheme ? 0xFF9BA1AD : 0xFF6D5F82;
-		var summarySurfaceColor = blackTheme ? 0xFF171A1F : 0xFFFFFBFF;
-		var summaryOutlineColor = blackTheme ? 0xFF30343C : 0xFFDCCEEB;
-		var timeSurfaceColor = blackTheme ? 0xFF111317 : 0xFFFCF8FF;
-		var statsColor = blackTheme ? 0xFFE8EBF0 : 0xFF2C1E48;
-		var timeSummaryColor = blackTheme ? 0xFFC7CDD7 : 0xFF4D34A8;
-		var sliderHintColor = blackTheme ? 0xFF9BA1AD : 0xFF7B6D93;
-		var titleColor = blackTheme ? 0xFFF5F7FA : palette.strong;
-		var bodyColor = blackTheme ? 0xFFC4CBD6 : palette.muted;
-		var dateTimeColor = blackTheme ? 0xFF9BA1AD : palette.muted;
+		var backdropColor = OptionsMenuTheme.backdropColor();
+		var panelSurfaceColor = OptionsMenuTheme.panelSurfaceColor();
+		var panelHeaderColor = OptionsMenuTheme.panelHeaderColor();
+		var panelOutlineColor = OptionsMenuTheme.panelOutlineColor();
+		var metaColor = OptionsMenuTheme.footerTextColor();
+		var summarySurfaceColor = OptionsMenuTheme.previewSurfaceColor();
+		var summaryOutlineColor = OptionsMenuTheme.neutralOutlineColor();
+		var timeSurfaceColor = OptionsMenuTheme.cardFill(false);
+		var statsColor = OptionsMenuTheme.previewTitleColor();
+		var timeSummaryColor = palette.accent;
+		var sliderHintColor = OptionsMenuTheme.cardDescriptionColor(false);
+		var titleColor = OptionsMenuTheme.titleColor();
+		var bodyColor = OptionsMenuTheme.bodyTextColor();
+		var dateTimeColor = OptionsMenuTheme.footerTextColor();
 
 		panelWidth = Math.min(960, FlxG.width - 36);
 		panelHeight = FlxG.height - 28;
@@ -246,7 +245,7 @@ class PauseSubState extends MusicBeatSubstate
 		menuBG = new FlxSprite().loadGraphic(Paths.image('menuDesat'));
 		menuBG.antialiasing = ClientPrefs.data.antialiasing;
 		menuBG.color = palette.pale;
-		menuBG.alpha = blackTheme ? 0.05 : 0.09;
+		menuBG.alpha = OptionsMenuTheme.menuBackgroundAlpha();
 		menuBG.updateHitbox();
 		menuBG.screenCenter();
 		pinSprite(menuBG);
@@ -1177,11 +1176,9 @@ private class PauseActionCard extends FlxSpriteGroup
 
 	function redraw():Void
 	{
-		var palette = OptionsMenuTheme.current();
-		var blackTheme = palette.name == 'Black';
-		var fill = blackTheme ? (selected ? 0xFF181B20 : 0xFF101216) : (selected ? palette.mist : 0xFFFCF8FF);
-		var stroke = blackTheme ? (selected ? palette.accent : 0xFF30343C) : (selected ? palette.accent : 0xFFDCCEEB);
-		var accent = blackTheme ? (selected ? palette.accent : 0xFF434852) : (selected ? palette.accent : palette.pale);
+		var fill = OptionsMenuTheme.cardFill(selected);
+		var stroke = OptionsMenuTheme.cardStroke(selected);
+		var accent = OptionsMenuTheme.cardAccent(selected);
 		var accentHeight = Std.int(Math.max(18, cardHeight - 32));
 		MD3ShapeTools.fillRoundRect(background, Std.int(cardWidth), Std.int(cardHeight), 24, fill);
 		MD3ShapeTools.strokeRoundRect(outline, Std.int(cardWidth), Std.int(cardHeight), 24, 2, stroke);
@@ -1189,9 +1186,9 @@ private class PauseActionCard extends FlxSpriteGroup
 		accentBar.y = BAR_Y;
 		MD3ShapeTools.fillRoundRect(accentBar, BAR_WIDTH, accentHeight, 4, accent);
 		accentBar.alpha = selected ? 1.0 : 0.72;
-		titleText.color = blackTheme ? (selected ? 0xFFF5F7FA : 0xFFE6EAF0) : (selected ? palette.strong : 0xFF402D61);
-		descriptionText.color = blackTheme ? (selected ? 0xFFC4CBD6 : 0xFF99A1AE) : (selected ? palette.muted : 0xFF7B6D93);
-		valueText.color = blackTheme ? (selected ? palette.accent : 0xFFB7BEC9) : (selected ? palette.accent : 0xFF7B6D93);
+		titleText.color = OptionsMenuTheme.cardTitleColor(selected);
+		descriptionText.color = OptionsMenuTheme.cardDescriptionColor(selected);
+		valueText.color = OptionsMenuTheme.cardValueColor(selected);
 	}
 
 	public function setSelected(value:Bool, instant:Bool = false):Void

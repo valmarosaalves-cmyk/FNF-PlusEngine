@@ -163,35 +163,36 @@ class ControlsSubState extends MusicBeatSubstate
 		add(panelShadow);
 
 		var panelSurface:FlxSprite = new FlxSprite(panelX, panelY);
-		MD3ShapeTools.fillRoundRect(panelSurface, Std.int(panelWidth), Std.int(panelHeight), 34, 0xFFF9F5FC);
+		MD3ShapeTools.fillRoundRect(panelSurface, Std.int(panelWidth), Std.int(panelHeight), 34, OptionsMenuTheme.panelSurfaceColor());
 		add(panelSurface);
 
 		panelHeader = new FlxSprite(panelX, panelY);
-		MD3ShapeTools.fillRoundRectComplex(panelHeader, Std.int(panelWidth), 106, 34, 34, 0, 0, 0xFFFFFBFF);
+		MD3ShapeTools.fillRoundRectComplex(panelHeader, Std.int(panelWidth), 106, 34, 34, 0, 0, OptionsMenuTheme.panelHeaderColor());
 		add(panelHeader);
 
 		var panelOutline:FlxSprite = new FlxSprite(panelX, panelY);
-		MD3ShapeTools.strokeRoundRect(panelOutline, Std.int(panelWidth), Std.int(panelHeight), 34, 2, 0x22FFFFFF);
+		MD3ShapeTools.strokeRoundRect(panelOutline, Std.int(panelWidth), Std.int(panelHeight), 34, 2, OptionsMenuTheme.neutralOutlineColor());
 		add(panelOutline);
 
 		var listSurface:FlxSprite = new FlxSprite(listX, listY);
-		MD3ShapeTools.fillAndStrokeRoundRect(listSurface, Std.int(listWidth), Std.int(panelHeight - 164), 28, 2, 0xFFF8F3FB, 0xFFE5DCEF);
+		MD3ShapeTools.fillAndStrokeRoundRect(listSurface, Std.int(listWidth), Std.int(panelHeight - 164), 28, 2,
+			OptionsMenuTheme.previewSurfaceColor(), OptionsMenuTheme.neutralOutlineColor());
 		add(listSurface);
 
 		var titleText:FlxText = new FlxText(panelX + 34, panelY + 18, panelWidth - 68, Language.getPhrase('controls_menu', 'Controls'), 30);
-		titleText.setFormat(Paths.font('inter-bold.otf'), 30, palette.strong, LEFT);
+		titleText.setFormat(Paths.font('inter-bold.otf'), 30, OptionsMenuTheme.titleColor(), LEFT);
 		titleText.antialiasing = ClientPrefs.data.antialiasing;
 		add(titleText);
 
 		var subtitleText:FlxText = new FlxText(panelX + 34, panelY + 58, panelWidth - 68,
 			Language.getPhrase('controls_menu_subtitle', 'Rebind keyboard and gamepad inputs without digging through the whole engine basement.'), 15);
-		subtitleText.setFormat(Paths.font('inter.otf'), 15, palette.muted, LEFT);
+		subtitleText.setFormat(Paths.font('inter.otf'), 15, OptionsMenuTheme.bodyTextColor(), LEFT);
 		subtitleText.antialiasing = ClientPrefs.data.antialiasing;
 		add(subtitleText);
 
 		var footerText:FlxText = new FlxText(panelX + 34, panelY + panelHeight - 40, panelWidth - 68,
 			Language.getPhrase('controls_menu_footer', 'ENTER opens the rebind dialog. LEFT / RIGHT swaps primary and alternate. CTRL or shoulder buttons switch keyboard/gamepad.'), 14);
-		footerText.setFormat(Paths.font('inter.otf'), 14, 0xFF5E506F, LEFT);
+		footerText.setFormat(Paths.font('inter.otf'), 14, OptionsMenuTheme.footerTextColor(), LEFT);
 		footerText.antialiasing = ClientPrefs.data.antialiasing;
 		add(footerText);
 
@@ -214,7 +215,7 @@ class ControlsSubState extends MusicBeatSubstate
 		add(controllerSpr);
 
 		var modeHint:FlxText = new FlxText(panelX + panelWidth - 360, panelY + 44, 220, Language.getPhrase('controls_menu_mode_hint', 'CTRL toggles input mode'), 14);
-		modeHint.setFormat(Paths.font('inter.otf'), 14, palette.muted, RIGHT);
+		modeHint.setFormat(Paths.font('inter.otf'), 14, OptionsMenuTheme.bodyTextColor(), RIGHT);
 		modeHint.antialiasing = ClientPrefs.data.antialiasing;
 		add(modeHint);
 
@@ -255,7 +256,7 @@ class ControlsSubState extends MusicBeatSubstate
 					});
 
 					var headerText = new FlxText(listX + 28, listY, listWidth - 56, label, 20);
-					headerText.setFormat(Paths.font('inter-bold.otf'), 20, 0xFF5D4B78, LEFT);
+					headerText.setFormat(Paths.font('inter-bold.otf'), 20, OptionsMenuTheme.titleColor(), LEFT);
 					headerText.antialiasing = ClientPrefs.data.antialiasing;
 					visibleHeaderTexts.add(headerText);
 				}
@@ -277,7 +278,7 @@ class ControlsSubState extends MusicBeatSubstate
 					visibleRowCards.add(rowCard);
 
 					var labelText = new FlxText(listX + 24, listY, 440, label, 20);
-					labelText.setFormat(Paths.font('inter-bold.otf'), 20, 0xFF2D2140, LEFT);
+					labelText.setFormat(Paths.font('inter-bold.otf'), 20, OptionsMenuTheme.optionTitleColor(false), LEFT);
 					labelText.antialiasing = ClientPrefs.data.antialiasing;
 					visibleOptionTexts.add(labelText);
 
@@ -297,7 +298,7 @@ class ControlsSubState extends MusicBeatSubstate
 							visibleBindCards.add(bindCard);
 
 							var bindText = new FlxText(panelX + panelWidth - 444 + slot * 212, listY, 184, '', 17);
-							bindText.setFormat(Paths.font('inter.otf'), 17, 0xFF33254A, CENTER);
+							bindText.setFormat(Paths.font('inter.otf'), 17, OptionsMenuTheme.optionDescriptionColor(false), CENTER);
 							bindText.antialiasing = ClientPrefs.data.antialiasing;
 							visibleBindTexts.add(bindText);
 						}
@@ -388,15 +389,15 @@ class ControlsSubState extends MusicBeatSubstate
 
 	function drawListCard(card:FlxSprite, selected:Bool):Void
 	{
-		var fill = selected ? 0xFFE8DEFF : 0xFFF8F2FB;
-		var stroke = selected ? 0xFF7A63DA : 0xFFE3D9EF;
+		var fill = OptionsMenuTheme.cardFill(selected);
+		var stroke = OptionsMenuTheme.cardStroke(selected);
 		MD3ShapeTools.fillAndStrokeRoundRect(card, 454, 56, 18, 2, fill, stroke);
 	}
 
 	function drawBindCard(card:FlxSprite, selected:Bool):Void
 	{
-		var fill = selected ? 0xFFDCD1FF : 0xFFF1EAF8;
-		var stroke = selected ? 0xFF6A53D2 : 0xFFD6CAE6;
+		var fill = OptionsMenuTheme.cardFill(selected);
+		var stroke = OptionsMenuTheme.cardStroke(selected);
 		MD3ShapeTools.fillAndStrokeRoundRect(card, 188, 56, 16, 2, fill, stroke);
 	}
 
@@ -474,7 +475,7 @@ class ControlsSubState extends MusicBeatSubstate
 			field.x = card.x + 18;
 			field.y = card.y + 15;
 			field.alpha += (ref.alpha - field.alpha) * follow;
-			field.color = selected ? 0xFF24173C : 0xFF4C3B66;
+			field.color = OptionsMenuTheme.optionTitleColor(selected);
 
 			applyVerticalClip(card, clipTop, clipBottom);
 			applyVerticalClip(field, clipTop, clipBottom);
@@ -506,7 +507,7 @@ class ControlsSubState extends MusicBeatSubstate
 			field.fieldWidth = 164;
 			field.alignment = CENTER;
 			field.alpha += (ref.alpha - field.alpha) * follow;
-			field.color = selected ? 0xFF27184A : 0xFF4D3C69;
+			field.color = OptionsMenuTheme.optionDescriptionColor(selected);
 
 			applyVerticalClip(card, clipTop, clipBottom);
 			applyVerticalClip(field, clipTop, clipBottom);
@@ -799,7 +800,7 @@ class ControlsSubState extends MusicBeatSubstate
 	{
 		FlxTween.cancelTweensOf(bg);
 		FlxTween.color(bg, 0.5, bg.color, onKeyboardMode ? gamepadColor : keyboardColor, {ease: FlxEase.linear});
-		MD3ShapeTools.fillRoundRectComplex(panelHeader, Std.int(panelWidth), 106, 34, 34, 0, 0, 0xFFFFFBFF);
+		MD3ShapeTools.fillRoundRectComplex(panelHeader, Std.int(panelWidth), 106, 34, 34, 0, 0, OptionsMenuTheme.panelHeaderColor());
 		onKeyboardMode = !onKeyboardMode;
 
 		curSelected = 0;

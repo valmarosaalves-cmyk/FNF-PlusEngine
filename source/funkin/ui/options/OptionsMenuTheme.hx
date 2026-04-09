@@ -1,5 +1,6 @@
 package funkin.ui.options;
 
+import flixel.util.FlxColor;
 import funkin.Preferences as ClientPrefs;
 import funkin.ui.components.md3.MD3Theme;
 
@@ -127,7 +128,23 @@ class OptionsMenuTheme
 	public static function syncAccent():Void
 	{
 		var palette = current();
-		MD3Theme.setAccent(palette.accent);
+		MD3Theme.setAccent(palette.accent, isDark());
+	}
+
+	static inline function clamp01(value:Float):Float
+	{
+		return value < 0 ? 0 : (value > 1 ? 1 : value);
+	}
+
+	static inline function colorWithAlpha(color:Int, alpha:Float):Int
+	{
+		return (Std.int(clamp01(alpha) * 255) << 24) | (color & 0x00FFFFFF);
+	}
+
+	static inline function blendColor(base:Int, tint:Int, amount:Float):Int
+	{
+		var ratio = clamp01(amount);
+		return FlxColor.interpolate(base, tint, ratio);
 	}
 
 	public static inline function backdropColor():Int
@@ -177,7 +194,8 @@ class OptionsMenuTheme
 
 	public static inline function cardFill(selected:Bool):Int
 	{
-		return isDark() ? (selected ? 0xFF1A1E24 : 0xFF121419) : (selected ? current().mist : 0xFFFCF8FF);
+		var base = isDark() ? 0xFF121419 : 0xFFFCF8FF;
+		return selected ? blendColor(base, current().accent, isDark() ? 0.11 : 0.09) : base;
 	}
 
 	public static inline function cardStroke(selected:Bool):Int
@@ -187,7 +205,10 @@ class OptionsMenuTheme
 
 	public static inline function cardAccent(selected:Bool):Int
 	{
-		return isDark() ? (selected ? current().accent : 0xFF434852) : (selected ? current().accent : current().pale);
+		if (selected)
+			return current().accent;
+
+		return isDark() ? blendColor(0xFF3A3F48, current().accent, 0.28) : blendColor(current().pale, current().accent, 0.18);
 	}
 
 	public static inline function cardTitleColor(selected:Bool):Int
@@ -218,6 +239,22 @@ class OptionsMenuTheme
 	public static inline function previewHintColor(focused:Bool = false):Int
 	{
 		return focused ? titleColor() : (isDark() ? 0xFF9BA1AD : 0xFF76678B);
+	}
+
+	public static inline function accentOverlay(alpha:Float):Int
+	{
+		return colorWithAlpha(current().accent, alpha);
+	}
+
+	public static inline function interactiveFill(active:Bool, hovered:Bool = false):Int
+	{
+		if (active)
+			return blendColor(isDark() ? 0xFF1A1E24 : 0xFFFCF8FF, current().accent, isDark() ? 0.15 : 0.11);
+
+		if (hovered)
+			return blendColor(isDark() ? 0xFF171B21 : 0xFFFFFBFF, current().accent, isDark() ? 0.08 : 0.06);
+
+		return 0x00000000;
 	}
 
 	public static inline function optionTitleColor(selected:Bool):Int

@@ -122,7 +122,7 @@ class MaterialNumericStepper extends FlxSpriteGroup
 		decrState = new FlxSprite(0, 0);
 		decrState.antialiasing = ClientPrefs.data.antialiasing;
 		MD3ShapeTools.fillRoundRect(decrState, area, h, cornerRadius());
-		decrState.color = MD3Theme.primary;
+		decrState.color = MD3Theme.stateLayerColor(MD3Theme.primary);
 		decrState.alpha = 0;
 		add(decrState);
 
@@ -130,7 +130,7 @@ class MaterialNumericStepper extends FlxSpriteGroup
 		incrState = new FlxSprite(w - area, 0);
 		incrState.antialiasing = ClientPrefs.data.antialiasing;
 		MD3ShapeTools.fillRoundRect(incrState, area, h, cornerRadius());
-		incrState.color = MD3Theme.primary;
+		incrState.color = MD3Theme.stateLayerColor(MD3Theme.primary);
 		incrState.alpha = 0;
 		add(incrState);
 
@@ -299,8 +299,8 @@ class MaterialNumericStepper extends FlxSpriteGroup
 		if (decrText  != null) decrText.color  = MD3Theme.primary;
 		if (incrText  != null) incrText.color  = MD3Theme.primary;
 		if (valueText != null) valueText.color = MD3Theme.onSurface;
-		if (decrState != null) decrState.color = MD3Theme.primary;
-		if (incrState != null) incrState.color = MD3Theme.primary;
+		if (decrState != null) decrState.color = MD3Theme.stateLayerColor(MD3Theme.primary);
+		if (incrState != null) incrState.color = MD3Theme.stateLayerColor(MD3Theme.primary);
 		if (divL != null) divL.color = MD3Theme.outlineVariant;
 		if (divR != null) divR.color = MD3Theme.outlineVariant;
 	}

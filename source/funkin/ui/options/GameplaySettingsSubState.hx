@@ -905,11 +905,10 @@ private class GameplayDropdownMenu extends FlxSpriteGroup
 
 	function refreshVisuals():Void
 	{
-		var darkTheme = OptionsMenuTheme.isDark();
 		for (index in 0...rowHighlights.length)
 		{
 			var isActive = index == selectedIndex;
-			var fill = isActive ? (darkTheme ? 0xFF1F242B : 0xFFE9DEFF) : 0x00000000;
+			var fill = OptionsMenuTheme.interactiveFill(isActive);
 			var textColor = isActive ? OptionsMenuTheme.titleColor() : OptionsMenuTheme.optionDescriptionColor(false);
 			MD3ShapeTools.fillRoundRect(rowHighlights[index], Std.int(background.width) - 16, ITEM_HEIGHT - 4, 14, fill);
 			rowLabels[index].color = textColor;

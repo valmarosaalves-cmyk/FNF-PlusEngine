@@ -228,6 +228,8 @@ class EnUS
         "setting_time_bar-song_name" => "Song Name",
         "setting_time_bar-disabled" => "Disabled",
         "description_time_bar" => "What should the Time Bar display?",
+        "setting_use_wavy_time_bar" => "Use Wavy Time Bar",
+        "description_use_wavy_time_bar" => "Uses the new wavy time bar in gameplay and loading screens. Leave this off if you want the classic engine bars instead.",
         "setting_flashing_lights" => "Flashing Lights",
         "description_flashing_lights" => "Uncheck this if you're sensitive to flashing lights!",
         "setting_show_key_viewer" => "Show Key Viewer",

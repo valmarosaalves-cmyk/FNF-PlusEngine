@@ -113,65 +113,67 @@ class NotesColorSubState extends MusicBeatSubstate
 		add(panelShadow);
 
 		var panelSurface:FlxSprite = new FlxSprite(panelX, panelY);
-		MD3ShapeTools.fillRoundRect(panelSurface, Std.int(panelWidth), Std.int(panelHeight), 34, 0xF3F9F5FC);
+		MD3ShapeTools.fillRoundRect(panelSurface, Std.int(panelWidth), Std.int(panelHeight), 34, OptionsMenuTheme.panelSurfaceColor());
 		add(panelSurface);
 
 		var panelHeader:FlxSprite = new FlxSprite(panelX, panelY);
-		MD3ShapeTools.fillRoundRectComplex(panelHeader, Std.int(panelWidth), 104, 34, 34, 0, 0, 0xFFFFFBFF);
+		MD3ShapeTools.fillRoundRectComplex(panelHeader, Std.int(panelWidth), 104, 34, 34, 0, 0, OptionsMenuTheme.panelHeaderColor());
 		add(panelHeader);
 
 		var panelOutline:FlxSprite = new FlxSprite(panelX, panelY);
-		MD3ShapeTools.strokeRoundRect(panelOutline, Std.int(panelWidth), Std.int(panelHeight), 34, 2, 0x22FFFFFF);
+		MD3ShapeTools.strokeRoundRect(panelOutline, Std.int(panelWidth), Std.int(panelHeight), 34, 2, OptionsMenuTheme.neutralOutlineColor());
 		add(panelOutline);
 
 		var previewSurface:FlxSprite = new FlxSprite(previewX, previewY);
-		MD3ShapeTools.fillAndStrokeRoundRect(previewSurface, Std.int(previewWidth), Std.int(previewHeight), 28, 2, 0xFFF3EDF9, 0xFFE1D6EF);
+		MD3ShapeTools.fillAndStrokeRoundRect(previewSurface, Std.int(previewWidth), Std.int(previewHeight), 28, 2,
+			OptionsMenuTheme.previewSurfaceColor(), OptionsMenuTheme.neutralOutlineColor());
 		add(previewSurface);
 
 		var editorSurface:FlxSprite = new FlxSprite(editorX, editorY);
-		MD3ShapeTools.fillAndStrokeRoundRect(editorSurface, Std.int(editorWidth), Std.int(editorHeight), 28, 2, 0xFFFCF8FF, 0xFFE6DCF1);
+		MD3ShapeTools.fillAndStrokeRoundRect(editorSurface, Std.int(editorWidth), Std.int(editorHeight), 28, 2,
+			OptionsMenuTheme.cardFill(false), OptionsMenuTheme.neutralOutlineColor());
 		add(editorSurface);
 
 		var titleText:FlxText = new FlxText(panelX + 34, panelY + 18, panelWidth - 68, Language.getPhrase('note_colors_menu', 'Note Colors'), 30);
-		titleText.setFormat(Paths.font('inter-bold.otf'), 30, palette.strong, LEFT);
+		titleText.setFormat(Paths.font('inter-bold.otf'), 30, OptionsMenuTheme.titleColor(), LEFT);
 		titleText.antialiasing = ClientPrefs.data.antialiasing;
 		add(titleText);
 
 		var subtitleText:FlxText = new FlxText(panelX + 34, panelY + 56, panelWidth - 68,
 			Language.getPhrase('note_colors_menu_subtitle', 'Tune arrow palettes without leaving the editor. Preview on the left, precise color control on the right.'), 15);
-		subtitleText.setFormat(Paths.font('inter.otf'), 15, palette.muted, LEFT);
+		subtitleText.setFormat(Paths.font('inter.otf'), 15, OptionsMenuTheme.bodyTextColor(), LEFT);
 		subtitleText.antialiasing = ClientPrefs.data.antialiasing;
 		add(subtitleText);
 
 		var previewLabel:FlxText = new FlxText(previewX + 22, previewY + 18, previewWidth - 132, Language.getPhrase('note_colors_preview_label', 'Preview Lane'), 20);
-		previewLabel.setFormat(Paths.font('inter-bold.otf'), 20, 0xFF2A1D3E, LEFT);
+		previewLabel.setFormat(Paths.font('inter-bold.otf'), 20, OptionsMenuTheme.previewTitleColor(), LEFT);
 		previewLabel.antialiasing = ClientPrefs.data.antialiasing;
 		add(previewLabel);
 
 		var previewHint:FlxText = new FlxText(previewX + 22, previewY + 68, previewWidth - 44,
 			Language.getPhrase('note_colors_preview_hint', 'Choose the RGB channel above, then pick the note lane below.'), 14);
-		previewHint.setFormat(Paths.font('inter.otf'), 14, 0xFF6E5E83, LEFT);
+		previewHint.setFormat(Paths.font('inter.otf'), 14, OptionsMenuTheme.previewHintColor(false), LEFT);
 		previewHint.antialiasing = ClientPrefs.data.antialiasing;
 		add(previewHint);
 
 		var editorLabel:FlxText = new FlxText(editorX + 22, editorY + 18, editorWidth - 44, Language.getPhrase('note_colors_editor_label', 'Color Mixer'), 20);
-		editorLabel.setFormat(Paths.font('inter-bold.otf'), 20, 0xFF2A1D3E, LEFT);
+		editorLabel.setFormat(Paths.font('inter-bold.otf'), 20, OptionsMenuTheme.previewTitleColor(), LEFT);
 		editorLabel.antialiasing = ClientPrefs.data.antialiasing;
 		add(editorLabel);
 
 		var editorHint:FlxText = new FlxText(editorX + 22, editorY + 46, editorWidth - 44,
 			Language.getPhrase('note_colors_editor_hint', 'Copy, paste, drag the wheel or type the hex value. Tiny chaos, but organized chaos.'), 14);
-		editorHint.setFormat(Paths.font('inter.otf'), 14, 0xFF6E5E83, LEFT);
+		editorHint.setFormat(Paths.font('inter.otf'), 14, OptionsMenuTheme.previewHintColor(false), LEFT);
 		editorHint.antialiasing = ClientPrefs.data.antialiasing;
 		add(editorHint);
 
 		modeBG = new FlxSprite(previewX + (previewWidth - 372) * 0.5, previewY + 116);
-		MD3ShapeTools.fillRoundRect(modeBG, 372, 108, 26, 0x227A63DA);
+		MD3ShapeTools.fillRoundRect(modeBG, 372, 108, 26, OptionsMenuTheme.accentOverlay(OptionsMenuTheme.isDark() ? 0.16 : 0.12));
 		modeBG.visible = false;
 		add(modeBG);
 
 		notesBG = new FlxSprite(previewX + 30, previewY + 246);
-		MD3ShapeTools.fillRoundRect(notesBG, Std.int(previewWidth - 60), 118, 26, 0x1F7A63DA);
+		MD3ShapeTools.fillRoundRect(notesBG, Std.int(previewWidth - 60), 118, 26, OptionsMenuTheme.accentOverlay(OptionsMenuTheme.isDark() ? 0.14 : 0.1));
 		notesBG.visible = false;
 		add(notesBG);
 
@@ -185,7 +187,7 @@ class NotesColorSubState extends MusicBeatSubstate
 			(controls.mobileC)
 				? Language.getPhrase('note_colors_toggle_mobile', 'Tap the note icon to switch between standard and pixel previews.')
 				: Language.getPhrase('note_colors_toggle_desktop', 'Press CTRL or click the note icon to switch between standard and pixel previews.'), 14);
-		toggleText.setFormat(Paths.font('inter.otf'), 14, 0xFF6E5E83, LEFT);
+		toggleText.setFormat(Paths.font('inter.otf'), 14, OptionsMenuTheme.previewHintColor(false), LEFT);
 		toggleText.antialiasing = ClientPrefs.data.antialiasing;
 		add(toggleText);
 
@@ -264,12 +266,12 @@ class NotesColorSubState extends MusicBeatSubstate
 			reset = "RESET";
 
 		var tip:FlxText = new FlxText(tipX, tipY, panelWidth - 52, Language.getPhrase('note_colors_tip', 'Press {1} to Reset the selected Note Part.', [reset]), 16);
-		tip.setFormat(Paths.font('inter.otf'), 15, 0xFF5E506F, LEFT);
+		tip.setFormat(Paths.font('inter.otf'), 15, OptionsMenuTheme.footerTextColor(), LEFT);
 		tip.antialiasing = ClientPrefs.data.antialiasing;
 		add(tip);
 
 		tipTxt = new FlxText(tipX, tipY + 24, panelWidth - 52, '', 16);
-		tipTxt.setFormat(Paths.font('inter.otf'), 15, 0xFF5E506F, LEFT);
+		tipTxt.setFormat(Paths.font('inter.otf'), 15, OptionsMenuTheme.footerTextColor(), LEFT);
 		tipTxt.antialiasing = ClientPrefs.data.antialiasing;
 		add(tipTxt);
 		updateTip();

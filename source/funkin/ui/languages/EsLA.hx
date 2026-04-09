@@ -404,6 +404,8 @@ class EsLA
         "description_use_legacy_font" => "Si está marcado, se usará la fuente de Psych 1.0.4.",
         "setting_legacy_shader_init" => "Inicialización de shader heredada",
         "description_legacy_shader_init" => "Si está marcado, se usará el sistema de inicialización de shader de Psych 0.7.3.\nActiva si tienes problemas con mods anteriores que modifican shaders.",
+        "setting_use_wavy_time_bar" => "Usar barra de tiempo ondulada",
+        "description_use_wavy_time_bar" => "Si está marcado, usa la nueva barra de tiempo ondulada en gameplay y pantallas de carga. Déjalo apagado si prefieres las barras clásicas del engine.",
 
         // Modchart Options
         "setting_hold_subdivisions" => "Subdivisiones de notas largas",
@@ -426,8 +428,6 @@ class EsLA
         "description_arrow_path_boundary" => "Define la distancia máxima a la que se renderizan las rutas de las notas.\nValores más altos aumentan el alcance, pero pueden afectar el rendimiento.\n(Recomendado: 300)",
         "setting_hold_end_scale" => "Tamaño del fin de notas largas",
         "description_hold_end_scale" => "Ajusta el tamaño del fin de las notas largas.\nAjusta según tus preferencias visuales.",
-        "setting_prevent_scaled_hold_ends" => "Prevenir escalado del fin de notas largas",
-        "description_prevent_scaled_hold_ends" => "Si está marcado, el tamaño del fin de las notas largas no se verá afectado por la escala de las notas largas.\nADVERTENCIA: Puede afectar el rendimiento si hay muchas notas largas en pantalla.",
         "setting_column_specific_modifiers" => "Modificadores específicos de columna",
         "description_column_specific_modifiers" => "Si está marcado, permite aplicar modificadores específicos a columnas individuales.\nDesabilitarlo puede mejorar el rendimiento reduciendo calculos.",
         "setting_holds_behind_strums" => "Notas largas detrás de las barras",

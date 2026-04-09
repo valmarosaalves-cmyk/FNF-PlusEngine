@@ -46,7 +46,8 @@ import funkin.graphics.VideoSprite;
 import funkin.play.components.JudCounter;
 import funkin.play.notes.Note.EventNote;
 import funkin.play.stage.*;
-import funkin.mobile.backend.native.WavyTimebar;
+import funkin.ui.components.md3.MaterialWavyProgressIndicator;
+import funkin.ui.components.md3.MaterialWavyProgressIndicator.WavyProgressType;
 import lenin.PreloadedChartNote;
 import lenin.HeavyChartManager;
 import lenin.NoteSpawner;
@@ -293,7 +294,12 @@ class PlayState extends MusicBeatState
 
 	public var healthBar:Bar;
 	public var timeBar:Bar;
+	public var timeProgressIndicator:MaterialWavyProgressIndicator;
 	var songPercent:Float = 0;
+	static inline var TIME_PROGRESS_SCALE_Y:Float = 1.45;
+	var lastTimeBarLeftColor:FlxColor = FlxColor.TRANSPARENT;
+	var lastTimeBarRightColor:FlxColor = FlxColor.TRANSPARENT;
+	var lastTimeBarGradientMode:Bool = false;
 	
 	// Backwards compatibility: Psych 0.7.3 scripts expect healthBarBG and timeBarBG
 	public var healthBarBG(get, never):FlxSprite;
@@ -305,6 +311,11 @@ class PlayState extends MusicBeatState
 	
 	function get_timeBarBG():FlxSprite {
 		return timeBar != null ? timeBar.bg : null;
+	}
+
+	inline function isWavyTimeBarEnabled():Bool
+	{
+		return ClientPrefs.data.useWavyTimeBar;
 	}
 
 	public var ratingsData:Array<Rating> = Rating.loadDefault();
@@ -438,15 +449,10 @@ class PlayState extends MusicBeatState
 	static inline var BREAK_TIMER_MIN_GAP:Float = 2000; // Minimum gap in ms between notes to show the timer
 
 	#if android
-	var nativeTimebarUpdateAccum:Float = 0;
-	var lastNativeTimebarProgress:Float = -1;
-	var nativeWavyTimebarEnabled:Bool = false;
 	var lowEndEventMode:Bool = false;
 	var lowEndEventAccumulator:Float = 0;
 	static inline var LOW_END_EVENT_TICK:Float = 1 / 45;
 	static inline var LOW_END_EVENT_BURST:Int = 6;
-	static inline var NATIVE_TIMEBAR_UPDATE_INTERVAL:Float = 1 / 20; // 20 FPS updates are enough for smooth UI
-	static inline var NATIVE_TIMEBAR_MIN_DELTA:Float = 0.003;
 	#end
 	
 	#if windows
@@ -1003,25 +1009,22 @@ class PlayState extends MusicBeatState
 		timeBar.alpha = 1; // Alpha siempre visible
 		timeBar.scale.x = 0; // Inicia con escala X en 0
 		timeBar.visible = showTime;
+		var useWavyTimeBar = isWavyTimeBarEnabled();
+		timeBar.bg.visible = !useWavyTimeBar;
+		timeBar.leftBar.visible = !useWavyTimeBar;
+		timeBar.rightBar.visible = !useWavyTimeBar;
+
+		timeProgressIndicator = new MaterialWavyProgressIndicator(0, 0, LINEAR, timeBar.barWidth);
+		timeProgressIndicator.scrollFactor.set();
+		timeProgressIndicator.alpha = timeBar.alpha;
+		timeProgressIndicator.visible = showTime && useWavyTimeBar;
+		timeProgressIndicator.scale.x = timeBar.scale.x;
+		timeProgressIndicator.setWaveColor(FlxColor.WHITE);
+		timeProgressIndicator.setTrackColor(0x99000000);
 		uiGroup.add(timeBar);
+		uiGroup.add(timeProgressIndicator);
 		uiGroup.add(timeTxt);
-
-		#if android
-		nativeWavyTimebarEnabled = showTime && !ClientPrefs.data.hideHud && !isNotITG && ClientPrefs.data.useNativeWavyTimebar;
-		var showNativeTimebar:Bool = nativeWavyTimebarEnabled;
-		if (nativeWavyTimebarEnabled)
-		{
-			timeBar.visible = false;
-		}
-
-		var timebarWidthPercent:Float = FlxMath.bound(timeBar.width / FlxG.width, 0.2, 1.0);
-		WavyTimebar.initialize();
-		WavyTimebar.setLayout(timebarWidthPercent, timeBar.y);
-		WavyTimebar.setProgress(0);
-		WavyTimebar.setAlpha(showNativeTimebar ? 1 : 0);
-		if (showNativeTimebar) WavyTimebar.show();
-		else WavyTimebar.hide();
-		#end
+		syncTimeBarVisualState();
 
 		// Lyric text - centered on screen, above everything on HUD
 		lyricText = new FlxText(0, FlxG.height * 0.75, FlxG.width, "", 32);
@@ -3438,16 +3441,6 @@ class PlayState extends MusicBeatState
 			var curTime:Float = Math.max(0, Conductor.songPosition - ClientPrefs.data.noteOffset);
 			songPercent = (curTime / songLength);
 
-			#if android
-			nativeTimebarUpdateAccum += elapsed;
-			if (nativeWavyTimebarEnabled && nativeTimebarUpdateAccum >= NATIVE_TIMEBAR_UPDATE_INTERVAL && Math.abs(songPercent - lastNativeTimebarProgress) >= NATIVE_TIMEBAR_MIN_DELTA)
-			{
-				WavyTimebar.setProgress(songPercent);
-				lastNativeTimebarProgress = songPercent;
-				nativeTimebarUpdateAccum = 0;
-			}
-			#end
-
 			var songCalc:Float = (songLength - curTime);
 			if(ClientPrefs.data.timeBarType == 'Time Elapsed') songCalc = curTime;
 
@@ -3524,6 +3517,8 @@ class PlayState extends MusicBeatState
 		}
 		
 
+
+		syncTimeBarVisualState();
 		if (camZooming)
 		{
 			FlxG.camera.zoom = FlxMath.lerp(defaultCamZoom, FlxG.camera.zoom, Math.exp(-elapsed * 3.125 * camZoomingDecay * playbackRate));
@@ -3885,6 +3880,59 @@ class PlayState extends MusicBeatState
 		return health;
 	}
 
+	inline function withBarAlpha(color:FlxColor, alpha:Float):FlxColor
+	{
+		return (Std.int(FlxMath.bound(alpha, 0, 1) * 255) << 24) | (color & 0x00FFFFFF);
+	}
+
+	function refreshTimeBarVisualStyle():Void
+	{
+		if (timeBar == null || timeBar.leftBar == null || timeBar.rightBar == null || timeProgressIndicator == null)
+			return;
+
+		var leftColor = timeBar.leftBar.color;
+		var rightColor = timeBar.rightBar.color;
+		if (ClientPrefs.data.shadedTimeBar)
+		{
+			timeProgressIndicator.setWaveGradient(leftColor, rightColor);
+			timeProgressIndicator.setTrackColor(withBarAlpha(FlxColor.interpolate(leftColor, rightColor, 0.5), 0.3));
+		}
+		else
+		{
+			timeProgressIndicator.setWaveColor(leftColor);
+			timeProgressIndicator.setTrackColor(withBarAlpha(rightColor, 0.55));
+		}
+
+		lastTimeBarLeftColor = leftColor;
+		lastTimeBarRightColor = rightColor;
+		lastTimeBarGradientMode = ClientPrefs.data.shadedTimeBar;
+	}
+
+	function syncTimeBarVisualState():Void
+	{
+		if (timeBar == null || timeProgressIndicator == null)
+			return;
+
+		var useWavyTimeBar = isWavyTimeBarEnabled();
+		timeBar.bg.visible = !useWavyTimeBar;
+		timeBar.leftBar.visible = !useWavyTimeBar;
+		timeBar.rightBar.visible = !useWavyTimeBar;
+
+		timeProgressIndicator.x = timeBar.x + timeBar.barOffset.x;
+		var timeProgressHeight = timeProgressIndicator.getIndicatorHeight() * TIME_PROGRESS_SCALE_Y * timeBar.scale.y;
+		timeProgressIndicator.y = timeBar.y + timeBar.barOffset.y + Math.max(0, (timeBar.barHeight - timeProgressHeight) * 0.5);
+		timeProgressIndicator.alpha = timeBar.alpha;
+		timeProgressIndicator.visible = timeBar.visible && useWavyTimeBar;
+		timeProgressIndicator.scale.set(timeBar.scale.x, timeBar.scale.y * TIME_PROGRESS_SCALE_Y);
+		timeProgressIndicator.value = songPercent;
+
+		if (timeBar.leftBar != null && timeBar.rightBar != null
+			&& (timeBar.leftBar.color != lastTimeBarLeftColor || timeBar.rightBar.color != lastTimeBarRightColor || ClientPrefs.data.shadedTimeBar != lastTimeBarGradientMode))
+		{
+			refreshTimeBarVisualStyle();
+		}
+	}
+
 	public function gradientTimebar(?dadColor:FlxColor = null, ?bfColor:FlxColor = null) {
 		if (timeBar == null || timeBar.leftBar == null) return;
 		
@@ -3895,17 +3943,8 @@ class PlayState extends MusicBeatState
 			bfColor = FlxColor.fromRGB(boyfriend.healthColorArray[0], boyfriend.healthColorArray[1], boyfriend.healthColorArray[2]);
 
 		if (bfColor != null && dadColor != null) {
-			timeBar.leftBar.pixels.fillRect(new Rectangle(0, 0, timeBar.leftBar.width, timeBar.leftBar.height), 0);
-
-			FlxGradient.overlayGradientOnFlxSprite(
-				timeBar.leftBar, 
-				Std.int(timeBar.leftBar.width), 
-				Std.int(timeBar.leftBar.height), 
-				[bfColor, dadColor], 
-				0, 0, 1, 180, true
-			);
-
-			timeBar.leftBar.dirty = true;
+			timeBar.setColors(bfColor, dadColor);
+			refreshTimeBarVisualStyle();
 		}
 	}
 
@@ -3922,6 +3961,8 @@ class PlayState extends MusicBeatState
 
 		if (ClientPrefs.data.shadedTimeBar)
 			gradientTimebar();
+		else
+			refreshTimeBarVisualStyle();
 	}
 
 	public function gradientObject(object:FlxSprite, colors:Array<FlxColor>, ?rotate:Int = 90) {
@@ -4681,9 +4722,14 @@ class PlayState extends MusicBeatState
 				if (arr.length >= 3) dadColor = FlxColor.fromRGB(arr[0], arr[1], arr[2]);
 			}
 		}
+
+		if (bfColor != null || dadColor != null)
+			timeBar.setColors(bfColor != null ? bfColor : timeBar.leftBar.color, dadColor != null ? dadColor : timeBar.rightBar.color);
 		
 		if (ClientPrefs.data.shadedTimeBar)
 			gradientTimebar(dadColor, bfColor);
+		else
+			refreshTimeBarVisualStyle();
 	}
 
 	public function tweenCamIn() {
@@ -4754,11 +4800,9 @@ class PlayState extends MusicBeatState
 		}
 
 		timeBar.visible = false;
+		if (timeProgressIndicator != null)
+			timeProgressIndicator.visible = false;
 		timeTxt.visible = false;
-		#if android
-		WavyTimebar.hide();
-		WavyTimebar.setAlpha(0);
-		#end
 		canPause = false;
 		endingSong = true;
 		camZooming = false;
@@ -6122,10 +6166,6 @@ class PlayState extends MusicBeatState
 	}
 
 	override function destroy() {
-		#if android
-		WavyTimebar.destroy();
-		#end
-
 		// Limpieza agresiva de memoria antes de destruir (Android)
 		#if android
 		funkin.util.MemoryManager.aggressiveCleanup();

@@ -21,11 +21,17 @@ class MaterialWavyProgressIndicator extends FlxSpriteGroup
 	public var indicatorType:WavyProgressType = LINEAR;
 	public var indicatorExtent:Float = 240;
 	public var animationSpeed:Float = 2.6;
+	public var waveUsesGradient(default, null):Bool = false;
 
 	var linearTrack:FlxSprite;
 	var linearWave:FlxSprite;
 	var circularTrack:FlxSprite;
 	var circularWave:FlxSprite;
+	var trackColor:FlxColor = 0x00000000;
+	var waveStartColor:FlxColor = 0x00000000;
+	var waveEndColor:FlxColor = 0x00000000;
+	var useThemeTrackColor:Bool = true;
+	var useThemeWaveColor:Bool = true;
 
 	var phase:Float = 0;
 	var sweepPhase:Float = 0;
@@ -51,7 +57,48 @@ class MaterialWavyProgressIndicator extends FlxSpriteGroup
 		}
 
 		MD3Theme.addListener(_onThemeChange);
+		applyResolvedColors();
 		redrawDynamic();
+	}
+
+	public function setWaveColor(color:FlxColor):Void
+	{
+		useThemeWaveColor = false;
+		waveUsesGradient = false;
+		waveStartColor = color;
+		waveEndColor = color;
+		redrawDynamic();
+	}
+
+	public function setWaveGradient(startColor:FlxColor, endColor:FlxColor):Void
+	{
+		useThemeWaveColor = false;
+		waveUsesGradient = true;
+		waveStartColor = startColor;
+		waveEndColor = endColor;
+		redrawDynamic();
+	}
+
+	public function setTrackColor(color:FlxColor):Void
+	{
+		useThemeTrackColor = false;
+		trackColor = color;
+		applyResolvedColors();
+		redrawDynamic();
+	}
+
+	public function resetThemeColors():Void
+	{
+		useThemeTrackColor = true;
+		useThemeWaveColor = true;
+		waveUsesGradient = false;
+		applyResolvedColors();
+		redrawDynamic();
+	}
+
+	public function getIndicatorHeight():Float
+	{
+		return indicatorType == LINEAR ? linearHeight() : circularSize();
 	}
 
 	function buildLinear():Void
@@ -104,17 +151,45 @@ class MaterialWavyProgressIndicator extends FlxSpriteGroup
 
 	function _onThemeChange():Void
 	{
+		applyResolvedColors();
+		redrawDynamic();
+	}
+
+	function applyResolvedColors():Void
+	{
+		if (useThemeTrackColor)
+			trackColor = MD3Theme.surfaceVariant;
+
+		if (useThemeWaveColor)
+		{
+			waveStartColor = MD3Theme.primary;
+			waveEndColor = MD3Theme.primary;
+			waveUsesGradient = false;
+		}
+
 		if (linearTrack != null)
 		{
-			linearTrack.color = MD3Theme.surfaceVariant;
+			linearTrack.color = stripAlpha(trackColor);
+			linearTrack.alpha = colorAlpha(trackColor);
 		}
 
 		if (circularTrack != null)
-		{
 			drawCircularTrack();
-		}
+	}
 
-		redrawDynamic();
+	inline function stripAlpha(color:FlxColor):FlxColor
+	{
+		return color & 0x00FFFFFF;
+	}
+
+	inline function colorAlpha(color:FlxColor):Float
+	{
+		return ((color >> 24) & 0xFF) / 255;
+	}
+
+	inline function resolveWaveColor(t:Float):FlxColor
+	{
+		return waveUsesGradient ? FlxColor.interpolate(waveStartColor, waveEndColor, FlxMath.bound(t, 0, 1)) : waveStartColor;
 	}
 
 	override function update(elapsed:Float):Void
@@ -177,18 +252,24 @@ class MaterialWavyProgressIndicator extends FlxSpriteGroup
 
 		var shape = new Shape();
 		var graphics = shape.graphics;
-		graphics.lineStyle(stroke, MD3Theme.primary, 1, false, null, ROUND, ROUND);
 		var steps = Std.int(Math.max(16, Math.ceil((endX - startX) / 4.0)));
+		var previousX:Null<Float> = null;
+		var previousY:Null<Float> = null;
 
 		for (i in 0...steps + 1)
 		{
 			var t = i / steps;
 			var px = FlxMath.lerp(startX, endX, t);
 			var py = centerY + Math.sin((px / waveLength) * TAU + phase) * amplitude;
-			if (i == 0)
-				graphics.moveTo(px, py);
-			else
+			if (previousX != null && previousY != null)
+			{
+				var color = resolveWaveColor((i - 0.5) / steps);
+				graphics.lineStyle(stroke, stripAlpha(color), colorAlpha(color), false, null, ROUND, ROUND);
+				graphics.moveTo(previousX, previousY);
 				graphics.lineTo(px, py);
+			}
+			previousX = px;
+			previousY = py;
 		}
 
 		bitmap.draw(shape);
@@ -208,7 +289,7 @@ class MaterialWavyProgressIndicator extends FlxSpriteGroup
 		var center = size * 0.5;
 
 		var shape = new Shape();
-		shape.graphics.lineStyle(thickness, MD3Theme.surfaceVariant, 1, false, null, ROUND, ROUND);
+		shape.graphics.lineStyle(thickness, stripAlpha(trackColor), colorAlpha(trackColor), false, null, ROUND, ROUND);
 		shape.graphics.drawCircle(center, center, radius);
 
 		bitmap.draw(shape);
@@ -246,9 +327,10 @@ class MaterialWavyProgressIndicator extends FlxSpriteGroup
 
 		var shape = new Shape();
 		var graphics = shape.graphics;
-		graphics.lineStyle(thickness, MD3Theme.primary, 1, false, null, ROUND, ROUND);
 
 		var steps = Std.int(Math.max(36, Math.ceil((sweep * baseRadius) / 3.0)));
+		var previousX:Null<Float> = null;
+		var previousY:Null<Float> = null;
 		for (i in 0...steps + 1)
 		{
 			var t = i / steps;
@@ -256,10 +338,15 @@ class MaterialWavyProgressIndicator extends FlxSpriteGroup
 			var radius = baseRadius + Math.sin(angle * waveTurns + phase) * amplitude;
 			var px = center + Math.cos(angle) * radius;
 			var py = center + Math.sin(angle) * radius;
-			if (i == 0)
-				graphics.moveTo(px, py);
-			else
+			if (previousX != null && previousY != null)
+			{
+				var color = resolveWaveColor((i - 0.5) / steps);
+				graphics.lineStyle(thickness, stripAlpha(color), colorAlpha(color), false, null, ROUND, ROUND);
+				graphics.moveTo(previousX, previousY);
 				graphics.lineTo(px, py);
+			}
+			previousX = px;
+			previousY = py;
 		}
 
 		bitmap.draw(shape);

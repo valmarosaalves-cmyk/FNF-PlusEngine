@@ -28,11 +28,6 @@ class MaterialLoadingIndicator extends FlxSpriteGroup
 	/** When true, a circular container is rendered behind the indicator. */
 	public var showContainer(default, null):Bool;
 
-	// M3 color tokens
-	static inline var ACTIVE_COLOR:FlxColor        = 0xFF6750A4; // primary
-	static inline var CONTAINER_COLOR:FlxColor     = 0xFFECE6F0; // primary-container
-	static inline var ON_CONTAINER_COLOR:FlxColor  = 0xFF21005D; // on-primary-container
-
 	var _container:FlxSprite;
 	var _indicator:FlxSprite;
 
@@ -76,7 +71,7 @@ class MaterialLoadingIndicator extends FlxSpriteGroup
 			var offset:Int = Std.int((cs - size) / 2);
 			_container = new FlxSprite(-offset, -offset);
 			_container.makeGraphic(cs, cs, FlxColor.TRANSPARENT, true);
-			_drawFilledCircle(_container, cs, CONTAINER_COLOR);
+			_drawFilledCircle(_container, cs, MD3Theme.primaryContainer);
 			add(_container);
 		}
 
@@ -84,6 +79,7 @@ class MaterialLoadingIndicator extends FlxSpriteGroup
 		_indicator.makeGraphic(size, size, FlxColor.TRANSPARENT, true);
 		_redrawShape(LOBES[0], AMPLITUDES[0], SECONDARY[0], SOFTNESS[0], PHASE_OFF[0], SCALE_X[0], SCALE_Y[0], TRIANGLE_MIX[0]);
 		add(_indicator);
+		MD3Theme.addListener(_onThemeChange);
 	}
 
 	override function update(elapsed:Float):Void
@@ -139,7 +135,7 @@ class MaterialLoadingIndicator extends FlxSpriteGroup
 		var frame:Int = indicatorSize;
 		var center = frame * 0.5;
 		var baseRadius = frame * 0.29;
-		var col:FlxColor = showContainer ? ON_CONTAINER_COLOR : ACTIVE_COLOR;
+		var col:FlxColor = showContainer ? MD3Theme.onPrimaryContainer : MD3Theme.primary;
 
 		_indicator.makeGraphic(frame, frame, FlxColor.TRANSPARENT, true);
 		var shape = new Shape();
@@ -218,5 +214,23 @@ class MaterialLoadingIndicator extends FlxSpriteGroup
 	{
 		var c:Float = t < 0 ? 0.0 : (t > 1 ? 1.0 : t);
 		return c * c * (3.0 - 2.0 * c);
+	}
+
+	function _onThemeChange():Void
+	{
+		if (_container != null)
+			_drawFilledCircle(_container, _container.frameWidth, MD3Theme.primaryContainer);
+		_redrawShape(_lastLobes >= 0 ? _lastLobes : LOBES[0],
+			_lastAmplitude >= 0 ? _lastAmplitude : AMPLITUDES[0],
+			_lastSecondary >= 0 ? _lastSecondary : SECONDARY[0],
+			_lastSoftness >= 0 ? _lastSoftness : SOFTNESS[0],
+			_lastPhase >= 0 ? _lastPhase : PHASE_OFF[0],
+			SCALE_X[_shapeIndex], SCALE_Y[_shapeIndex], TRIANGLE_MIX[_shapeIndex]);
+	}
+
+	override function destroy():Void
+	{
+		MD3Theme.removeListener(_onThemeChange);
+		super.destroy();
 	}
 }

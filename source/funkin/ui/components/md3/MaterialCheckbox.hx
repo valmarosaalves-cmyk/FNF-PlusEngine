@@ -26,11 +26,7 @@ class MaterialCheckbox extends FlxSpriteGroup
 	var stateLayer:FlxSprite;
 	var labelText:FlxText;
 
-	static inline var DISABLED_COLOR:FlxColor = 0x611C1B1F;
-
 	// State layers
-	static inline var HOVER_OVERLAY:FlxColor = 0x146750A4;
-	static inline var PRESSED_OVERLAY:FlxColor = 0x1F6750A4;
 
 	// State
 	var isHovered:Bool = false;
@@ -125,7 +121,7 @@ class MaterialCheckbox extends FlxSpriteGroup
 		}
 
 		redrawCheckbox();
-		stateLayer.color = FlxColor.WHITE;
+		stateLayer.color = MD3Theme.stateLayerColor(MD3Theme.primary);
 
 		if (!enabled)
 		{
@@ -136,14 +132,14 @@ class MaterialCheckbox extends FlxSpriteGroup
 			}
 			else
 			{
-				MD3ShapeTools.strokeRoundRect(container, containerSize(), containerSize(), checkboxRadius(), 2, DISABLED_COLOR);
+				MD3ShapeTools.strokeRoundRect(container, containerSize(), containerSize(), checkboxRadius(), 2, MD3Theme.disabledContentColor());
 				container.color = FlxColor.WHITE;
 			}
 			container.alpha = 0.38;
-			checkIcon.color = DISABLED_COLOR;
+			checkIcon.color = MD3Theme.disabledContentColor();
 			checkIcon.alpha = checked ? 1 : 0;
 			if (labelText != null)
-				labelText.color = DISABLED_COLOR;
+				labelText.color = MD3Theme.disabledContentColor();
 		}
 		else
 		{
@@ -187,7 +183,7 @@ class MaterialCheckbox extends FlxSpriteGroup
 		{
 			isHovered = true;
 			if (hoverTween != null) hoverTween.cancel();
-			stateLayer.color = HOVER_OVERLAY;
+				stateLayer.color = MD3Theme.stateLayerColor(MD3Theme.primary);
 			hoverTween = FlxTween.num(stateLayer.alpha, 1, 0.15, {ease: FlxEase.cubeOut}, function(v) { stateLayer.alpha = v; });
 		}
 		else if (!isOver && isHovered)
@@ -202,14 +198,14 @@ class MaterialCheckbox extends FlxSpriteGroup
 		{
 			isPressed = true;
 			if (pressTween != null) pressTween.cancel();
-			stateLayer.color = PRESSED_OVERLAY;
+				stateLayer.color = MD3Theme.stateLayerColor(MD3Theme.primary, true);
 			pressTween = FlxTween.num(stateLayer.alpha, 1, 0.1, {ease: FlxEase.cubeOut}, function(v) { stateLayer.alpha = v; });
 		}
 		else if (!FlxG.mouse.pressed && isPressed)
 		{
 			isPressed = false;
 			if (pressTween != null) pressTween.cancel();
-			stateLayer.color = isHovered ? HOVER_OVERLAY : FlxColor.TRANSPARENT;
+				stateLayer.color = isHovered ? MD3Theme.stateLayerColor(MD3Theme.primary) : FlxColor.TRANSPARENT;
 			var targetAlpha = isHovered ? 1.0 : 0.0;
 			pressTween = FlxTween.num(stateLayer.alpha, targetAlpha, 0.1, {ease: FlxEase.cubeOut}, function(v) { stateLayer.alpha = v; });
 		}

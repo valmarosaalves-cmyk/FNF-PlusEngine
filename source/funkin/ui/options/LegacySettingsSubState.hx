@@ -160,6 +160,11 @@ class LegacySettingsSubState extends MusicBeatSubstate
 			saveSetting('Legacy Shader Init ' + boolLabel(value));
 		}), cardX, cardY);
 
+		cardY = addCard(new LegacySwitchCard('useWavyTimeBar', phraseSetting('use_wavy_time_bar', 'Use Wavy Time Bar'), phraseDescription('use_wavy_time_bar', 'Uses the new wavy time bar in gameplay and loading screens. Leave this off if you want the classic engine bars instead.'), cardWidth, ClientPrefs.data.useWavyTimeBar, ClientPrefs.defaultData.useWavyTimeBar, function(value:Bool) {
+			ClientPrefs.data.useWavyTimeBar = value;
+			saveSetting('Use Wavy Time Bar ' + boolLabel(value));
+		}), cardX, cardY);
+
 		cardY = addCard(new LegacySwitchCard('vanillaTransition', phraseSetting('vanilla_transition', 'Vanilla Transition'), phraseDescription('vanilla_transition', 'Brings back the classic transition flow instead of the custom Plus Engine wipe.'), cardWidth, ClientPrefs.data.vanillaTransition, ClientPrefs.defaultData.vanillaTransition, function(value:Bool) {
 			ClientPrefs.data.vanillaTransition = value;
 			saveSetting('Vanilla Transition ' + boolLabel(value));

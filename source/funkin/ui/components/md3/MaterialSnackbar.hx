@@ -36,11 +36,6 @@ class MaterialSnackbar extends FlxSpriteGroup
 	static inline var LABEL_SIZE:Int = 14;
 	static inline var ACTION_SIZE:Int = 14;
 
-	// Colors (MD3)
-	static inline var SURFACE_COLOR:FlxColor = 0xFF313033;
-	static inline var TEXT_COLOR:FlxColor = 0xFFE6E1E5;
-	static inline var ACTION_COLOR:FlxColor = 0xFFCEC0FF;
-
 	// Layout
 	var snackWidth:Float = 320;
 	var _autoHideTimer:Float = 0;

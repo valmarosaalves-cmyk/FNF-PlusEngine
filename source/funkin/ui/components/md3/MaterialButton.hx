@@ -32,12 +32,6 @@ class MaterialButton extends FlxSpriteGroup
 	// Dimensions
 	public var buttonWidth:Float = 120;
 	static inline var OUTLINE_WIDTH:Int = 1;
-	static inline var DISABLED_CONTAINER_COLOR:FlxColor = 0x1F1C1B1F;
-	static inline var DISABLED_TEXT_COLOR:FlxColor = 0x611C1B1F;
-
-	// State layers (overlay colors)
-	static inline var HOVER_OVERLAY:FlxColor = 0x141C1B1F;
-	static inline var PRESSED_OVERLAY:FlxColor = 0x1F1C1B1F;
 
 	// State
 	var isHovered:Bool = false;
@@ -109,7 +103,7 @@ class MaterialButton extends FlxSpriteGroup
 		}
 
 		redrawGeometry();
-		outline.color = enabled ? MD3Theme.outline : DISABLED_TEXT_COLOR;
+		outline.color = enabled ? MD3Theme.outline : MD3Theme.disabledContentColor();
 
 		if (!enabled)
 		{
@@ -117,25 +111,26 @@ class MaterialButton extends FlxSpriteGroup
 			{
 				case FILLED:
 					container.visible = true;
-					container.color = DISABLED_CONTAINER_COLOR;
+					container.color = MD3Theme.disabledContainerColor();
 					container.alpha = 1;
 					outline.visible = false;
 					stateLayer.visible = true;
-					labelText.color = DISABLED_TEXT_COLOR;
+					labelText.color = MD3Theme.disabledContentColor();
 				case OUTLINED:
 					container.visible = false;
 					outline.visible = true;
 					stateLayer.visible = true;
-					labelText.color = DISABLED_TEXT_COLOR;
+					labelText.color = MD3Theme.disabledContentColor();
 				case TEXT:
 					container.visible = false;
 					outline.visible = false;
 					stateLayer.visible = true;
-					labelText.color = DISABLED_TEXT_COLOR;
+					labelText.color = MD3Theme.disabledContentColor();
 			}
 		}
 		else
 		{
+			stateLayer.color = MD3Theme.stateLayerColor(buttonType == FILLED ? MD3Theme.onPrimary : MD3Theme.primary);
 			switch (buttonType)
 			{
 				case FILLED:
@@ -184,7 +179,7 @@ class MaterialButton extends FlxSpriteGroup
 		{
 			isHovered = true;
 			if (hoverTween != null) hoverTween.cancel();
-			stateLayer.color = HOVER_OVERLAY;
+				stateLayer.color = MD3Theme.stateLayerColor(buttonType == FILLED ? MD3Theme.onPrimary : MD3Theme.primary);
 			hoverTween = FlxTween.num(stateLayer.alpha, 1, 0.15, {ease: FlxEase.cubeOut}, function(v) { stateLayer.alpha = v; });
 		}
 		else if (!isOver && isHovered)
@@ -199,14 +194,14 @@ class MaterialButton extends FlxSpriteGroup
 		{
 			isPressed = true;
 			if (pressTween != null) pressTween.cancel();
-			stateLayer.color = PRESSED_OVERLAY;
+				stateLayer.color = MD3Theme.stateLayerColor(buttonType == FILLED ? MD3Theme.onPrimary : MD3Theme.primary, true);
 			pressTween = FlxTween.num(stateLayer.alpha, 1, 0.1, {ease: FlxEase.cubeOut}, function(v) { stateLayer.alpha = v; });
 		}
 		else if (!FlxG.mouse.pressed && isPressed)
 		{
 			isPressed = false;
 			if (pressTween != null) pressTween.cancel();
-			stateLayer.color = isHovered ? HOVER_OVERLAY : FlxColor.TRANSPARENT;
+				stateLayer.color = isHovered ? MD3Theme.stateLayerColor(buttonType == FILLED ? MD3Theme.onPrimary : MD3Theme.primary) : FlxColor.TRANSPARENT;
 			var targetAlpha = isHovered ? 1.0 : 0.0;
 			pressTween = FlxTween.num(stateLayer.alpha, targetAlpha, 0.1, {ease: FlxEase.cubeOut}, function(v) { stateLayer.alpha = v; });
 		}

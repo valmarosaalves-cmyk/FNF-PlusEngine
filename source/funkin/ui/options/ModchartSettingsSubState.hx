@@ -177,11 +177,6 @@ class ModchartSettingsSubState extends MusicBeatSubstate
 			saveSetting('Hold End Scale: ' + value);
 		}), cardX, cardY);
 
-		cardY = addCard(new ModchartSwitchCard('preventScaledHoldEnd', phraseSetting('prevent_scaled_hold_ends', 'Prevent Scaled Hold Ends'), phraseDescription('prevent_scaled_hold_ends', 'Keeps sustain tail caps at a stable size even when modifiers stretch the rest of the note.'), cardWidth, ClientPrefs.data.preventScaledHoldEnd, ClientPrefs.defaultData.preventScaledHoldEnd, function(value:Bool) {
-			ClientPrefs.data.preventScaledHoldEnd = value;
-			saveSetting('Prevent Scaled Hold Ends ' + boolLabel(value));
-		}), cardX, cardY);
-
 		cardY = addCard(new ModchartSwitchCard('columnSpecificModifiers', phraseSetting('column_specific_modifiers', 'Column Specific Modifiers'), phraseDescription('column_specific_modifiers', 'Allows modifiers to target specific lanes instead of applying globally. Stronger effect, higher cost.'), cardWidth, ClientPrefs.data.columnSpecificModifiers, ClientPrefs.defaultData.columnSpecificModifiers, function(value:Bool) {
 			ClientPrefs.data.columnSpecificModifiers = value;
 			saveSetting('Column Specific Modifiers ' + boolLabel(value));

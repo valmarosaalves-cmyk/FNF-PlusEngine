@@ -93,7 +93,6 @@ import funkin.ui.title.TitleState;
 	public var optimizeHolds:Bool = false; // Optimizes hold rendering (not recommended for complex modcharts)
 	public var holdsBehindStrum:Bool = false; // Renders sustains behind strum line
 	public var holdEndScale:Float = 1.0; // Scale multiplier for hold note endings (0.1-3.0)
-	public var preventScaledHoldEnd:Bool = false; // Prevents modifier scaling on hold ends (performance cost)
 	
 	// Hold Cache Settings (Auto-managed by AndroidOptimizer)
 	public var holdCacheEnabled:Bool = true; // Hold graphics cache for performance
@@ -116,6 +115,7 @@ import funkin.ui.title.TitleState;
 
 	public var ghostTapping:Bool = true;
 	public var timeBarType:String = 'Time Left';
+	public var useWavyTimeBar:Bool = false;
 	public var shadedTimeBar:Bool = false;
 	public var scoreZoom:Bool = true;
 	public var timeBump:Bool = false;

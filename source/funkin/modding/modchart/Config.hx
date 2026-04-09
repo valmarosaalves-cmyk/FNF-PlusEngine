@@ -89,17 +89,6 @@ class Config {
 	private static inline function get_HOLD_END_SCALE():Float return ClientPrefs.data.holdEndScale;
 
 	/**
-	 * Prevents scaling the hold ends. (Some people doens't like that lol)
-	 * 
-	 * **WARNING**: Performance may be affected if there's too much
-	 * hold arrows at screen. (it basicly uses one extra `getPath()` call)
-	 * 
-	 * Synced with: `ClientPrefs.data.preventScaledHoldEnd`
-	 */
-	public static var PREVENT_SCALED_HOLD_END(get, never):Bool;
-	private static inline function get_PREVENT_SCALED_HOLD_END():Bool return ClientPrefs.data.preventScaledHoldEnd;
-
-	/**
 	 * Enables or disables column-specific modifiers.
 	 *
 	 * Disabling this may improve performance by

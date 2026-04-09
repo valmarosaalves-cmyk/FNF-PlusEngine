@@ -175,14 +175,14 @@ class GameplayChangersSubstate extends MusicBeatSubstate
 		contentBottom = panelY + panelHeight - 56;
 		cardWidth = panelWidth - 36;
 
-		backdrop = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, 0xFF0F0B17);
+		backdrop = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, OptionsMenuTheme.backdropColor());
 		backdrop.alpha = 0;
 		add(backdrop);
 
 		menuBG = new FlxSprite().loadGraphic(Paths.image('menuDesat'));
 		menuBG.antialiasing = ClientPrefs.data.antialiasing;
 		menuBG.color = palette.pale;
-		menuBG.alpha = 0.08;
+		menuBG.alpha = OptionsMenuTheme.menuBackgroundAlpha();
 		menuBG.updateHitbox();
 		menuBG.screenCenter();
 		add(menuBG);
@@ -192,25 +192,25 @@ class GameplayChangersSubstate extends MusicBeatSubstate
 		add(panelShadow);
 
 		panelSurface = new FlxSprite();
-		MD3ShapeTools.fillRoundRect(panelSurface, Std.int(panelWidth), Std.int(panelHeight), 34, 0xFFF9F5FC);
+		MD3ShapeTools.fillRoundRect(panelSurface, Std.int(panelWidth), Std.int(panelHeight), 34, OptionsMenuTheme.panelSurfaceColor());
 		add(panelSurface);
 
 		panelHeader = new FlxSprite();
-		MD3ShapeTools.fillRoundRectComplex(panelHeader, Std.int(panelWidth), 112, 34, 0, 0, 34, 0xFFFFFBFF);
+		MD3ShapeTools.fillRoundRectComplex(panelHeader, Std.int(panelWidth), 112, 34, 0, 0, 34, OptionsMenuTheme.panelHeaderColor());
 		add(panelHeader);
 
 		panelOutline = new FlxSprite();
-		MD3ShapeTools.strokeRoundRect(panelOutline, Std.int(panelWidth), Std.int(panelHeight), 34, 2, 0x24FFFFFF);
+		MD3ShapeTools.strokeRoundRect(panelOutline, Std.int(panelWidth), Std.int(panelHeight), 34, 2, OptionsMenuTheme.panelOutlineColor());
 		add(panelOutline);
 
 		titleText = new FlxText(0, 0, panelWidth - 210, Language.getPhrase('gameplay_changers_menu', 'Gameplay Changers'), 30);
-		titleText.setFormat(Paths.font('inter-bold.otf'), 30, palette.strong, LEFT);
+		titleText.setFormat(Paths.font('inter-bold.otf'), 30, OptionsMenuTheme.titleColor(), LEFT);
 		titleText.antialiasing = ClientPrefs.data.antialiasing;
 		add(titleText);
 
 		subtitleText = new FlxText(0, 0, panelWidth - 220,
 			Language.getPhrase('gameplay_changers_menu_subtitle', 'A left-side drawer for modifiers, because the old text tower had the charisma of a tax form.'), 15);
-		subtitleText.setFormat(Paths.font('inter.otf'), 15, palette.muted, LEFT);
+		subtitleText.setFormat(Paths.font('inter.otf'), 15, OptionsMenuTheme.bodyTextColor(), LEFT);
 		subtitleText.antialiasing = ClientPrefs.data.antialiasing;
 		add(subtitleText);
 
@@ -223,19 +223,19 @@ class GameplayChangersSubstate extends MusicBeatSubstate
 		add(resetButton);
 
 		statusText = new FlxText(0, 0, panelWidth - 56, Language.getPhrase('gameplay_changers_ready', 'Modifiers ready'), 14);
-		statusText.setFormat(Paths.font('inter.otf'), 14, 0xFF6D5F82, LEFT);
+		statusText.setFormat(Paths.font('inter.otf'), 14, OptionsMenuTheme.bodyTextColor(), LEFT);
 		statusText.antialiasing = ClientPrefs.data.antialiasing;
 		add(statusText);
 
 		hintText = new FlxText(0, 0, 260,
 			Language.getPhrase('gameplay_changers_hint', 'UP/DOWN select. LEFT/RIGHT adjust. ENTER toggles or opens.'), 13);
-		hintText.setFormat(Paths.font('inter.otf'), 13, palette.muted, RIGHT);
+		hintText.setFormat(Paths.font('inter.otf'), 13, OptionsMenuTheme.bodyTextColor(), RIGHT);
 		hintText.antialiasing = ClientPrefs.data.antialiasing;
 		add(hintText);
 
 		footerText = new FlxText(0, 0, panelWidth - 48,
 			Language.getPhrase('gameplay_changers_footer', 'R resets everything. ESC goes back. The drawer slides left because drama matters.'), 13);
-		footerText.setFormat(Paths.font('inter.otf'), 13, 0xFF6D5F82, CENTER);
+		footerText.setFormat(Paths.font('inter.otf'), 13, OptionsMenuTheme.footerTextColor(), CENTER);
 		footerText.antialiasing = ClientPrefs.data.antialiasing;
 		add(footerText);
 
@@ -529,12 +529,12 @@ private class GameplayChangerCard extends FlxSpriteGroup
 		add(accentBar);
 
 		titleText = new FlxText(30, 12, width - 60, option.name, 18);
-		titleText.setFormat(Paths.font('inter-bold.otf'), 18, 0xFF2C1E48, LEFT);
+		titleText.setFormat(Paths.font('inter-bold.otf'), 18, OptionsMenuTheme.optionTitleColor(false), LEFT);
 		titleText.antialiasing = ClientPrefs.data.antialiasing;
 		add(titleText);
 
 		descriptionText = new FlxText(30, 36, width - 60, description, 12);
-		descriptionText.setFormat(Paths.font('inter.otf'), 12, 0xFF76678B, LEFT);
+		descriptionText.setFormat(Paths.font('inter.otf'), 12, OptionsMenuTheme.optionDescriptionColor(false), LEFT);
 		descriptionText.antialiasing = ClientPrefs.data.antialiasing;
 		add(descriptionText);
 
@@ -557,14 +557,14 @@ private class GameplayChangerCard extends FlxSpriteGroup
 	function redraw():Void
 	{
 		var palette = OptionsMenuTheme.current();
-		var fill = selected ? palette.mist : 0xFFFCF8FF;
-		var stroke = selected ? palette.accent : 0xFFDCCEEB;
-		var accent = selected ? palette.accent : palette.pale;
+		var fill = OptionsMenuTheme.cardFill(selected);
+		var stroke = OptionsMenuTheme.cardStroke(selected);
+		var accent = OptionsMenuTheme.cardAccent(selected);
 		MD3ShapeTools.fillRoundRect(background, Std.int(cardWidth), Std.int(cardHeight), 24, fill);
 		MD3ShapeTools.strokeRoundRect(outline, Std.int(cardWidth), Std.int(cardHeight), 24, 2, stroke);
 		MD3ShapeTools.fillRoundRect(accentBar, 6, Std.int(Math.max(18, cardHeight - 32)), 4, accent);
-		titleText.color = selected ? palette.strong : 0xFF402D61;
-		descriptionText.color = selected ? palette.muted : 0xFF7B6D93;
+		titleText.color = OptionsMenuTheme.cardTitleColor(selected);
+		descriptionText.color = OptionsMenuTheme.cardDescriptionColor(selected);
 	}
 
 	public function setSelected(value:Bool, instant:Bool = false):Void
@@ -862,12 +862,12 @@ private class GameplayChangerDropdownMenu extends FlxSpriteGroup
 		var menuHeight = getTotalHeight(items.length);
 		background = new FlxSprite();
 		background.antialiasing = ClientPrefs.data.antialiasing;
-		MD3ShapeTools.fillRoundRect(background, Std.int(width), menuHeight, 20, 0xFFF8F4FC);
+		MD3ShapeTools.fillRoundRect(background, Std.int(width), menuHeight, 20, OptionsMenuTheme.previewSurfaceColor());
 		add(background);
 
 		outline = new FlxSprite();
 		outline.antialiasing = ClientPrefs.data.antialiasing;
-		MD3ShapeTools.strokeRoundRect(outline, Std.int(width), menuHeight, 20, 2, 0xFFD9C9F1);
+		MD3ShapeTools.strokeRoundRect(outline, Std.int(width), menuHeight, 20, 2, OptionsMenuTheme.neutralOutlineColor());
 		add(outline);
 
 		for (index in 0...items.length)
@@ -879,7 +879,7 @@ private class GameplayChangerDropdownMenu extends FlxSpriteGroup
 			add(highlight);
 
 			var label = new FlxText(18, rowY + 10, width - 36, itemLabel != null ? itemLabel(items[index]) : items[index], 14);
-			label.setFormat(Paths.font('inter.otf'), 14, 0xFF3E2C5F, LEFT);
+			label.setFormat(Paths.font('inter.otf'), 14, OptionsMenuTheme.previewHintColor(false), LEFT);
 			label.antialiasing = ClientPrefs.data.antialiasing;
 			rowLabels.push(label);
 			add(label);
@@ -898,8 +898,8 @@ private class GameplayChangerDropdownMenu extends FlxSpriteGroup
 		for (index in 0...rowHighlights.length)
 		{
 			var isActive = index == selectedIndex;
-			var fill = isActive ? 0xFFE9DEFF : 0x00000000;
-			var textColor = isActive ? 0xFF2E1A4F : 0xFF4A3967;
+			var fill = OptionsMenuTheme.interactiveFill(isActive);
+			var textColor = isActive ? OptionsMenuTheme.previewTitleColor() : OptionsMenuTheme.previewHintColor(false);
 			MD3ShapeTools.fillRoundRect(rowHighlights[index], Std.int(background.width) - 16, ITEM_HEIGHT - 4, 14, fill);
 			rowLabels[index].color = textColor;
 		}

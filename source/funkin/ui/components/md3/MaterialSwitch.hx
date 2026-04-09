@@ -198,6 +198,13 @@ class MaterialSwitch extends FlxSpriteGroup
 		var targetThumbColor:FlxColor = checked ? MD3Theme.onPrimary : MD3Theme.outline;
 		var targetIconColor:FlxColor = checked ? MD3Theme.primary : MD3Theme.onSurfaceVariant;
 
+		if (!enabled)
+		{
+			targetTrackColor = MD3Theme.disabledContainerColor();
+			targetThumbColor = MD3Theme.disabledContentColor();
+			targetIconColor = MD3Theme.disabledContentColor();
+		}
+
 		if (animate)
 		{
 			animateColor(track, track.color, targetTrackColor, duration);

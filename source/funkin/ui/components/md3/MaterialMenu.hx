@@ -34,9 +34,6 @@ class MaterialMenu extends FlxSpriteGroup
 	// Dimensions
 	public var menuWidth:Float = 200;
 
-	static inline var HOVER_OVERLAY:FlxColor = 0x146750A4;
-	static inline var SHADOW_COLOR:FlxColor = 0x33000000;
-
 	// Animation
 	var openTween:FlxTween;
 
@@ -58,7 +55,7 @@ class MaterialMenu extends FlxSpriteGroup
 		// Shadow / elevation simulation (offset darker rect)
 		var shadow = new FlxSprite(2, 4);
 		shadow.antialiasing = ClientPrefs.data.antialiasing;
-		MD3ShapeTools.fillRoundRect(shadow, Std.int(menuWidth), totalHeight, menuRadius(), SHADOW_COLOR);
+		MD3ShapeTools.fillRoundRect(shadow, Std.int(menuWidth), totalHeight, menuRadius(), MD3Theme.shadowColor());
 		add(shadow);
 
 		// Panel
@@ -72,7 +69,7 @@ class MaterialMenu extends FlxSpriteGroup
 		hoveredLayer = new FlxSprite(0, 0);
 		hoveredLayer.antialiasing = ClientPrefs.data.antialiasing;
 		MD3ShapeTools.fillRoundRect(hoveredLayer, Std.int(menuWidth), itemHeight(), MD3Metrics.corner(6, menuWidth, itemHeight()));
-		hoveredLayer.color = HOVER_OVERLAY;
+		hoveredLayer.color = MD3Theme.stateLayerColor(MD3Theme.primary);
 		hoveredLayer.alpha = 0;
 		add(hoveredLayer);
 
@@ -106,6 +103,17 @@ class MaterialMenu extends FlxSpriteGroup
 		// Start hidden
 		visible = false;
 		alpha = 0;
+		MD3Theme.addListener(_onThemeChange);
+	}
+
+	function _onThemeChange():Void
+	{
+		if (panel != null) panel.color = MD3Theme.surfaceContainerHigh;
+		if (hoveredLayer != null) hoveredLayer.color = MD3Theme.stateLayerColor(MD3Theme.primary);
+		for (label in itemLabels)
+			if (label != null) label.color = MD3Theme.onSurface;
+		for (divider in dividers)
+			if (divider != null) divider.color = MD3Theme.outlineVariant;
 	}
 
 	public function open():Void
@@ -179,6 +187,7 @@ class MaterialMenu extends FlxSpriteGroup
 
 	override function destroy():Void
 	{
+		MD3Theme.removeListener(_onThemeChange);
 		if (openTween != null) openTween.cancel();
 		super.destroy();
 	}

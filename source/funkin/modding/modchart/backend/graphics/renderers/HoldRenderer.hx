@@ -75,6 +75,21 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 	}
 
 	/**
+	 * Measures the visible distance between two hold segments on screen.
+	 * Using the projected center avoids over-stretching the cap with strong scroll modifiers.
+	 */
+	@:noCompletion
+	inline private function getSegmentScreenLength(first:HoldSegmentOutput, second:HoldSegmentOutput):Float {
+		final startX = (first.left.x + first.right.x) * 0.5;
+		final startY = (first.left.y + first.right.y) * 0.5;
+		final endX = (second.left.x + second.right.x) * 0.5;
+		final endY = (second.left.y + second.right.y) * 0.5;
+		final deltaX = endX - startX;
+		final deltaY = endY - startY;
+		return Math.sqrt((deltaX * deltaX) + (deltaY * deltaY));
+	}
+
+	/**
 	 * Returns the normal points along the hold path at specific hitTime using.
 	 *
 	 * Based on schmovin' hold system
@@ -273,9 +288,9 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 
 		var vertPointer = 0;
 
-		final isHoldEnd:Bool = Adapter.instance.isHoldEnd(item);
-		final holdHeight:Float = item.frame.frame.height * item.scale.y * Config.HOLD_END_SCALE;
-		final holdTimeInterval:Float = (Adapter.instance.getHoldLength(item) * ((isHoldEnd ? (Config.PREVENT_SCALED_HOLD_END ? 1 : 0.5) * Config.HOLD_END_SCALE : 1))) / HOLD_SUBDIVISIONS;
+		final holdIsEnd:Bool = Adapter.instance.isHoldEnd(item);
+		final holdHeight:Float = item.width * Config.HOLD_END_SCALE;
+		final holdTimeInterval:Float = (Adapter.instance.getHoldLength(item) * (holdIsEnd ? Config.HOLD_END_SCALE : 1.0)) / HOLD_SUBDIVISIONS;
 		var timeScale:Float = 1;
 		var firstIteration:Bool = true;
 
@@ -294,18 +309,17 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 			if (firstIteration) {
 				item._z = out1.depth;
 
-				if (isHoldEnd && Config.PREVENT_SCALED_HOLD_END) {
-					if (out1.clipped) {
-						final rawStart = getHoldSegment(item, basePos, getArrowParams(item, holdTimeProgress), false);
-						final rawEnd = out2.clipped ? getHoldSegment(item, basePos, getArrowParams(item, holdTimeProgress + holdTimeInterval), false) : out2;
+				if (holdIsEnd) {
+					var segmentLength = getSegmentScreenLength(out1, out2);
 
-						final rawLength = (rawEnd.origin - rawStart.origin).length;
-						if (rawLength > 0) {
-							timeScale = (holdHeight / HOLD_SUBDIVISIONS) / rawLength;
-							out2 = getHoldSegment(item, basePos, (lastData = getArrowParams(item, holdTimeInterval * timeScale)));
-						}
-					} else {
-						timeScale = (holdHeight / HOLD_SUBDIVISIONS) / Math.max(0, (out2.origin - out1.origin).length);
+					if (out1.clipped || out2.clipped) {
+						final rawStartSegment = getHoldSegment(item, basePos, getArrowParams(item, holdTimeProgress), false);
+						final rawEndSegment = getHoldSegment(item, basePos, getArrowParams(item, holdTimeProgress + holdTimeInterval), false);
+						segmentLength = getSegmentScreenLength(rawStartSegment, rawEndSegment);
+					}
+
+					if (segmentLength > 0) {
+						timeScale = (holdHeight / HOLD_SUBDIVISIONS) / segmentLength;
 						out2 = getHoldSegment(item, basePos, (lastData = getArrowParams(item, holdTimeInterval * timeScale)));
 					}
 				}

@@ -20,6 +20,8 @@ import flash.media.Sound;
 
 import funkin.data.song.Song;
 import funkin.data.stage.StageData;
+import funkin.ui.components.md3.MaterialWavyProgressIndicator;
+import funkin.ui.components.md3.MaterialWavyProgressIndicator.WavyProgressType;
 
 import sys.thread.Mutex;
 
@@ -71,11 +73,14 @@ class LoadingState extends MusicBeatState
 	var dontUpdate:Bool = false;
 
 	var barGroup:FlxSpriteGroup;
+	var barBack:FlxSprite;
 	var bar:FlxSprite;
+	var wavyBar:MaterialWavyProgressIndicator;
 	var barWidth:Int = 0;
 	var intendedPercent:Float = 0;
 	var curPercent:Float = 0;
 	var stateChangeDelay:Float = 0;
+	static inline var LOADING_WAVY_SCALE_Y:Float = 1.35;
 
 	#if PSYCH_WATERMARKS
 	var logo:FlxSprite;
@@ -96,13 +101,46 @@ class LoadingState extends MusicBeatState
 	#if HSCRIPT_ALLOWED
 	var hscript:HScript;
 	#end
+
+	inline function isWavyTimeBarEnabled():Bool
+	{
+		return ClientPrefs.data.useWavyTimeBar;
+	}
+
+	inline function withAlpha(color:FlxColor, alpha:Float):FlxColor
+	{
+		return (Std.int(FlxMath.bound(alpha, 0, 1) * 255) << 24) | (color & 0x00FFFFFF);
+	}
+
+	function syncLoadingBarVisual():Void
+	{
+		var useWavyTimeBar = isWavyTimeBarEnabled();
+
+		if (barBack != null)
+			barBack.visible = !useWavyTimeBar;
+		if (bar != null)
+			bar.visible = !useWavyTimeBar;
+
+		if (wavyBar == null || bar == null || barBack == null)
+			return;
+
+		wavyBar.visible = useWavyTimeBar;
+		wavyBar.x = bar.x;
+		var wavyHeight = wavyBar.getIndicatorHeight() * LOADING_WAVY_SCALE_Y;
+		wavyBar.y = bar.y + Math.max(0, (bar.height - wavyHeight) * 0.5);
+		wavyBar.scale.set(1, LOADING_WAVY_SCALE_Y);
+		wavyBar.setWaveColor(bar.color);
+		wavyBar.setTrackColor(withAlpha(barBack.color, 0.85));
+		wavyBar.value = curPercent;
+	}
+
 	override function create()
 	{
 		persistentUpdate = true;
 		barGroup = new FlxSpriteGroup();
 		add(barGroup);
 
-		var barBack:FlxSprite = new FlxSprite(0, 660).makeGraphic(1, 1, FlxColor.BLACK);
+		barBack = new FlxSprite(0, 660).makeGraphic(1, 1, FlxColor.BLACK);
 		barBack.scale.set(FlxG.width - 300, 25);
 		barBack.updateHitbox();
 		barBack.screenCenter(X);
@@ -113,6 +151,14 @@ class LoadingState extends MusicBeatState
 		bar.updateHitbox();
 		barGroup.add(bar);
 		barWidth = Std.int(barBack.width - 10);
+
+		wavyBar = new MaterialWavyProgressIndicator(bar.x, bar.y, LINEAR, barWidth);
+		wavyBar.scrollFactor.set();
+		wavyBar.setWaveColor(bar.color);
+		wavyBar.setTrackColor(withAlpha(barBack.color, 0.85));
+		wavyBar.value = 0;
+		barGroup.add(wavyBar);
+		syncLoadingBarVisual();
 
 		#if HSCRIPT_ALLOWED
 		if(Mods.currentModDirectory != null && Mods.currentModDirectory.trim().length > 0)
@@ -294,6 +340,8 @@ class LoadingState extends MusicBeatState
 			bar.scale.x = barWidth * curPercent;
 			bar.updateHitbox();
 		}
+
+		syncLoadingBarVisual();
 		
 		#if HSCRIPT_ALLOWED
 		if(hscript != null)

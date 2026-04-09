@@ -809,12 +809,11 @@ private class MobileSettingsDropdownMenu extends FlxSpriteGroup
 	function refreshVisuals():Void
 	{
 		var darkTheme = OptionsMenuTheme.isDark();
-		var palette = OptionsMenuTheme.current();
 		for (index in 0...rowHighlights.length)
 		{
 			var isActive = index == selectedIndex;
 			var isHovered = index == hoverIndex;
-			var fill = isActive ? (darkTheme ? 0xFF1F242B : palette.mist) : (isHovered ? (darkTheme ? 0xFF171B21 : palette.pale) : 0x00000000);
+			var fill = OptionsMenuTheme.interactiveFill(isActive, isHovered);
 			var textColor = isActive ? OptionsMenuTheme.titleColor() : OptionsMenuTheme.optionDescriptionColor(false);
 			MD3ShapeTools.fillRoundRect(rowHighlights[index], Std.int(background.width) - 16, ITEM_HEIGHT - 4, 14, fill);
 			rowLabels[index].color = textColor;

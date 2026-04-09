@@ -43,10 +43,6 @@ class MaterialTooltip extends FlxSpriteGroup
 	static inline var HOVER_DELAY:Float = 0.5; // seconds before tooltip appears
 	static inline var HIDE_DELAY:Float = 1.5;  // seconds before auto-hiding
 
-	// Colors (MD3)
-	static inline var BG_COLOR:FlxColor = 0xFF313033;
-	static inline var TEXT_COLOR:FlxColor = 0xFFE6E1E5;
-
 	// State
 	var _wasHovering:Bool = false;
 	var _hideTimer:Float = 0;

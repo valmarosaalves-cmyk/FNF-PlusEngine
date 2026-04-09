@@ -33,15 +33,6 @@ class MaterialRadioButton extends FlxSpriteGroup
 	static inline var STATE_LAYER_SIZE:Int = 40;
 	static inline var LABEL_SPACING:Int = 8;
 	
-	// Colors (MD3)
-	static inline var PRIMARY_COLOR:FlxColor = 0xFF6750A4;
-	static inline var ON_SURFACE_VARIANT:FlxColor = 0xFF49454F;
-	static inline var DISABLED_COLOR:FlxColor = 0x611C1B1F;
-	
-	// State layers
-	static inline var HOVER_OVERLAY:FlxColor = 0x146750A4;
-	static inline var PRESSED_OVERLAY:FlxColor = 0x1F6750A4;
-	
 	// State
 	var isHovered:Bool = false;
 	var isPressed:Bool = false;
@@ -158,11 +149,11 @@ class MaterialRadioButton extends FlxSpriteGroup
 		
 		if (!enabled)
 		{
-			drawCircleOutline(outerCircle, ICON_SIZE / 2, ICON_SIZE / 2, ICON_SIZE / 2, 2, DISABLED_COLOR);
-			innerCircle.color = DISABLED_COLOR;
+			drawCircleOutline(outerCircle, ICON_SIZE / 2, ICON_SIZE / 2, ICON_SIZE / 2, 2, MD3Theme.disabledContentColor());
+			innerCircle.color = MD3Theme.disabledContentColor();
 			innerCircle.alpha = selected ? 0.38 : 0;
 			if (labelText != null)
-				labelText.color = DISABLED_COLOR;
+				labelText.color = MD3Theme.disabledContentColor();
 		}
 		else
 		{
@@ -200,7 +191,7 @@ class MaterialRadioButton extends FlxSpriteGroup
 		{
 			isHovered = true;
 			if (hoverTween != null) hoverTween.cancel();
-			stateLayer.color = HOVER_OVERLAY;
+			stateLayer.color = MD3Theme.stateLayerColor(MD3Theme.primary);
 			hoverTween = FlxTween.num(stateLayer.alpha, 1, 0.15, {ease: FlxEase.cubeOut}, function(v) { stateLayer.alpha = v; });
 		}
 		else if (!isOver && isHovered)
@@ -215,14 +206,14 @@ class MaterialRadioButton extends FlxSpriteGroup
 		{
 			isPressed = true;
 			if (pressTween != null) pressTween.cancel();
-			stateLayer.color = PRESSED_OVERLAY;
+			stateLayer.color = MD3Theme.stateLayerColor(MD3Theme.primary, true);
 			pressTween = FlxTween.num(stateLayer.alpha, 1, 0.1, {ease: FlxEase.cubeOut}, function(v) { stateLayer.alpha = v; });
 		}
 		else if (!FlxG.mouse.pressed && isPressed)
 		{
 			isPressed = false;
 			if (pressTween != null) pressTween.cancel();
-			stateLayer.color = isHovered ? HOVER_OVERLAY : FlxColor.TRANSPARENT;
+				stateLayer.color = isHovered ? MD3Theme.stateLayerColor(MD3Theme.primary) : FlxColor.TRANSPARENT;
 			var targetAlpha = isHovered ? 1.0 : 0.0;
 			pressTween = FlxTween.num(stateLayer.alpha, targetAlpha, 0.1, {ease: FlxEase.cubeOut}, function(v) { stateLayer.alpha = v; });
 		}

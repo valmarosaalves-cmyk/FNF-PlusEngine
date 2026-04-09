@@ -290,10 +290,6 @@ class VisualsSettingsSubState extends MusicBeatSubstate
 
 		cardY = addCard(new VisualsSwitchCard('shadedTimeBar', phraseSetting('gradient_time_bar', 'Gradient Time Bar'), phraseDescription('gradient_time_bar', 'If checked, the time bar is shaded according to the character icon colors.'), cardWidth, ClientPrefs.data.shadedTimeBar, ClientPrefs.defaultData.shadedTimeBar, function(value:Bool) { ClientPrefs.data.shadedTimeBar = value; saveSetting('Gradient Time Bar ' + boolLabel(value)); }), cardX, cardY);
 
-		#if android
-		cardY = addCard(new VisualsSwitchCard('useNativeWavyTimebar', phraseSetting('native_wavy_time_bar', 'EXPERIMENTAL Native Wavy Time Bar'), phraseDescription('native_wavy_time_bar', 'If enabled, uses the Android native wavy time bar and hides the engine time bar fill.'), cardWidth, ClientPrefs.data.useNativeWavyTimebar, ClientPrefs.defaultData.useNativeWavyTimebar, function(value:Bool) { ClientPrefs.data.useNativeWavyTimebar = value; saveSetting('Native Wavy Time Bar ' + boolLabel(value)); }), cardX, cardY);
-		#end
-
 		cardY = addCard(new VisualsSwitchCard('flashing', phraseSetting('flashing_lights', 'Flashing Lights'), phraseDescription('flashing_lights', 'Disable this if you are sensitive to flashing lights.'), cardWidth, ClientPrefs.data.flashing, ClientPrefs.defaultData.flashing, function(value:Bool) { ClientPrefs.data.flashing = value; saveSetting('Flashing Lights ' + boolLabel(value)); }), cardX, cardY);
 		cardY = addCard(new VisualsSwitchCard('camZooms', phraseSetting('camera_zooms', 'Camera Zooms'), phraseDescription('camera_zooms', 'If unchecked, the camera will not zoom in on beat hits.'), cardWidth, ClientPrefs.data.camZooms, ClientPrefs.defaultData.camZooms, function(value:Bool) { ClientPrefs.data.camZooms = value; saveSetting('Camera Zooms ' + boolLabel(value)); }), cardX, cardY);
 		cardY = addCard(new VisualsSwitchCard('scoreZoom', phraseSetting('score_text_grow_on_hit', 'Score Text Grow on Hit'), phraseDescription('score_text_grow_on_hit', 'If unchecked, disables the score text growing every time you hit a note.'), cardWidth, ClientPrefs.data.scoreZoom, ClientPrefs.defaultData.scoreZoom, function(value:Bool) { ClientPrefs.data.scoreZoom = value; saveSetting('Score Text Grow on Hit ' + boolLabel(value)); }), cardX, cardY);
@@ -1085,13 +1081,11 @@ private class VisualsDropdownMenu extends FlxSpriteGroup
 
 	function refreshVisuals():Void
 	{
-		var darkTheme = OptionsMenuTheme.isDark();
-		var palette = OptionsMenuTheme.current();
 		for (index in 0...rowHighlights.length)
 		{
 			var isActive = index == selectedIndex;
 			var isHovered = index == hoverIndex;
-			var fill = isActive ? (darkTheme ? 0xFF1F242B : palette.mist) : (isHovered ? (darkTheme ? 0xFF171B21 : palette.pale) : 0x00000000);
+			var fill = OptionsMenuTheme.interactiveFill(isActive, isHovered);
 			var textColor = isActive ? OptionsMenuTheme.titleColor() : OptionsMenuTheme.optionDescriptionColor(false);
 			MD3ShapeTools.fillRoundRect(rowHighlights[index], Std.int(background.width) - 16, ITEM_HEIGHT - 4, 14, fill);
 			rowLabels[index].color = textColor;

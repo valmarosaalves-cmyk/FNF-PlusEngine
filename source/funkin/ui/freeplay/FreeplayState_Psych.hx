@@ -220,6 +220,26 @@ class FreeplayState_Psych extends MusicBeatState
 		super.closeSubState();
 	}
 
+	function refreshSelectedScoreData(?immediate:Bool = false):Void
+	{
+		if (songs.length == 0) return;
+
+		#if !switch
+		intendedScore = Highscore.getScore(songs[curSelected].songName, curDifficulty);
+		intendedRating = Highscore.getRating(songs[curSelected].songName, curDifficulty);
+		#else
+		intendedScore = 0;
+		intendedRating = 0;
+		#end
+
+		if (immediate)
+		{
+			lerpScore = intendedScore;
+			lerpRating = intendedRating;
+			updateTexts();
+		}
+	}
+
 	public function addSong(songName:String, weekNum:Int, songCharacter:String, color:Int)
 	{
 		songs.push(new PsychSongMetadata(songName, weekNum, songCharacter, color));
@@ -480,7 +500,9 @@ class FreeplayState_Psych extends MusicBeatState
 		else if((controls.RESET || (touchPad != null && touchPad.buttonY != null && touchPad.buttonY.justPressed)) && !player.playingMusic)
 		{
 			persistentUpdate = false;
-			openSubState(new ResetScoreSubState(songs[curSelected].songName, curDifficulty, songs[curSelected].songCharacter));
+			openSubState(new ResetScoreSubState(songs[curSelected].songName, curDifficulty, songs[curSelected].songCharacter, -1, function() {
+				refreshSelectedScoreData(true);
+			}));
 			FlxG.sound.play(Paths.sound('scrollMenu'));
 		}
 

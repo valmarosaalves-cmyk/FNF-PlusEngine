@@ -17,7 +17,7 @@ import openfl.display.Shape;
  */
 class MaterialSlider extends FlxSpriteGroup
 {
-	static inline var TRACE_LAYOUT:Bool = true;
+	static inline var TRACE_LAYOUT:Bool = false;
 
 	public var value(default, set):Float = 0.5;
 	public var min:Float = 0.0;
@@ -113,7 +113,6 @@ class MaterialSlider extends FlxSpriteGroup
 	function traceLayout(reason:String):Void
 	{
 		if (!TRACE_LAYOUT) return;
-		trace('[MaterialSlider] ' + reason + ' ' + getDebugLayout());
 	}
 
 	public function getDebugLayout():String

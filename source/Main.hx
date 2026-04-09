@@ -4,6 +4,7 @@ import funkin.ui.debug.FPSCounter;
 import funkin.ui.debug.TraceDisplay;
 import funkin.ui.debug.TraceButton;
 import funkin.ui.debug.DebugButton;
+import funkin.ui.MaterialVolumeTray;
 import funkin.Preferences as ClientPrefs;
 import funkin.util.Screenshot;
 import flixel.FlxGame;
@@ -57,6 +58,7 @@ class Main extends Sprite
 	public static var traceDisplay:TraceDisplay;
 	public static var traceButton:TraceButton;
 	public static var debugButton:DebugButton;
+	public static var materialVolumeTray:MaterialVolumeTray;
 
 	public static final platform:String = #if mobile "Phones" #else "PCs" #end;
 	public static var watermarkSprite:Sprite = null;
@@ -68,6 +70,7 @@ class Main extends Sprite
 	var focusStateTimer:FlxTimer;
 	var windowHasFocus:Bool = true;
 	var restoringFocusVolume:Bool = false;
+	var lastReportedVolume:Float = 1.0;
 	public static var focusMusicTween:FlxTween;
 
 	// You can pretty much ignore everything from here on - your code should go in your states.
@@ -212,6 +215,7 @@ class Main extends Sprite
 		var initialState:Class<FlxState> = InitialState;
 		
 		addChild(new FlxGame(game.width, game.height, initialState, game.framerate, game.framerate, game.skipSplash, game.startFullscreen));
+		initializeMaterialVolumeTray();
 		FlxG.save.bind('funkin', CoolUtil.getSavePath());
 		ClientPrefs.loadPrefs();
 		
@@ -334,6 +338,41 @@ class Main extends Sprite
 		});
 
 		setupGame();
+	}
+
+	function initializeMaterialVolumeTray():Void
+	{
+		if (FlxG.game == null || Lib.current == null || Lib.current.stage == null)
+			return;
+
+		FlxG.sound.soundTrayEnabled = false;
+		lastReportedVolume = FlxG.sound.muted ? 0 : FlxG.sound.volume;
+
+		if (materialVolumeTray == null)
+			materialVolumeTray = new MaterialVolumeTray();
+
+		if (materialVolumeTray.parent != Lib.current.stage)
+		{
+			if (materialVolumeTray.parent != null)
+				materialVolumeTray.parent.removeChild(materialVolumeTray);
+			Lib.current.stage.addChild(materialVolumeTray);
+		}
+		Lib.current.stage.setChildIndex(materialVolumeTray, Lib.current.stage.numChildren - 1);
+
+		var self = this;
+		FlxG.sound.volumeHandler = function(volume:Float)
+		{
+			self.onVolumeChanged(volume);
+		};
+	}
+
+	function onVolumeChanged(volume:Float):Void
+	{
+		if (materialVolumeTray == null)
+			return;
+
+		lastReportedVolume = volume;
+		materialVolumeTray.showVolume(volume);
 	}
 
 	static function resetSpriteCache(sprite:Sprite):Void {

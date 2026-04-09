@@ -250,6 +250,7 @@ class MusicBeatState extends BaseMusicBeatState
 	{
 		if(nextState == null)
 			nextState = FlxG.state;
+		GlobalLoadingOverlay.showPersistent();
 
 		// Call scripts when transition starts - if they return Function_Stop, they handle their own transition
 		var isReset:Bool = (nextState == FlxG.state);

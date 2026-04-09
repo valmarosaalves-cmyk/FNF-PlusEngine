@@ -230,7 +230,6 @@ class MaterialButton extends FlxSpriteGroup
 			labelText.wordWrap = false;
 			labelText.text = value;
 			labelText.y = y + (buttonHeight() - labelText.height) / 2;
-			trace('[MaterialButton] set_label value=' + value + ' group=(' + x + ', ' + y + ') text=(' + labelText.x + ', ' + labelText.y + ', ' + labelText.width + 'x' + labelText.height + ') width=' + buttonWidth);
 		}
 		return label;
 	}

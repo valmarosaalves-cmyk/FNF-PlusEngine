@@ -30,6 +30,13 @@ class MaterialDialog extends FlxSpriteGroup
 	var dismissButton:MaterialButton;
 	var panelWidth:Int = 0;
 	var panelHeight:Int = 0;
+	var buttonWidth:Int = 0;
+	var buttonHeight:Int = 0;
+	var confirmBaseX:Float = 0;
+	var confirmBaseY:Float = 0;
+	var dismissBaseX:Float = 0;
+	var dismissBaseY:Float = 0;
+	var focusedAction:Int = 1;
 
 	static inline var SCRIM_COLOR:FlxColor = 0x52000000;
 
@@ -57,7 +64,7 @@ class MaterialDialog extends FlxSpriteGroup
 		var spacing = dialogSpacing();
 		var titleSize = dialogTitleSize();
 		var bodySize = dialogBodySize();
-		var buttonHeight = MD3Metrics.size(44);
+		buttonHeight = MD3Metrics.size(44);
 		panelWidth = MD3Metrics.dialogWidth(420, screenW);
 
 		// Compute panel height dynamically based on body text.
@@ -101,11 +108,15 @@ class MaterialDialog extends FlxSpriteGroup
 
 		// Buttons row (bottom-right aligned)
 		var buttonSpacing = MD3Metrics.size(8);
-		var buttonWidth = Std.int(Math.min(MD3Metrics.size(140), (panelWidth - padding * 2 - buttonSpacing) / 2));
+		buttonWidth = Std.int(Math.min(MD3Metrics.size(140), (panelWidth - padding * 2 - buttonSpacing) / 2));
 		var buttonRowY = panelY + panelHeight - padding - buttonHeight;
+		dismissBaseX = panelX + panelWidth - padding - buttonWidth * 2 - buttonSpacing;
+		dismissBaseY = buttonRowY;
+		confirmBaseX = panelX + panelWidth - padding - buttonWidth;
+		confirmBaseY = buttonRowY;
 
 		dismissButton = new MaterialButton(
-			panelX + panelWidth - padding - buttonWidth * 2 - buttonSpacing,
+			dismissBaseX,
 			buttonRowY, dismissLabel, TEXT, buttonWidth,
 			function()
 			{
@@ -117,7 +128,7 @@ class MaterialDialog extends FlxSpriteGroup
 		add(dismissButton);
 
 		confirmButton = new MaterialButton(
-			panelX + panelWidth - padding - buttonWidth,
+			confirmBaseX,
 			buttonRowY, confirmLabel, FILLED, buttonWidth,
 			function()
 			{
@@ -131,6 +142,7 @@ class MaterialDialog extends FlxSpriteGroup
 		// Start hidden
 		visible = false;
 		MD3Theme.addListener(_onThemeChange);
+		refreshActionFocus();
 	}
 
 	function _onThemeChange():Void
@@ -145,6 +157,8 @@ class MaterialDialog extends FlxSpriteGroup
 		if (isOpen) return;
 		isOpen = true;
 		visible = true;
+		focusedAction = 1;
+		refreshActionFocus();
 
 		if (openTween != null) openTween.cancel();
 		if (scrimTween != null) scrimTween.cancel();
@@ -174,6 +188,56 @@ class MaterialDialog extends FlxSpriteGroup
 		FlxTween.tween(bodyText, {alpha: 0}, 0.15, {ease: FlxEase.cubeIn});
 		FlxTween.tween(confirmButton, {alpha: 0}, 0.15, {ease: FlxEase.cubeIn});
 		FlxTween.tween(dismissButton, {alpha: 0}, 0.15, {ease: FlxEase.cubeIn});
+	}
+
+	public function focusConfirm():Void
+	{
+		focusedAction = 1;
+		refreshActionFocus();
+	}
+
+	public function focusDismiss():Void
+	{
+		focusedAction = 0;
+		refreshActionFocus();
+	}
+
+	public function moveFocus(direction:Int):Void
+	{
+		if (direction == 0) return;
+		focusedAction = focusedAction == 1 ? 0 : 1;
+		refreshActionFocus();
+	}
+
+	public function activateFocused():Void
+	{
+		if (focusedAction == 1)
+		{
+			if (confirmButton.onClick != null) confirmButton.onClick();
+		}
+		else if (dismissButton.onClick != null)
+		{
+			dismissButton.onClick();
+		}
+	}
+
+	function refreshActionFocus():Void
+	{
+		if (confirmButton == null || dismissButton == null) return;
+
+		applyButtonFocus(confirmButton, focusedAction == 1, confirmBaseX, confirmBaseY);
+		applyButtonFocus(dismissButton, focusedAction == 0, dismissBaseX, dismissBaseY);
+	}
+
+	function applyButtonFocus(button:MaterialButton, isFocused:Bool, baseX:Float, baseY:Float):Void
+	{
+		var scaleValue:Float = isFocused ? 1.05 : 1.0;
+		button.scale.set(scaleValue, scaleValue);
+		button.alpha = isFocused ? 1.0 : 0.88;
+		var scaledWidth:Float = buttonWidth * scaleValue;
+		var scaledHeight:Float = buttonHeight * scaleValue;
+		button.x = baseX - (scaledWidth - buttonWidth) * 0.5;
+		button.y = baseY - (scaledHeight - buttonHeight) * 0.5;
 	}
 
 	override function update(elapsed:Float):Void

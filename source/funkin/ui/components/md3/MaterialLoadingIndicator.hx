@@ -3,6 +3,7 @@ package funkin.ui.components.md3;
 import flixel.FlxSprite;
 import flixel.group.FlxSpriteGroup;
 import flixel.util.FlxColor;
+import flixel.math.FlxMath;
 import openfl.display.Shape;
 
 /**
@@ -47,12 +48,15 @@ class MaterialLoadingIndicator extends FlxSpriteGroup
 	var _lastPhase:Float = -1;
 
 	// Circular shape family. Each turn advances to the next preset.
-	// The values are tuned to stay recognizably round instead of collapsing into random blobs.
-	static var LOBES:Array<Int> =       [0, 4, 6, 7, 9, 12, 8, 5];
-	static var AMPLITUDES:Array<Float> = [0.00, 0.16, 0.12, 0.10, 0.08, 0.06, 0.14, 0.18];
-	static var SECONDARY:Array<Float> =  [0.00, 0.02, 0.03, 0.02, 0.02, 0.01, 0.04, 0.05];
-	static var SOFTNESS:Array<Float> =   [1.00, 0.94, 0.96, 0.97, 0.98, 0.99, 0.92, 0.88];
-	static var PHASE_OFF:Array<Float> =  [0.00, 0.78, 0.35, 0.18, 0.52, 0.00, 0.64, 0.30];
+	// The sequence now mixes rounded blobs, ovals, and triangular silhouettes.
+	static var LOBES:Array<Int> =       [0, 4, 6, 7, 3, 5, 8, 3];
+	static var AMPLITUDES:Array<Float> = [0.00, 0.16, 0.12, 0.10, 0.08, 0.12, 0.14, 0.09];
+	static var SECONDARY:Array<Float> =  [0.00, 0.02, 0.03, 0.02, 0.01, 0.03, 0.04, 0.01];
+	static var SOFTNESS:Array<Float> =   [1.00, 0.94, 0.96, 0.97, 0.98, 0.92, 0.90, 0.99];
+	static var PHASE_OFF:Array<Float> =  [0.00, 0.78, 0.35, 0.18, 0.00, 0.64, 0.30, 0.00];
+	static var SCALE_X:Array<Float> =    [1.00, 1.00, 1.18, 0.96, 1.00, 1.22, 0.92, 1.00];
+	static var SCALE_Y:Array<Float> =    [1.00, 1.00, 0.78, 1.08, 1.00, 0.74, 1.14, 1.00];
+	static var TRIANGLE_MIX:Array<Float> = [0.00, 0.10, 0.00, 0.14, 0.78, 0.00, 0.22, 0.60];
 
 	static inline var SPIN_SPEED:Float = 248.0;
 	static inline var SHAPE_MORPH_PORTION:Float = 0.36;
@@ -78,7 +82,7 @@ class MaterialLoadingIndicator extends FlxSpriteGroup
 
 		_indicator = new FlxSprite(0, 0);
 		_indicator.makeGraphic(size, size, FlxColor.TRANSPARENT, true);
-		_redrawShape(LOBES[0], AMPLITUDES[0], SECONDARY[0], SOFTNESS[0], PHASE_OFF[0]);
+		_redrawShape(LOBES[0], AMPLITUDES[0], SECONDARY[0], SOFTNESS[0], PHASE_OFF[0], SCALE_X[0], SCALE_Y[0], TRIANGLE_MIX[0]);
 		add(_indicator);
 	}
 
@@ -105,6 +109,9 @@ class MaterialLoadingIndicator extends FlxSpriteGroup
 		var secondary = _lerp(SECONDARY[previousIndex], SECONDARY[_shapeIndex], morphT);
 		var softness = _lerp(SOFTNESS[previousIndex], SOFTNESS[_shapeIndex], morphT);
 		var phaseOffset = _lerp(PHASE_OFF[previousIndex], PHASE_OFF[_shapeIndex], morphT);
+		var scaleX = _lerp(SCALE_X[previousIndex], SCALE_X[_shapeIndex], morphT);
+		var scaleY = _lerp(SCALE_Y[previousIndex], SCALE_Y[_shapeIndex], morphT);
+		var triangleMix = _lerp(TRIANGLE_MIX[previousIndex], TRIANGLE_MIX[_shapeIndex], morphT);
 
 		if (Math.abs(lobes - _lastLobes) > 0.02
 			|| Math.abs(amplitude - _lastAmplitude) > 0.01
@@ -117,7 +124,7 @@ class MaterialLoadingIndicator extends FlxSpriteGroup
 			_lastSecondary = secondary;
 			_lastSoftness = softness;
 			_lastPhase = phaseOffset;
-			_redrawShape(lobes, amplitude, secondary, softness, phaseOffset);
+			_redrawShape(lobes, amplitude, secondary, softness, phaseOffset, scaleX, scaleY, triangleMix);
 		}
 
 		_indicator.angle = _spinAngle;
@@ -127,11 +134,11 @@ class MaterialLoadingIndicator extends FlxSpriteGroup
 	// Private helpers
 	// -----------------------------------------------------------------------
 
-	function _redrawShape(lobes:Float, amplitude:Float, secondary:Float, softness:Float, phaseOffset:Float):Void
+	function _redrawShape(lobes:Float, amplitude:Float, secondary:Float, softness:Float, phaseOffset:Float, scaleX:Float, scaleY:Float, triangleMix:Float):Void
 	{
 		var frame:Int = indicatorSize;
 		var center = frame * 0.5;
-		var baseRadius = frame * 0.33;
+		var baseRadius = frame * 0.29;
 		var col:FlxColor = showContainer ? ON_CONTAINER_COLOR : ACTIVE_COLOR;
 
 		_indicator.makeGraphic(frame, frame, FlxColor.TRANSPARENT, true);
@@ -146,9 +153,11 @@ class MaterialLoadingIndicator extends FlxSpriteGroup
 			var primaryWave = lobes <= 0.01 ? 0.0 : Math.sin(angle * lobes + phaseOffset);
 			var secondaryWave = lobes <= 0.01 ? 0.0 : Math.sin(angle * lobes * 0.5 + phaseOffset * 1.7);
 			var normalizedPrimary = primaryWave >= 0 ? Math.pow(primaryWave, softness) : -Math.pow(-primaryWave, softness);
-			var radius = baseRadius * (1.0 + normalizedPrimary * amplitude + secondaryWave * secondary);
-			var px = center + Math.cos(angle) * radius;
-			var py = center + Math.sin(angle) * radius;
+			var organicRadius = baseRadius * (1.0 + normalizedPrimary * amplitude + secondaryWave * secondary);
+			var triangleRadius = _triangleRadius(angle, baseRadius * 1.08);
+			var radius = organicRadius * (1.0 - triangleMix) + triangleRadius * triangleMix;
+			var px = FlxMath.bound(center + Math.cos(angle) * radius * scaleX, 1, frame - 1);
+			var py = FlxMath.bound(center + Math.sin(angle) * radius * scaleY, 1, frame - 1);
 
 			if (i == 0)
 				shape.graphics.moveTo(px, py);
@@ -160,6 +169,21 @@ class MaterialLoadingIndicator extends FlxSpriteGroup
 		_indicator.pixels.fillRect(_indicator.pixels.rect, FlxColor.TRANSPARENT);
 		_indicator.pixels.draw(shape, null, null, null, null, true);
 		_indicator.dirty = true;
+	}
+
+	function _triangleRadius(angle:Float, baseRadius:Float):Float
+	{
+		var sector:Float = TAU / 3;
+		var local:Float = angle % sector;
+		if (local < 0) local += sector;
+		local -= sector * 0.5;
+
+		var denom:Float = Math.cos(local);
+		if (Math.abs(denom) < 0.001)
+			denom = denom < 0 ? -0.001 : 0.001;
+
+		var triangleRadius:Float = (baseRadius * Math.cos(Math.PI / 3)) / denom;
+		return FlxMath.bound(triangleRadius, baseRadius * 0.52, baseRadius * 1.18);
 	}
 
 	public function getDebugLayout():String

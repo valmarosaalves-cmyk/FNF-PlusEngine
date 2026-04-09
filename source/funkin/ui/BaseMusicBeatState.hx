@@ -1,6 +1,7 @@
 package funkin.ui;
 
 import flixel.FlxState;
+import flixel.FlxSubState;
 import funkin.graphics.PsychCamera;
 import funkin.ui.debug.TraceDisplay;
 
@@ -210,6 +211,25 @@ class BaseMusicBeatState extends FlxState
 	}
 
 	// ─── Lifecycle ────────────────────────────────────────────────────────────
+	override function create():Void
+	{
+		super.create();
+		GlobalLoadingOverlay.stateReady();
+	}
+
+	override function openSubState(SubState:FlxSubState):Void
+	{
+		if (!(SubState is CustomFadeTransition))
+			GlobalLoadingOverlay.pulse();
+		super.openSubState(SubState);
+	}
+
+	override function closeSubState():Void
+	{
+		super.closeSubState();
+		GlobalLoadingOverlay.hide();
+	}
+
 	override function destroy():Void
 	{
 		removeTouchPad();
@@ -272,6 +292,7 @@ class BaseMusicBeatState extends FlxState
 	public static function startTransition(nextState:FlxState = null):Void
 	{
 		if (nextState == null) nextState = FlxG.state;
+		GlobalLoadingOverlay.showPersistent();
 		FlxG.state.openSubState(new CustomFadeTransition(0.7, false));
 		if (nextState == FlxG.state) {
 			var resetFn = _makeCurrentStateReset();

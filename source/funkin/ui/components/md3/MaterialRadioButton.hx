@@ -57,7 +57,6 @@ class MaterialRadioButton extends FlxSpriteGroup
 	public function new(x:Float = 0, y:Float = 0, ?label:String = "", ?value:String = "", ?groupName:String = "default", ?selected:Bool = false, ?onChange:String->Void = null)
 	{
 		super(x, y);
-		trace('[MaterialRadioButton] new() start label="$label" group="$groupName" selected=$selected');
 		
 		this.label = label;
 		this.value = value.length > 0 ? value : label;
@@ -70,7 +69,6 @@ class MaterialRadioButton extends FlxSpriteGroup
 		radioGroups.get(groupName).push(this);
 		
 		// Create state layer (for hover/press effects)
-		trace('[MaterialRadioButton] creating stateLayer');
 		var layerOffset = (STATE_LAYER_SIZE - ICON_SIZE) / 2;
 		stateLayer = new FlxSprite(-layerOffset, -layerOffset);
 		stateLayer.makeGraphic(STATE_LAYER_SIZE, STATE_LAYER_SIZE, FlxColor.TRANSPARENT);
@@ -79,13 +77,11 @@ class MaterialRadioButton extends FlxSpriteGroup
 		add(stateLayer);
 		
 		// Create outer circle
-		trace('[MaterialRadioButton] creating outerCircle');
 		outerCircle = new FlxSprite(0, 0);
 		outerCircle.makeGraphic(ICON_SIZE, ICON_SIZE, FlxColor.TRANSPARENT, true);
 		add(outerCircle);
 		
 		// Create inner circle (selected indicator)
-		trace('[MaterialRadioButton] creating innerCircle');
 		var innerOffset = (ICON_SIZE - INNER_CIRCLE_SIZE) / 2;
 		innerCircle = new FlxSprite(innerOffset, innerOffset);
 		innerCircle.makeGraphic(INNER_CIRCLE_SIZE, INNER_CIRCLE_SIZE, FlxColor.TRANSPARENT);
@@ -96,7 +92,6 @@ class MaterialRadioButton extends FlxSpriteGroup
 		// Create label text if provided
 		if (label.length > 0)
 		{
-			trace('[MaterialRadioButton] creating labelText');
 			labelText = new FlxText(ICON_SIZE + LABEL_SPACING, 0, 0, label, 14);
 			labelText.setFormat(Paths.font("inter.otf"), 14, MD3Theme.onSurfaceVariant, LEFT);
 			labelText.antialiasing = ClientPrefs.data.antialiasing;
@@ -104,16 +99,13 @@ class MaterialRadioButton extends FlxSpriteGroup
 			add(labelText);
 		}
 		
-		trace('[MaterialRadioButton] calling updateAppearance');
 		updateAppearance();
 		
 		// Set selected after all components are created
 		if (selected)
 		{
-			trace('[MaterialRadioButton] calling selectThis() for initial selection');
 			selectThis();
 		}
-		trace('[MaterialRadioButton] new() complete');
 		MD3Theme.addListener(updateAppearance);
 	}
 	
@@ -161,7 +153,6 @@ class MaterialRadioButton extends FlxSpriteGroup
 	{
 		if (outerCircle == null || innerCircle == null)
 		{
-			trace('[MaterialRadioButton] updateAppearance: outerCircle=${outerCircle != null ? "ok" : "NULL"} innerCircle=${innerCircle != null ? "ok" : "NULL"} — skipping');
 			return;
 		}
 		
@@ -261,13 +252,11 @@ class MaterialRadioButton extends FlxSpriteGroup
 	
 	function set_selected(value:Bool):Bool
 	{
-		trace('[MaterialRadioButton] set_selected value=$value innerCircle=${innerCircle != null ? "ok" : "NULL"}');
 		var oldValue = selected;
 		selected = value;
 		
 		if (innerCircle == null)
 		{
-			trace('[MaterialRadioButton] set_selected: innerCircle is null, skipping tween');
 			return selected;
 		}
 		

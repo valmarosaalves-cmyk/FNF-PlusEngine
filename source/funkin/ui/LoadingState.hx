@@ -206,6 +206,7 @@ class LoadingState extends MusicBeatState
 		addTouchPad('NONE', 'B');
 		
 		super.create();
+		GlobalLoadingOverlay.showPersistent();
 
 		if (stateChangeDelay <= 0 && checkLoaded())
 		{

@@ -1114,7 +1114,9 @@ class FreeplayState extends MusicBeatState {
         if((controls.RESET || (touchPad != null && touchPad.buttonY.justPressed)) && !isTyping) {
             persistentUpdate = false;
             removeTouchPad();
-            openSubState(new ResetScoreSubState(songs[curSelected].songName, curDifficulty, songs[curSelected].songCharacter));
+            openSubState(new ResetScoreSubState(songs[curSelected].songName, curDifficulty, songs[curSelected].songCharacter, -1, function() {
+                refreshSelectedScoreData(true);
+            }));
             FlxG.sound.play(Paths.sound('scrollMenu'));
         }
     }
@@ -1641,6 +1643,24 @@ class FreeplayState extends MusicBeatState {
         
         loadChartMetadata();
     
+    }
+
+    function refreshSelectedScoreData(?immediate:Bool = false):Void {
+        if (songs.length == 0) return;
+
+        #if !switch
+        intendedScore = Highscore.getScore(songs[curSelected].songName, curDifficulty, viewingOpponentScores);
+        intendedRating = Highscore.getRating(songs[curSelected].songName, curDifficulty, viewingOpponentScores);
+        #else
+        intendedScore = 0;
+        intendedRating = 0;
+        #end
+
+        if (immediate) {
+            lerpScore = intendedScore;
+            lerpRating = intendedRating;
+            updateDynamicData();
+        }
     }
 
     /**

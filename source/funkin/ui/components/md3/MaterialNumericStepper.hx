@@ -19,7 +19,7 @@ import funkin.ui.components.md3.MD3Theme;
  */
 class MaterialNumericStepper extends FlxSpriteGroup
 {
-	static inline var TRACE_LAYOUT:Bool = true;
+	static inline var TRACE_LAYOUT:Bool = false;
 
 	// -----------------------------------------------------------------------
 	// Public API
@@ -174,7 +174,6 @@ class MaterialNumericStepper extends FlxSpriteGroup
 	function traceLayout(reason:String):Void
 	{
 		if (!TRACE_LAYOUT) return;
-		trace('[MaterialNumericStepper] ' + reason + ' ' + getDebugLayout());
 	}
 
 	public function getDebugLayout():String

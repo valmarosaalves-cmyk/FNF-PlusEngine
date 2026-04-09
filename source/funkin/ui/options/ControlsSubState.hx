@@ -1,23 +1,53 @@
 package funkin.ui.options;
 
-import funkin.input.InputFormatter;
+import flixel.FlxG;
+import flixel.FlxSprite;
 import flixel.addons.display.FlxBackdrop;
 import flixel.addons.display.FlxGridOverlay;
-import flixel.math.FlxRect;
-import funkin.play.AttachedSprite;
-import funkin.ui.components.md3.MD3ShapeTools;
-
-import flixel.input.keyboard.FlxKey;
+import flixel.group.FlxGroup.FlxTypedGroup;
 import flixel.input.gamepad.FlxGamepad;
 import flixel.input.gamepad.FlxGamepadInputID;
-import flixel.input.gamepad.FlxGamepadManager;
+import flixel.input.keyboard.FlxKey;
+import flixel.math.FlxMath;
+import flixel.math.FlxRect;
+import flixel.text.FlxText;
+import flixel.tweens.FlxEase;
+import flixel.tweens.FlxTween;
+import flixel.util.FlxColor;
+import funkin.input.InputFormatter;
+import funkin.ui.components.md3.MD3ShapeTools;
+import funkin.ui.components.md3.MaterialDialog;
+
+typedef ControlsHeaderRef = {
+	var rowID:Int;
+	var targetY:Int;
+	var alpha:Float;
+	var text:String;
+}
+
+typedef ControlsOptionRef = {
+	var rowID:Int;
+	var optionIndex:Int;
+	var targetY:Int;
+	var alpha:Float;
+	var text:String;
+	var hasBinds:Bool;
+}
+
+typedef ControlsBindRef = {
+	var optionIndex:Int;
+	var bindSlot:Int;
+	var targetY:Int;
+	var alpha:Float;
+	var text:String;
+}
 
 class ControlsSubState extends MusicBeatSubstate
 {
 	var curSelected:Int = 0;
 	var curAlt:Bool = false;
 
-	//Show on gamepad - Display name - Save file key - Rebind display name
+	// Show on gamepad - Display name - Save file key - Rebind display name
 	var options:Array<Dynamic> = [
 		[true, 'NOTES'],
 		[true, 'Left', 'note_left', 'Note Left'],
@@ -44,7 +74,7 @@ class ControlsSubState extends MusicBeatSubstate
 		[false, 'DEBUG'],
 		[false, 'Key 1', 'debug_1', 'Debug Key #1'],
 		[false, 'Key 2', 'debug_2', 'Debug Key #2'],
-		[false,],
+		[false],
 		[false, 'WINDOW'],
 		[false, 'Fullscreen', 'fullscreen', 'Fullscreen Toggel']
 	];
@@ -54,24 +84,19 @@ class ControlsSubState extends MusicBeatSubstate
 
 	var bg:FlxSprite;
 	var grid:FlxBackdrop;
-	var grpDisplay:FlxTypedGroup<Alphabet>;
-	var grpBlacks:FlxTypedGroup<AttachedSprite>;
-	var grpOptions:FlxTypedGroup<Alphabet>;
-	var grpBinds:FlxTypedGroup<Alphabet>;
-	var selectSpr:AttachedSprite;
 	var visibleRowCards:FlxTypedGroup<FlxSprite>;
 	var visibleOptionTexts:FlxTypedGroup<FlxText>;
 	var visibleBindCards:FlxTypedGroup<FlxSprite>;
 	var visibleBindTexts:FlxTypedGroup<FlxText>;
 	var visibleHeaderTexts:FlxTypedGroup<FlxText>;
-	var headerRefs:Array<Alphabet> = [];
-	var optionRefs:Array<Alphabet> = [];
-	var bindRefs:Array<Alphabet> = [];
+	var headerRefs:Array<ControlsHeaderRef> = [];
+	var optionRefs:Array<ControlsOptionRef> = [];
+	var bindRefs:Array<ControlsBindRef> = [];
 
 	var gamepadColor:FlxColor = 0xfffd7194;
 	var keyboardColor:FlxColor = 0xff7192fd;
 	var onKeyboardMode:Bool = true;
-	
+
 	var controllerSpr:FlxSprite;
 	var panelHeader:FlxSprite;
 	var panelX:Float = 0;
@@ -82,8 +107,14 @@ class ControlsSubState extends MusicBeatSubstate
 	var listY:Float = 0;
 	var listWidth:Float = 0;
 	var listHeight:Float = 0;
-	var listVisualOffsetY:Float = 54;
-	
+	var lastVisibleRowID:Int = 0;
+
+	var binding:Bool = false;
+	var holdingEsc:Float = 0;
+	var bindingDialog:MaterialDialog;
+
+	var timeForMoving:Float = 0.1;
+
 	public function new()
 	{
 		controls.isInSubstate = true;
@@ -91,7 +122,7 @@ class ControlsSubState extends MusicBeatSubstate
 		super();
 
 		#if DISCORD_ALLOWED
-		DiscordClient.changePresence("Controls Menu", null);
+		DiscordClient.changePresence('Controls Menu', null);
 		#end
 
 		options.push([true]);
@@ -159,24 +190,11 @@ class ControlsSubState extends MusicBeatSubstate
 		add(subtitleText);
 
 		var footerText:FlxText = new FlxText(panelX + 34, panelY + panelHeight - 40, panelWidth - 68,
-			Language.getPhrase('controls_menu_footer', 'ENTER rebinds. LEFT / RIGHT swaps primary and alternate. CTRL or shoulder buttons switch keyboard/gamepad.'), 14);
+			Language.getPhrase('controls_menu_footer', 'ENTER opens the rebind dialog. LEFT / RIGHT swaps primary and alternate. CTRL or shoulder buttons switch keyboard/gamepad.'), 14);
 		footerText.setFormat(Paths.font('inter.otf'), 14, 0xFF5E506F, LEFT);
 		footerText.antialiasing = ClientPrefs.data.antialiasing;
 		add(footerText);
 
-		grpDisplay = new FlxTypedGroup<Alphabet>();
-		add(grpDisplay);
-		grpOptions = new FlxTypedGroup<Alphabet>();
-		add(grpOptions);
-		grpBlacks = new FlxTypedGroup<AttachedSprite>();
-		add(grpBlacks);
-		selectSpr = new AttachedSprite();
-		selectSpr.makeGraphic(214, 72, FlxColor.WHITE);
-		selectSpr.copyAlpha = false;
-		selectSpr.alpha = 0.75;
-		add(selectSpr);
-		grpBinds = new FlxTypedGroup<Alphabet>();
-		add(grpBinds);
 		visibleRowCards = new FlxTypedGroup<FlxSprite>();
 		add(visibleRowCards);
 		visibleOptionTexts = new FlxTypedGroup<FlxText>();
@@ -201,202 +219,170 @@ class ControlsSubState extends MusicBeatSubstate
 		add(modeHint);
 
 		createTexts();
-		
+
 		addTouchPad('NONE', 'B');
 	}
 
-	var lastID:Int = 0;
-	function createTexts()
+	function createTexts():Void
 	{
 		curOptions = [];
 		curOptionsValid = [];
 		headerRefs = [];
 		optionRefs = [];
 		bindRefs = [];
-		grpDisplay.forEachAlive(function(text:Alphabet) text.destroy());
-		grpBlacks.forEachAlive(function(black:AttachedSprite) black.destroy());
-		grpOptions.forEachAlive(function(text:Alphabet) text.destroy());
-		grpBinds.forEachAlive(function(text:Alphabet) text.destroy());
-		visibleRowCards.forEachAlive(function(card:FlxSprite) card.destroy());
-		visibleOptionTexts.forEachAlive(function(text:FlxText) text.destroy());
-		visibleBindCards.forEachAlive(function(card:FlxSprite) card.destroy());
-		visibleBindTexts.forEachAlive(function(text:FlxText) text.destroy());
-		visibleHeaderTexts.forEachAlive(function(text:FlxText) text.destroy());
-		grpDisplay.clear();
-		grpBlacks.clear();
-		grpOptions.clear();
-		grpBinds.clear();
+		clearVisibleGroups();
+
+		var rowID:Int = 0;
+		for (optionIndex => option in options)
+		{
+			if (!onKeyboardMode && !option[0])
+				continue;
+
+			if (option.length > 1)
+			{
+				var isCentered:Bool = option.length < 3;
+				var isDefaultOption:Bool = option[1] == defaultKey;
+				var isHeader:Bool = isCentered && !isDefaultOption;
+				var label:String = getOptionLabel(option, isHeader);
+
+				if (isHeader)
+				{
+					headerRefs.push({
+						rowID: rowID,
+						targetY: rowID,
+						alpha: 0.92,
+						text: label
+					});
+
+					var headerText = new FlxText(listX + 28, listY, listWidth - 56, label, 20);
+					headerText.setFormat(Paths.font('inter-bold.otf'), 20, 0xFF5D4B78, LEFT);
+					headerText.antialiasing = ClientPrefs.data.antialiasing;
+					visibleHeaderTexts.add(headerText);
+				}
+				else
+				{
+					var hasBinds:Bool = !isCentered;
+					curOptions.push(optionIndex);
+					curOptionsValid.push(rowID);
+					optionRefs.push({
+						rowID: rowID,
+						optionIndex: optionIndex,
+						targetY: rowID,
+						alpha: 1,
+						text: label,
+						hasBinds: hasBinds
+					});
+
+					var rowCard = new FlxSprite();
+					visibleRowCards.add(rowCard);
+
+					var labelText = new FlxText(listX + 24, listY, 440, label, 20);
+					labelText.setFormat(Paths.font('inter-bold.otf'), 20, 0xFF2D2140, LEFT);
+					labelText.antialiasing = ClientPrefs.data.antialiasing;
+					visibleOptionTexts.add(labelText);
+
+					if (hasBinds)
+					{
+						for (slot in 0...2)
+						{
+							bindRefs.push({
+								optionIndex: optionIndex,
+								bindSlot: slot,
+								targetY: rowID,
+								alpha: 1,
+								text: getBindDisplayText(option[2], slot)
+							});
+
+							var bindCard = new FlxSprite();
+							visibleBindCards.add(bindCard);
+
+							var bindText = new FlxText(panelX + panelWidth - 444 + slot * 212, listY, 184, '', 17);
+							bindText.setFormat(Paths.font('inter.otf'), 17, 0xFF33254A, CENTER);
+							bindText.antialiasing = ClientPrefs.data.antialiasing;
+							visibleBindTexts.add(bindText);
+						}
+					}
+				}
+			}
+
+			rowID++;
+		}
+
+		lastVisibleRowID = Std.int(Math.max(0, rowID - 1));
+		updateText(0, true);
+		syncVisibleRows(0, true);
+	}
+
+	function clearVisibleGroups():Void
+	{
+		for (card in visibleRowCards.members)
+			if (card != null) card.destroy();
+		for (text in visibleOptionTexts.members)
+			if (text != null) text.destroy();
+		for (card in visibleBindCards.members)
+			if (card != null) card.destroy();
+		for (text in visibleBindTexts.members)
+			if (text != null) text.destroy();
+		for (text in visibleHeaderTexts.members)
+			if (text != null) text.destroy();
+
 		visibleRowCards.clear();
 		visibleOptionTexts.clear();
 		visibleBindCards.clear();
 		visibleBindTexts.clear();
 		visibleHeaderTexts.clear();
+	}
 
-		var myID:Int = 0;
-		for (i => option in options)
+	function getOptionLabel(option:Array<Dynamic>, isHeader:Bool):String
+	{
+		var rawLabel:String = option[1];
+		if (rawLabel == defaultKey)
+			return Language.getPhrase(rawLabel);
+
+		if (isHeader)
+			return Language.getPhrase('keygroup_' + rawLabel, rawLabel);
+
+		return Language.getPhrase('key_' + option[2], rawLabel);
+	}
+
+	function getBindDisplayText(bindKey:String, slot:Int):String
+	{
+		if (onKeyboardMode)
 		{
-			if(onKeyboardMode || option[0])
-			{
-				if(option.length > 1)
-				{
-					var isCentered:Bool = (option.length < 3);
-					var isDefaultKey:Bool = (option[1] == defaultKey);
-					var isDisplayKey:Bool = (isCentered && !isDefaultKey);
-
-					var str:String = option[1];
-					var keyStr:String = option[2];
-					if(isDefaultKey) str = Language.getPhrase(str);
-					var text:Alphabet = new Alphabet(listX + 332, listY + 56, !isDisplayKey ? Language.getPhrase('key_$keyStr', str) : Language.getPhrase('keygroup_$str', str), !isDisplayKey);
-					text.isMenuItem = true;
-					text.changeX = false;
-					text.distancePerItem.y = 60;
-					text.targetY = myID;
-					text.ID = myID;
-					lastID = myID;
-
-					if(!isDisplayKey)
-					{
-						text.alignment = RIGHT;
-						grpOptions.add(text);
-						text.visible = false;
-						curOptions.push(i);
-						curOptionsValid.push(myID);
-
-						var rowCard = new FlxSprite();
-						visibleRowCards.add(rowCard);
-						var labelText = new FlxText(listX + 24, listY, 440, '', 20);
-						labelText.setFormat(Paths.font('inter-bold.otf'), 20, 0xFF2D2140, LEFT);
-						labelText.antialiasing = ClientPrefs.data.antialiasing;
-						visibleOptionTexts.add(labelText);
-						optionRefs.push(text);
-					}
-					else
-					{
-						grpDisplay.add(text);
-						text.visible = false;
-						var headerText = new FlxText(listX + 28, listY, listWidth - 56, text.text, 20);
-						headerText.setFormat(Paths.font('inter-bold.otf'), 20, 0xFF5D4B78, LEFT);
-						headerText.antialiasing = ClientPrefs.data.antialiasing;
-						visibleHeaderTexts.add(headerText);
-						headerRefs.push(text);
-					}
-
-					if(isCentered) addCenteredText(text, option, myID);
-					else addKeyText(text, option, myID);
-
-					text.snapToPosition();
-					text.y += FlxG.height * 2;
-				}
-				myID++;
-			}
+			var keys:Array<Null<FlxKey>> = ClientPrefs.keyBinds.get(bindKey);
+			if (keys == null) keys = ClientPrefs.defaultKeys.get(bindKey).copy();
+			return InputFormatter.getKeyName(keys[slot] != null ? keys[slot] : NONE);
 		}
-		updateText();
-		syncVisibleRows(0, true);
+
+		var buttons:Array<Null<FlxGamepadInputID>> = ClientPrefs.gamepadBinds.get(bindKey);
+		if (buttons == null) buttons = ClientPrefs.defaultButtons.get(bindKey).copy();
+		return InputFormatter.getGamepadName(buttons[slot] != null ? buttons[slot] : NONE);
 	}
 
-	function addCenteredText(text:Alphabet, option:Array<Dynamic>, id:Int)
+	function getOptionRef(optionIndex:Int):ControlsOptionRef
 	{
-		text.alignment = LEFT;
-		text.x = listX + 28;
-		text.startPosition.x = text.x;
-		text.y -= 72;
-		text.startPosition.y -= 72;
+		for (optionRef in optionRefs)
+			if (optionRef.optionIndex == optionIndex) return optionRef;
+
+		return null;
 	}
-	function addKeyText(text:Alphabet, option:Array<Dynamic>, id:Int)
+
+	function getBindRefIndex(optionIndex:Int, bindSlot:Int):Int
 	{
-		var keys:Array<Null<FlxKey>> = ClientPrefs.keyBinds.get(option[2]);
-		if(keys == null && onKeyboardMode)
-			keys = ClientPrefs.defaultKeys.get(option[2]).copy();
-
-		var gmpds:Array<Null<FlxGamepadInputID>> = ClientPrefs.gamepadBinds.get(option[2]);
-		if(gmpds == null && !onKeyboardMode)
-			gmpds = ClientPrefs.defaultButtons.get(option[2]).copy();
-
-		for (n in 0...2)
+		for (index in 0...bindRefs.length)
 		{
-			var key:String = null;
-			if(onKeyboardMode)
-				key = InputFormatter.getKeyName((keys[n] != null) ? keys[n] : NONE);
-			else
-				key = InputFormatter.getGamepadName((gmpds[n] != null) ? gmpds[n] : NONE);
-
-			var attach:Alphabet = new Alphabet(panelX + panelWidth - 444 + n * 212, listY + 4, key, false);
-			attach.isMenuItem = true;
-			attach.changeX = false;
-			attach.distancePerItem.y = 60;
-			attach.targetY = text.targetY;
-			attach.ID = Math.floor(grpBinds.length / 2);
-			attach.snapToPosition();
-			attach.y += FlxG.height * 2;
-			grpBinds.add(attach);
-			attach.visible = false;
-
-			playstationCheck(attach);
-			attach.scaleX = Math.min(1, 230 / attach.width);
-			//attach.text = key;
-
-			// spawn black bars at the right of the key name
-			var black:AttachedSprite = new AttachedSprite();
-			black.makeGraphic(214, 72, FlxColor.BLACK);
-			black.alphaMult = 0.4;
-			black.sprTracker = text;
-			black.yAdd = -3;
-			black.xAdd = 122 + n * 212;
-			black.visible = false;
-			grpBlacks.add(black);
-
-			var bindCard = new FlxSprite();
-			visibleBindCards.add(bindCard);
-			var bindText = new FlxText(panelX + panelWidth - 444 + n * 212, listY, 184, key, 17);
-			bindText.setFormat(Paths.font('inter.otf'), 17, 0xFF33254A, CENTER);
-			bindText.antialiasing = ClientPrefs.data.antialiasing;
-			visibleBindTexts.add(bindText);
-			bindRefs.push(attach);
+			var bindRef = bindRefs[index];
+			if (bindRef.optionIndex == optionIndex && bindRef.bindSlot == bindSlot)
+				return index;
 		}
+
+		return -1;
 	}
 
-	function playstationCheck(alpha:Alphabet)
+	function updateBind(bindIndex:Int, text:String):Void
 	{
-		if(onKeyboardMode) return;
-
-		var gamepad:FlxGamepad = FlxG.gamepads.firstActive;
-		var model:FlxGamepadModel = gamepad != null ? gamepad.detectedModel : UNKNOWN;
-		var letter = alpha.letters[0];
-		if(model == PS4)
-		{
-			switch(alpha.text)
-			{
-				case '[', ']': //Square and Triangle respectively
-					letter.image = 'alphabet_playstation';
-					letter.updateHitbox();
-					
-					letter.offset.x += 4;
-					letter.offset.y -= 5;
-			}
-		}
-	}
-
-	function updateBind(num:Int, text:String)
-	{
-		var bind:Alphabet = grpBinds.members[num];
-		var attach:Alphabet = new Alphabet(panelX + panelWidth - 444 + (num % 2) * 212, listY + 4, text, false);
-		attach.isMenuItem = true;
-		attach.changeX = false;
-		attach.distancePerItem.y = 60;
-		attach.targetY = bind.targetY;
-		attach.ID = bind.ID;
-		attach.x = bind.x;
-		attach.y = bind.y;
-		
-		playstationCheck(attach);
-		attach.scaleX = Math.min(1, 230 / attach.width);
-		//attach.text = text;
-
-		bind.kill();
-		grpBinds.remove(bind);
-		grpBinds.insert(num, attach);
-		bind.destroy();
-		bindRefs[num] = attach;
+		if (bindIndex < 0 || bindIndex >= bindRefs.length) return;
+		bindRefs[bindIndex].text = text;
 		syncVisibleRows(0, true);
 	}
 
@@ -441,6 +427,8 @@ class ControlsSubState extends MusicBeatSubstate
 
 	function syncVisibleRows(elapsed:Float = 0, instant:Bool = false):Void
 	{
+		if (curOptions == null || curOptions.length == 0) return;
+
 		var clipTop = listY + 14;
 		var clipBottom = listY + listHeight - 14;
 		var topRowY = listY + 18;
@@ -452,6 +440,7 @@ class ControlsSubState extends MusicBeatSubstate
 			var ref = headerRefs[index];
 			var field = visibleHeaderTexts.members[index];
 			if (ref == null || field == null) continue;
+
 			var targetY = topRowY + (ref.targetY + 3) * rowSpacing + 10;
 			field.text = ref.text;
 			field.x = listX + 28;
@@ -459,7 +448,8 @@ class ControlsSubState extends MusicBeatSubstate
 				field.y = targetY;
 			else
 				field.y += (targetY - field.y) * follow;
-			field.alpha += (0.92 - field.alpha) * follow;
+			field.alpha += (ref.alpha - field.alpha) * follow;
+
 			applyVerticalClip(field, clipTop, clipBottom);
 		}
 
@@ -470,21 +460,20 @@ class ControlsSubState extends MusicBeatSubstate
 			var field = visibleOptionTexts.members[index];
 			if (ref == null || card == null || field == null) continue;
 
-			var selected = ref.ID == curOptionsValid[curSelected];
+			var selected = ref.optionIndex == curOptions[curSelected];
 			var targetCardY = topRowY + (ref.targetY + 3) * rowSpacing;
-			var targetAlpha = ref.alpha;
 			card.x = listX + 18;
 			if (instant || card.y == 0)
 				card.y = targetCardY;
 			else
 				card.y += (targetCardY - card.y) * follow;
 			drawListCard(card, selected);
-			card.alpha += (targetAlpha - card.alpha) * follow;
+			card.alpha += (ref.alpha - card.alpha) * follow;
 
 			field.text = ref.text;
 			field.x = card.x + 18;
 			field.y = card.y + 15;
-			field.alpha += (targetAlpha - field.alpha) * follow;
+			field.alpha += (ref.alpha - field.alpha) * follow;
 			field.color = selected ? 0xFF24173C : 0xFF4C3B66;
 
 			applyVerticalClip(card, clipTop, clipBottom);
@@ -497,26 +486,26 @@ class ControlsSubState extends MusicBeatSubstate
 			var card = visibleBindCards.members[index];
 			var field = visibleBindTexts.members[index];
 			if (ref == null || card == null || field == null) continue;
-			var parentRef = optionRefs[Math.floor(index / 2)];
+
+			var parentRef = getOptionRef(ref.optionIndex);
 			if (parentRef == null) continue;
 
-			var selected = ref.ID == curSelected && (index % 2) == (curAlt ? 1 : 0);
+			var selected = ref.optionIndex == curOptions[curSelected] && ref.bindSlot == (curAlt ? 1 : 0);
 			var targetCardY = topRowY + (parentRef.targetY + 3) * rowSpacing + 3;
-			var targetAlpha = parentRef.alpha;
-			card.x = panelX + panelWidth - 444 + (index % 2) * 212;
+			card.x = panelX + panelWidth - 444 + ref.bindSlot * 212;
 			if (instant || card.y == 0)
 				card.y = targetCardY;
 			else
 				card.y += (targetCardY - card.y) * follow;
 			drawBindCard(card, selected);
-			card.alpha += (targetAlpha - card.alpha) * follow;
+			card.alpha += (ref.alpha - card.alpha) * follow;
 
 			field.text = ref.text;
 			field.x = card.x + 12;
 			field.y = card.y + 18;
 			field.fieldWidth = 164;
 			field.alignment = CENTER;
-			field.alpha += (targetAlpha - field.alpha) * follow;
+			field.alpha += (ref.alpha - field.alpha) * follow;
 			field.color = selected ? 0xFF27184A : 0xFF4D3C69;
 
 			applyVerticalClip(card, clipTop, clipBottom);
@@ -524,17 +513,9 @@ class ControlsSubState extends MusicBeatSubstate
 		}
 	}
 
-	var binding:Bool = false;
-	var holdingEsc:Float = 0;
-	var bindingBlack:FlxSprite;
-	var bindingPanel:FlxSprite;
-	var bindingText:FlxText;
-	var bindingText2:FlxText;
-
-	var timeForMoving:Float = 0.1;
-	override function update(elapsed:Float)
+	override function update(elapsed:Float):Void
 	{
-		if(timeForMoving > 0) //Fix controller bug
+		if (timeForMoving > 0)
 		{
 			timeForMoving = Math.max(0, timeForMoving - elapsed);
 			super.update(elapsed);
@@ -542,52 +523,33 @@ class ControlsSubState extends MusicBeatSubstate
 			return;
 		}
 
-		if(!binding)
+		if (!binding)
 		{
-			if(touchPad.buttonB.justPressed || FlxG.keys.justPressed.ESCAPE || FlxG.gamepads.anyJustPressed(B))
+			if (touchPad.buttonB.justPressed || FlxG.keys.justPressed.ESCAPE || FlxG.gamepads.anyJustPressed(B))
 			{
 				controls.isInSubstate = false;
 				close();
 				return;
 			}
-			if(FlxG.keys.justPressed.CONTROL || FlxG.gamepads.anyJustPressed(LEFT_SHOULDER) || FlxG.gamepads.anyJustPressed(RIGHT_SHOULDER)) swapMode();
 
-			if(FlxG.keys.justPressed.LEFT || FlxG.keys.justPressed.RIGHT || FlxG.gamepads.anyJustPressed(DPAD_LEFT) || FlxG.gamepads.anyJustPressed(DPAD_RIGHT) ||
-				FlxG.gamepads.anyJustPressed(LEFT_STICK_DIGITAL_LEFT) || FlxG.gamepads.anyJustPressed(LEFT_STICK_DIGITAL_RIGHT)) updateAlt(true);
+			if (FlxG.keys.justPressed.CONTROL || FlxG.gamepads.anyJustPressed(LEFT_SHOULDER) || FlxG.gamepads.anyJustPressed(RIGHT_SHOULDER))
+				swapMode();
 
-			if(FlxG.keys.justPressed.UP || FlxG.gamepads.anyJustPressed(DPAD_UP) || FlxG.gamepads.anyJustPressed(LEFT_STICK_DIGITAL_UP)) updateText(-1);
-			else if(FlxG.keys.justPressed.DOWN || FlxG.gamepads.anyJustPressed(DPAD_DOWN) || FlxG.gamepads.anyJustPressed(LEFT_STICK_DIGITAL_DOWN)) updateText(1);
+			if (FlxG.keys.justPressed.LEFT || FlxG.keys.justPressed.RIGHT || FlxG.gamepads.anyJustPressed(DPAD_LEFT) || FlxG.gamepads.anyJustPressed(DPAD_RIGHT)
+				|| FlxG.gamepads.anyJustPressed(LEFT_STICK_DIGITAL_LEFT) || FlxG.gamepads.anyJustPressed(LEFT_STICK_DIGITAL_RIGHT))
+				updateAlt(true);
 
-			if(FlxG.keys.justPressed.ENTER || FlxG.gamepads.anyJustPressed(START) || FlxG.gamepads.anyJustPressed(A))
+			if (FlxG.keys.justPressed.UP || FlxG.gamepads.anyJustPressed(DPAD_UP) || FlxG.gamepads.anyJustPressed(LEFT_STICK_DIGITAL_UP))
+				updateText(-1);
+			else if (FlxG.keys.justPressed.DOWN || FlxG.gamepads.anyJustPressed(DPAD_DOWN) || FlxG.gamepads.anyJustPressed(LEFT_STICK_DIGITAL_DOWN))
+				updateText(1);
+
+			if (FlxG.keys.justPressed.ENTER || FlxG.gamepads.anyJustPressed(START) || FlxG.gamepads.anyJustPressed(A))
 			{
-				if(options[curOptions[curSelected]][1] != defaultKey)
+				var selectedOption = options[curOptions[curSelected]];
+				if (selectedOption[1] != defaultKey)
 				{
-					bindingBlack = new FlxSprite().makeGraphic(1, 1, /*FlxColor.BLACK*/ FlxColor.WHITE);
-					bindingBlack.scale.set(FlxG.width, FlxG.height);
-					bindingBlack.updateHitbox();
-					bindingBlack.alpha = 0;
-					FlxTween.tween(bindingBlack, {alpha: 0.6}, 0.35, {ease: FlxEase.linear});
-					add(bindingBlack);
-
-					bindingPanel = new FlxSprite((FlxG.width - 620) * 0.5, (FlxG.height - 220) * 0.5);
-					MD3ShapeTools.fillAndStrokeRoundRect(bindingPanel, 620, 220, 28, 2, 0xFFF8F2FB, 0xFFE0D4EE);
-					add(bindingPanel);
-
-					bindingText = new FlxText(bindingPanel.x + 28, bindingPanel.y + 34, 564,
-						Language.getPhrase('controls_rebinding', 'Rebinding {1}', [options[curOptions[curSelected]][3]]), 28);
-					bindingText.setFormat(Paths.font('inter-bold.otf'), 28, 0xFF281B41, CENTER);
-					bindingText.antialiasing = ClientPrefs.data.antialiasing;
-					add(bindingText);
-
-					final escape:String = (controls.mobileC) ? "B" : "ESC";
-					final backspace:String = (controls.mobileC) ? "C" : "Backspace";
-					
-					bindingText2 = new FlxText(bindingPanel.x + 36, bindingPanel.y + 104, 548,
-						Language.getPhrase('controls_rebinding2', 'Hold {1} to Cancel\nHold {2} to Delete', [escape, backspace]), 20);
-					bindingText2.setFormat(Paths.font('inter.otf'), 20, 0xFF5C4B77, CENTER);
-					bindingText2.antialiasing = ClientPrefs.data.antialiasing;
-					add(bindingText2);
-
+					openBindingDialog();
 					binding = true;
 					holdingEsc = 0;
 					ClientPrefs.toggleVolumeKeys(false);
@@ -595,43 +557,36 @@ class ControlsSubState extends MusicBeatSubstate
 				}
 				else
 				{
-					// Reset to Default
 					ClientPrefs.resetKeys(!onKeyboardMode);
 					ClientPrefs.reloadVolumeKeys();
-					var lastSel:Int = curSelected;
+					var lastSelection = curSelected;
 					createTexts();
-					curSelected = lastSel;
-					updateText();
+					curSelected = FlxMath.wrap(lastSelection, 0, curOptions.length - 1);
+					updateText(0, true);
 					FlxG.sound.play(Paths.sound('cancelMenu'));
 				}
 			}
 		}
 		else
 		{
-			var altNum:Int = curAlt ? 1 : 0;
+			var altNum = curAlt ? 1 : 0;
 			var curOption:Array<Dynamic> = options[curOptions[curSelected]];
-			if(FlxG.keys.pressed.ESCAPE || FlxG.gamepads.anyPressed(B))
+
+			if (FlxG.keys.pressed.ESCAPE || FlxG.gamepads.anyPressed(B))
 			{
 				holdingEsc += elapsed;
-				if(holdingEsc > 0.5)
+				if (holdingEsc > 0.5)
 				{
 					FlxG.sound.play(Paths.sound('cancelMenu'));
-					closeBinding();
+					cancelBinding();
 				}
 			}
 			else if (FlxG.keys.pressed.BACKSPACE || FlxG.gamepads.anyPressed(BACK))
 			{
 				holdingEsc += elapsed;
-				if(holdingEsc > 0.5)
+				if (holdingEsc > 0.5)
 				{
-					if (onKeyboardMode)
-						ClientPrefs.keyBinds.get(curOption[2])[altNum] = NONE;
-					else
-						ClientPrefs.gamepadBinds.get(curOption[2])[altNum] = NONE;
-					ClientPrefs.clearInvalidKeys(curOption[2]);
-					updateBind(Math.floor(curSelected * 2) + altNum, onKeyboardMode ? InputFormatter.getKeyName(NONE) : InputFormatter.getGamepadName(NONE));
-					FlxG.sound.play(Paths.sound('cancelMenu'));
-					closeBinding();
+					clearCurrentBinding();
 				}
 			}
 			else
@@ -641,9 +596,9 @@ class ControlsSubState extends MusicBeatSubstate
 				var curKeys:Array<FlxKey> = ClientPrefs.keyBinds.get(curOption[2]);
 				var curButtons:Array<FlxGamepadInputID> = ClientPrefs.gamepadBinds.get(curOption[2]);
 
-				if(onKeyboardMode)
+				if (onKeyboardMode)
 				{
-					if(FlxG.keys.justPressed.ANY || FlxG.keys.justReleased.ANY)
+					if (FlxG.keys.justPressed.ANY || FlxG.keys.justReleased.ANY)
 					{
 						var keyPressed:Int = FlxG.keys.firstJustPressed();
 						var keyReleased:Int = FlxG.keys.firstJustReleased();
@@ -659,26 +614,28 @@ class ControlsSubState extends MusicBeatSubstate
 						}
 					}
 				}
-				else if(FlxG.gamepads.anyJustPressed(ANY) || FlxG.gamepads.anyJustPressed(LEFT_TRIGGER) || FlxG.gamepads.anyJustPressed(RIGHT_TRIGGER) || FlxG.gamepads.anyJustReleased(ANY))
+				else if (FlxG.gamepads.anyJustPressed(ANY) || FlxG.gamepads.anyJustPressed(LEFT_TRIGGER) || FlxG.gamepads.anyJustPressed(RIGHT_TRIGGER)
+					|| FlxG.gamepads.anyJustReleased(ANY))
 				{
 					var keyPressed:Null<FlxGamepadInputID> = NONE;
 					var keyReleased:Null<FlxGamepadInputID> = NONE;
-					if(FlxG.gamepads.anyJustPressed(LEFT_TRIGGER)) keyPressed = LEFT_TRIGGER; //it wasnt working for some reason
-					else if(FlxG.gamepads.anyJustPressed(RIGHT_TRIGGER)) keyPressed = RIGHT_TRIGGER; //it wasnt working for some reason
+					if (FlxG.gamepads.anyJustPressed(LEFT_TRIGGER))
+						keyPressed = LEFT_TRIGGER;
+					else if (FlxG.gamepads.anyJustPressed(RIGHT_TRIGGER))
+						keyPressed = RIGHT_TRIGGER;
 					else
 					{
-						for (i in 0...FlxG.gamepads.numActiveGamepads)
+						for (gamepadIndex in 0...FlxG.gamepads.numActiveGamepads)
 						{
-							var gamepad:FlxGamepad = FlxG.gamepads.getByID(i);
-							if(gamepad != null)
-							{
-								keyPressed = gamepad.firstJustPressedID();
-								keyReleased = gamepad.firstJustReleasedID();
+							var gamepad:FlxGamepad = FlxG.gamepads.getByID(gamepadIndex);
+							if (gamepad == null) continue;
 
-								if(keyPressed == null) keyPressed = NONE;
-								if(keyReleased == null) keyReleased = NONE;
-								if(keyPressed != NONE || keyReleased != NONE) break;
-							}
+							keyPressed = gamepad.firstJustPressedID();
+							keyReleased = gamepad.firstJustReleasedID();
+
+							if (keyPressed == null) keyPressed = NONE;
+							if (keyReleased == null) keyReleased = NONE;
+							if (keyPressed != NONE || keyReleased != NONE) break;
 						}
 					}
 
@@ -694,92 +651,151 @@ class ControlsSubState extends MusicBeatSubstate
 					}
 				}
 
-				if(changed)
+				if (changed)
 				{
 					if (onKeyboardMode)
 					{
-						if(curKeys[altNum] == curKeys[1 - altNum])
+						if (curKeys[altNum] == curKeys[1 - altNum])
 							curKeys[1 - altNum] = FlxKey.NONE;
 					}
 					else
 					{
-						if(curButtons[altNum] == curButtons[1 - altNum])
+						if (curButtons[altNum] == curButtons[1 - altNum])
 							curButtons[1 - altNum] = FlxGamepadInputID.NONE;
 					}
 
-					var option:String = options[curOptions[curSelected]][2];
-					ClientPrefs.clearInvalidKeys(option);
-					for (n in 0...2)
-					{
-						var key:String = null;
-						if(onKeyboardMode)
-						{
-							var savKey:Array<Null<FlxKey>> = ClientPrefs.keyBinds.get(option);
-							key = InputFormatter.getKeyName(savKey[n] != null ? savKey[n] : NONE);
-						}
-						else
-						{
-							var savKey:Array<Null<FlxGamepadInputID>> = ClientPrefs.gamepadBinds.get(option);
-							key = InputFormatter.getGamepadName(savKey[n] != null ? savKey[n] : NONE);
-						}
-						updateBind(Math.floor(curSelected * 2) + n, key);
-					}
+					var optionKey:String = curOption[2];
+					ClientPrefs.clearInvalidKeys(optionKey);
+					for (slot in 0...2)
+						updateBind(getBindRefIndex(curOptions[curSelected], slot), getBindDisplayText(optionKey, slot));
+
 					FlxG.sound.play(Paths.sound('confirmMenu'));
 					closeBinding();
 				}
 			}
 		}
+
 		super.update(elapsed);
 		syncVisibleRows(elapsed);
 	}
 
-	function closeBinding()
+	function openBindingDialog():Void
+	{
+		var selectedOption = options[curOptions[curSelected]];
+		var targetInput:String = onKeyboardMode
+			? Language.getPhrase('controls_rebinding_keyboard', 'keyboard key')
+			: Language.getPhrase('controls_rebinding_gamepad', 'gamepad button');
+		var targetSlot:String = curAlt
+			? Language.getPhrase('controls_rebinding_alt_slot', 'Alternate slot')
+			: Language.getPhrase('controls_rebinding_primary_slot', 'Primary slot');
+		var escape:String = controls.mobileC ? 'B' : 'ESC';
+		var backspace:String = controls.mobileC ? 'C' : 'Backspace';
+
+		if (bindingDialog != null)
+		{
+			remove(bindingDialog);
+			bindingDialog.destroy();
+			bindingDialog = null;
+		}
+
+		bindingDialog = new MaterialDialog(
+			Language.getPhrase('controls_rebinding', 'Rebinding {1}', [selectedOption[3]]),
+			Language.getPhrase('controls_rebinding_dialog_body',
+				'Waiting for a {1}.\nTarget: {2}.\n\nPress anything to bind it.\nHold {3} to cancel.\nHold {4} to clear this slot.',
+				[targetInput, targetSlot, escape, backspace]),
+			Language.getPhrase('controls_rebinding_clear_button', 'Clear bind'),
+			Language.getPhrase('controls_rebinding_cancel_button', 'Cancel'),
+			function()
+			{
+				clearCurrentBinding();
+			},
+			function()
+			{
+				FlxG.sound.play(Paths.sound('cancelMenu'));
+				cancelBinding();
+			}
+		);
+		add(bindingDialog);
+		bindingDialog.open();
+	}
+
+	function cancelBinding():Void
+	{
+		if (!binding) return;
+		closeBinding();
+	}
+
+	function clearCurrentBinding():Void
+	{
+		if (!binding) return;
+
+		var altNum = curAlt ? 1 : 0;
+		var curOption:Array<Dynamic> = options[curOptions[curSelected]];
+		if (onKeyboardMode)
+			ClientPrefs.keyBinds.get(curOption[2])[altNum] = NONE;
+		else
+			ClientPrefs.gamepadBinds.get(curOption[2])[altNum] = NONE;
+
+		ClientPrefs.clearInvalidKeys(curOption[2]);
+		updateBind(getBindRefIndex(curOptions[curSelected], altNum), onKeyboardMode ? InputFormatter.getKeyName(NONE) : InputFormatter.getGamepadName(NONE));
+		FlxG.sound.play(Paths.sound('cancelMenu'));
+		closeBinding();
+	}
+
+	function closeBinding():Void
 	{
 		binding = false;
-		bindingBlack.destroy();
-		remove(bindingBlack);
+		holdingEsc = 0;
 
-		bindingPanel.destroy();
-		remove(bindingPanel);
+		if (bindingDialog != null)
+		{
+			remove(bindingDialog);
+			bindingDialog.destroy();
+			bindingDialog = null;
+		}
 
-		bindingText.destroy();
-		remove(bindingText);
-
-		bindingText2.destroy();
-		remove(bindingText2);
 		ClientPrefs.reloadVolumeKeys();
 	}
 
-	function updateText(?change:Int = 0)
+	function updateText(?change:Int = 0, ?silent:Bool = false):Void
 	{
+		if (curOptions == null || curOptions.length == 0) return;
+
 		curSelected = FlxMath.wrap(curSelected + change, 0, curOptions.length - 1);
 
-		var num:Int = curOptionsValid[curSelected];
-		var addNum:Int = 0;
-		if(num < 3) addNum = 3 - num;
-		else if(num > lastID - 4) addNum = (lastID - 4) - num;
+		var currentRow = curOptionsValid[curSelected];
+		var addNum = 0;
+		if (currentRow < 3)
+			addNum = 3 - currentRow;
+		else if (currentRow > lastVisibleRowID - 4)
+			addNum = (lastVisibleRowID - 4) - currentRow;
 
-		grpDisplay.forEachAlive(function(item:Alphabet) {
-			item.targetY = item.ID - num - addNum;
-		});
+		for (headerRef in headerRefs)
+		{
+			headerRef.targetY = headerRef.rowID - currentRow - addNum;
+			headerRef.alpha = 0.92;
+		}
 
-		grpOptions.forEachAlive(function(item:Alphabet)
+		for (optionRef in optionRefs)
 		{
-			item.targetY = item.ID - num - addNum;
-			item.alpha = (item.ID - num == 0) ? 1 : 0.6;
-		});
-		grpBinds.forEachAlive(function(item:Alphabet)
+			optionRef.targetY = optionRef.rowID - currentRow - addNum;
+			optionRef.alpha = optionRef.optionIndex == curOptions[curSelected] ? 1 : 0.6;
+		}
+
+		for (bindRef in bindRefs)
 		{
-			var parent:Alphabet = grpOptions.members[item.ID];
-			item.targetY = parent.targetY;
-			item.alpha = parent.alpha;
-		});
+			var parentRef = getOptionRef(bindRef.optionIndex);
+			if (parentRef == null) continue;
+			bindRef.targetY = parentRef.targetY;
+			bindRef.alpha = parentRef.alpha;
+		}
 
 		updateAlt();
-		FlxG.sound.play(Paths.sound('scrollMenu'));
+		if (!silent)
+			FlxG.sound.play(Paths.sound('scrollMenu'));
 	}
 
-	function swapMode()
+	function swapMode():Void
 	{
 		FlxTween.cancelTweensOf(bg);
 		FlxTween.color(bg, 0.5, bg.color, onKeyboardMode ? gamepadColor : keyboardColor, {ease: FlxEase.linear});
@@ -790,16 +806,15 @@ class ControlsSubState extends MusicBeatSubstate
 		curAlt = false;
 		controllerSpr.animation.play(onKeyboardMode ? 'keyboard' : 'gamepad');
 		createTexts();
+		FlxG.sound.play(Paths.sound('scrollMenu'));
 	}
 
-	function updateAlt(?doSwap:Bool = false)
+	function updateAlt(?doSwap:Bool = false):Void
 	{
-		if(doSwap)
+		if (doSwap)
 		{
 			curAlt = !curAlt;
 			FlxG.sound.play(Paths.sound('scrollMenu'));
 		}
-		selectSpr.sprTracker = grpBlacks.members[Math.floor(curSelected * 2) + (curAlt ? 1 : 0)];
-		selectSpr.visible = false;
 	}
 }

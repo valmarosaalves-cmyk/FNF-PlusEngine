@@ -14,7 +14,7 @@ import funkin.ui.components.md3.MD3Theme;
  */
 class MaterialSwitch extends FlxSpriteGroup
 {
-	static inline var TRACE_LAYOUT:Bool = true;
+	static inline var TRACE_LAYOUT:Bool = false;
 
 	public var checked(default, set):Bool = false;
 	public var enabled:Bool = true;
@@ -89,7 +89,6 @@ class MaterialSwitch extends FlxSpriteGroup
 	function traceLayout(reason:String):Void
 	{
 		if (!TRACE_LAYOUT) return;
-		trace('[MaterialSwitch] ' + reason + ' ' + getDebugLayout());
 	}
 
 	public function getDebugLayout():String

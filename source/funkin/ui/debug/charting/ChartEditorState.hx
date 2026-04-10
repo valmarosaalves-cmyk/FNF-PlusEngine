@@ -223,6 +223,8 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 
 	var tipBg:FlxSprite;
 	var fullTipText:FlxText;
+	var _uiThemeSignature:String = null;
+	var _outputIsError:Bool = false;
 	
 	var vortexEnabled:Bool = false;
 	var waveformEnabled:Bool = false;
@@ -399,7 +401,10 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 		infoBox.getTab('Information').menu.add(infoText);
 		add(infoBox);
 
-		mainBox = new PsychUIBox(mainBoxPosition.x, mainBoxPosition.y, 300, 280, ['Charting', 'Data', 'Events', 'Note', 'Section', 'Song']);
+		mainBox = new PsychUIBox(mainBoxPosition.x, mainBoxPosition.y, 340, 280, ['Charting', 'Data', 'Events', 'Note', 'Section', 'Song']);
+		mainBox.minTabWidth = 50;
+		mainBox.minTabHeight = 28;
+		mainBox.resize(340, 280);
 		mainBox.selectedName = 'Song';
 		mainBox.scrollFactor.set();
 		mainBox.cameras = [camUI];
@@ -485,7 +490,6 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 		//
 
 		loadMusic();
-		reloadNotesDropdowns();
 		if(!_shouldReset)
 		{
 			vocals.time = opponentVocals.time = FlxG.sound.music.time = Conductor.songPosition - Conductor.offset;
@@ -588,6 +592,7 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 		].join('\n');
 		fullTipText.screenCenter();
 		add(fullTipText);
+		refreshStandaloneUiTheme(true);
 		addTouchPad('LEFT_FULL', 'CHART_EDITOR');
 		super.create();
 	}
@@ -741,6 +746,8 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 	var lastBeatHit:Int = 0;
 	override function update(elapsed:Float)
 	{
+		refreshStandaloneUiTheme();
+
 		// Mostrar overlay cuando hay un archivo siendo arrastrado
 		#if desktop
 		if(droppedFilePath != null || (FlxG.stage != null && FlxG.stage.window != null))
@@ -2066,15 +2073,80 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 		outputTxt.text = message;
 		outputTxt.y = FlxG.height - outputTxt.height - 30;
 		outputAlpha = 4;
+		_outputIsError = isError;
 		if(isError)
 		{
 			FlxG.sound.play(Paths.sound('cancelMenu'), 0.6);
 			outputTxt.color = FlxColor.RED;
+			outputTxt.borderColor = 0xFF2A0000;
 		}
 		else
 		{
 			FlxG.sound.play(Paths.sound('scrollMenu'), 0.6);
-			outputTxt.color = FlxColor.WHITE;
+			outputTxt.color = PsychUISkin.textPrimary();
+			outputTxt.borderColor = PsychUISkin.contrastText(PsychUISkin.textPrimary());
+		}
+	}
+
+	function refreshStandaloneUiTheme(force:Bool = false):Void
+	{
+		var signature:String = PsychUISkin.signature();
+		if(!force && _uiThemeSignature == signature)
+			return;
+
+		if(infoBox != null)
+			applyTextThemeToGroup(infoBox.getTab('Information').menu);
+
+		if(mainBox != null)
+		{
+			for(tab in mainBox.tabs)
+				applyTextThemeToGroup(tab.menu);
+		}
+
+		if(upperBox != null)
+		{
+			for(tab in upperBox.tabs)
+				applyTextThemeToGroup(tab.menu);
+		}
+
+		if(infoText != null)
+			infoText.color = PsychUISkin.textPrimary();
+
+		if(outputTxt != null)
+		{
+			outputTxt.color = _outputIsError ? FlxColor.RED : PsychUISkin.textPrimary();
+			outputTxt.borderColor = _outputIsError ? 0xFF2A0000 : PsychUISkin.contrastText(PsychUISkin.textPrimary());
+		}
+
+		_uiThemeSignature = signature;
+	}
+
+	function applyTextThemeToGroup(group:FlxSpriteGroup):Void
+	{
+		if(group == null)
+			return;
+
+		for(member in group.members)
+		{
+			if(member == null || !member.exists)
+				continue;
+
+			if(Std.isOfType(member, FlxText))
+			{
+				cast(member, FlxText).color = PsychUISkin.textPrimary();
+				continue;
+			}
+
+			if(Std.isOfType(member, FlxSpriteGroup)
+				&& !Std.isOfType(member, PsychUIButton)
+				&& !Std.isOfType(member, PsychUICheckBox)
+				&& !Std.isOfType(member, PsychUIDropDownMenu)
+				&& !Std.isOfType(member, PsychUIInputText)
+				&& !Std.isOfType(member, PsychUISlider)
+				&& !Std.isOfType(member, PsychUIBox))
+			{
+				applyTextThemeToGroup(cast member);
+			}
 		}
 	}
 
@@ -3187,7 +3259,6 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 	var mustHitCheckBox:PsychUICheckBox;
 	var gfSectionCheckBox:PsychUICheckBox;
 	var altAnimSectionCheckBox:PsychUICheckBox;
-
 	var changeBpmCheckBox:PsychUICheckBox;
 	var changeBpmStepper:PsychUINumericStepper;
 	var beatsPerSecStepper:PsychUINumericStepper;
@@ -3198,6 +3269,7 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 		var affectEvents:PsychUICheckBox = null;
 		var copyLastSecStepper:PsychUINumericStepper = null;
 		var tab_group = mainBox.getTab('Section').menu;
+				upperBox.bg.visible = false;
 		var objX = 10;
 		var objY = 10;
 		function copyNotesOnSection(?secOff:Int = 0, ?showMessage:Bool = true) //Used on "Copy Section" and "Copy Last Section" buttons
@@ -3324,12 +3396,12 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 		};
 
 		objY += 40;
-		var copyButton:PsychUIButton = new PsychUIButton(objX, objY, 'Copy Section', copyNotesOnSection.bind());
-		var pasteButton:PsychUIButton = new PsychUIButton(objX + 100, objY, 'Paste Section', function()
+		var copyButton:PsychUIButton = new PsychUIButton(objX, objY, 'Copy Section', copyNotesOnSection.bind(), 104, 24);
+		var pasteButton:PsychUIButton = new PsychUIButton(objX + 112, objY, 'Paste Section', function()
 		{
 			pasteCopiedNotesToSection(affectNotes.checked, affectEvents.checked);
-		});
-		var clearButton:PsychUIButton = new PsychUIButton(objX + 200, objY, 'Clear', function()
+		}, 104, 24);
+		var clearButton:PsychUIButton = new PsychUIButton(objX + 224, objY, 'Clear', function()
 		{
 			for (note in curRenderedNotes)
 			{
@@ -3343,7 +3415,7 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 				selectedNotes.remove(note);
 			}
 			softReloadNotes(true);
-		});
+		}, 72, 24);
 		clearButton.normalStyle.bgColor = FlxColor.RED;
 		clearButton.normalStyle.textColor = FlxColor.WHITE;
 
@@ -3361,9 +3433,8 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 			pasteCopiedNotesToSection(affectNotes.checked, affectEvents.checked);
 			copiedNotes = lastCopiedNotes;
 			copiedEvents = lastCopiedEvents;
-		});
-		copyLastSecButton.resize(80, 26);
-		copyLastSecStepper = new PsychUINumericStepper(objX + 110, objY + 2, 1, 1, -999, 999, 0);
+		}, 120, 26);
+		copyLastSecStepper = new PsychUINumericStepper(objX + 128, objY + 2, 1, 1, -999, 999, 0);
 		
 		objY += 40;
 		var swapSectionButton:PsychUIButton = new PsychUIButton(objX, objY, 'Swap Section', function()
@@ -3380,8 +3451,8 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 				}
 			}
 			softReloadNotes(true);
-		});
-		var duetSectionButton:PsychUIButton = new PsychUIButton(objX + 100, objY, 'Duet Section', function()
+		}, 104, 24);
+		var duetSectionButton:PsychUIButton = new PsychUIButton(objX + 112, objY, 'Duet Section', function()
 		{
 			var side:Int = -1;
 			for (note in curRenderedNotes.members)
@@ -3420,8 +3491,8 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 			softReloadNotes(true);
 			
 			addUndoAction(ADD_NOTE, {notes: pushedNotes});
-		});
-		var mirrorNotesButton:PsychUIButton = new PsychUIButton(objX + 200, objY, 'Mirror Notes', function()
+		}, 104, 24);
+		var mirrorNotesButton:PsychUIButton = new PsychUIButton(objX + 224, objY, 'Mirror Notes', function()
 		{
 			var maxData:Int = GRID_COLUMNS_PER_PLAYER * GRID_PLAYERS;
 			for (note in curRenderedNotes)
@@ -3433,7 +3504,7 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 				positionNoteXByData(note);
 			}
 			softReloadNotes(true);
-		});
+		}, 104, 24);
 
 		tab_group.add(mustHitCheckBox);
 		tab_group.add(gfSectionCheckBox);
@@ -3624,10 +3695,10 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 			loadMusic();
 		});
 			
-		var reloadAudioButton:PsychUIButton = new PsychUIButton(objX + 120, objY -5, 'Reload Audio', function() loadMusic(true), 80);	
+		var reloadAudioButton:PsychUIButton = new PsychUIButton(objX + 132, objY -5, 'Reload Audio', function() loadMusic(true), 108);	
 		
 		#if (mac || mobile)
-		var reloadJsonButton:PsychUIButton = new PsychUIButton(objX + 205, objY, 'Reload JSON', function()
+		var reloadJsonButton:PsychUIButton = new PsychUIButton(objX + 248, objY, 'Reload JSON', function()
 		{
 			var cur = Paths.formatToSongPath(songNameInputText.text);
 			var curdiff = Highscore.formatSong(cur, PlayState.storyDifficulty);
@@ -3656,7 +3727,7 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 					
 			if(!ignoreProgressCheckBox.checked) openSubState(new Prompt('Warning: Any unsaved progress\nwill be lost.', func));
 			else func();
-		}, 80);
+		}, 108);
 		#end
 
 		objY += 65;
@@ -3693,6 +3764,10 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 		//
 		
 		objY += 40;
+		var leftColumnWidth:Int = 126;
+		var rightColumnX:Float = objX + 150;
+		var labelWidth:Int = 118;
+
 		playerDropDown = new PsychUIDropDownMenu(objX, objY, [''], function(id:Int, character:String)
 		{
 			PlayState.SONG.player1 = character;
@@ -3700,13 +3775,13 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 			updateHeads(true);
 			loadMusic();
 			trace('selected $character');
-		});
-		stageDropDown = new PsychUIDropDownMenu(objX + 140, objY, [''], function(id:Int, stage:String)
+		}, leftColumnWidth);
+		stageDropDown = new PsychUIDropDownMenu(rightColumnX, objY, [''], function(id:Int, stage:String)
 		{
 			PlayState.SONG.stage = stage;
 			StageData.loadDirectory(PlayState.SONG);
 			trace('selected $stage');
-		});
+		}, leftColumnWidth);
 
 		animatedIconsCheckBox = new PsychUICheckBox(objX + 120, objY + -85, 'Animated Icons', 100, function()
 		{
@@ -3721,13 +3796,13 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 			updateHeads(true);
 			loadMusic();
 			trace('selected $character');
-		});
+		}, leftColumnWidth);
 		
 		girlfriendDropDown = new PsychUIDropDownMenu(objX, objY + 80, [''], function(id:Int, character:String)
 		{
 			PlayState.SONG.gfVersion = character;
 			trace('selected $character');
-		});
+		}, leftColumnWidth);
 		
 		tab_group.add(new FlxText(bpmStepper.x, bpmStepper.y - 15, 50, 'BPM:'));
 		tab_group.add(new FlxText(scrollSpeedStepper.x, scrollSpeedStepper.y - 15, 80, 'Scroll Speed:'));
@@ -3737,10 +3812,10 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 		tab_group.add(audioOffsetStepper);
 
 		//dropdowns
-		tab_group.add(new FlxText(stageDropDown.x, stageDropDown.y - 15, 80, 'Stage:'));
-		tab_group.add(new FlxText(playerDropDown.x, playerDropDown.y - 15, 80, 'Player:'));
-		tab_group.add(new FlxText(opponentDropDown.x, opponentDropDown.y - 15, 80, 'Opponent:'));
-		tab_group.add(new FlxText(girlfriendDropDown.x, girlfriendDropDown.y - 15, 80, 'Girlfriend:'));
+		tab_group.add(new FlxText(stageDropDown.x, stageDropDown.y - 15, labelWidth, 'Stage:'));
+		tab_group.add(new FlxText(playerDropDown.x, playerDropDown.y - 15, labelWidth, 'Player:'));
+		tab_group.add(new FlxText(opponentDropDown.x, opponentDropDown.y - 15, labelWidth, 'Opponent:'));
+		tab_group.add(new FlxText(girlfriendDropDown.x, girlfriendDropDown.y - 15, labelWidth, 'Girlfriend:'));
 		tab_group.add(stageDropDown);
 		tab_group.add(animatedIconsCheckBox);
 		tab_group.add(girlfriendDropDown);
@@ -5520,7 +5595,6 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 			case PsychUIBox.MINIMIZE_EVENT:
 				if(sender == upperBox)
 				{
-					upperBox.bg.visible = !upperBox.isMinimized;
 					updateUpperBoxBg();
 				}
 
@@ -5536,8 +5610,8 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 		{
 			var menu = upperBox.selectedTab.menu;
 			upperBox.bg.x = upperBox.x + upperBox.selectedIndex * (upperBox.width/upperBox.tabs.length);
-			upperBox.bg.setGraphicSize(menu.width, menu.height + 21);
-			upperBox.bg.updateHitbox();
+			upperBox.resizeBackground(Std.int(menu.width), Std.int(menu.height + 21));
+			upperBox.bg.visible = false;
 		}
 	}
 

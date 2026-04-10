@@ -59,12 +59,21 @@ class PsychUIInputText extends FlxSpriteGroup
 	public var customFilterPattern(default, set):EReg;
 
 	public var selectedFormat:FlxTextFormat = new FlxTextFormat(FlxColor.WHITE);
+	public var useDynamicTheme:Bool = true;
+
+	var _themeSignature:String = null;
+	var _lastFocused:Bool = false;
+	var _lastHovered:Bool = false;
+	var _drawWidth:Int = 1;
+	var _drawHeight:Int = 20;
+	var _innerDrawWidth:Int = 1;
+	var _innerDrawHeight:Int = 18;
 
 	public function new(x:Float = 0, y:Float = 0, wid:Int = 100, ?text:String = '', size:Int = 8)
 	{
 		super(x, y);
-		this.bg = new FlxSprite().makeGraphic(1, 1, FlxColor.BLACK);
-		this.behindText = new FlxSprite(1, 1).makeGraphic(1, 1, FlxColor.WHITE);
+		this.bg = new FlxSprite().makeGraphic(1, 1, FlxColor.TRANSPARENT, true);
+		this.behindText = new FlxSprite(1, 1).makeGraphic(1, 1, FlxColor.TRANSPARENT, true);
 		this.selection = new FlxSprite().makeGraphic(1, 1, FlxColor.WHITE);
 		this.textObj = new FlxText(1, 1, Math.max(1, wid - 2), '', size);
 		this.caret = new FlxSprite().makeGraphic(1, 1, FlxColor.WHITE);
@@ -74,15 +83,18 @@ class PsychUIInputText extends FlxSpriteGroup
 		add(this.textObj);
 		add(this.caret);
 
-		this.textObj.color = FlxColor.BLACK;
+		this.textObj.color = PsychUISkin.textPrimary();
 		this.textObj.textField.selectable = false;
 		this.textObj.textField.wordWrap = false;
 		this.textObj.textField.multiline = false;
-		this.selection.color = FlxColor.BLUE;
+		this.selection.color = PsychUISkin.inputSelectionColor();
+		this.textObj.text = ' ';
+		this.textObj.updateHitbox();
 
 		@:bypassAccessor fieldWidth = wid;
-		setGraphicSize(wid + 2, this.textObj.height + 2);
+		setGraphicSize(wid + 2, Std.int(Math.max(20, this.textObj.height + 6)));
 		updateHitbox();
+		applyTheme(true);
 		this.text = text;
 
 		FlxG.stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
@@ -397,6 +409,9 @@ class PsychUIInputText extends FlxSpriteGroup
 	override function update(elapsed:Float)
 	{
 		super.update(elapsed);
+		syncLayout();
+		refreshTheme();
+		updateVisualState();
 
 		if(FlxG.mouse.justPressed)
 		{
@@ -451,7 +466,7 @@ class PsychUIInputText extends FlxSpriteGroup
 					if(!drewSelection && _caretTime < 0.5 && caret.x >= textObj.x)
 					{
 						caret.visible = true;
-						caret.color = textObj.color;
+						caret.color = PsychUISkin.inputCaretColor();
 					}
 					else caret.visible = false;
 				}
@@ -475,6 +490,7 @@ class PsychUIInputText extends FlxSpriteGroup
 
 	public function updateCaret()
 	{
+		syncLayout();
 		if(textObj == null || !textObj.exists) return;
 
 		// Clamp indices before calling OpenFL's selection API.
@@ -570,14 +586,21 @@ class PsychUIInputText extends FlxSpriteGroup
 	override public function setGraphicSize(width:Float = 0, height:Float = 0)
 	{
 		super.setGraphicSize(width, height);
-		bg.setGraphicSize(width, height);
-		behindText.setGraphicSize(width - 2, height - 2);
+		_drawWidth = Std.int(Math.max(3, width));
+		_drawHeight = Std.int(Math.max(20, height));
+		_innerDrawWidth = Std.int(Math.max(1, _drawWidth - 2));
+		_innerDrawHeight = Std.int(Math.max(1, _drawHeight - 2));
 		if(textObj != null && textObj.exists)
 		{
+			textObj.fieldWidth = Math.max(1, _innerDrawWidth - 4);
 			textObj.scale.x = 1;
 			textObj.scale.y = 1;
 			if(caret != null && caret.exists) caret.setGraphicSize(1, textObj.height - 4);
+			textObj.updateHitbox();
+			if(caret != null && caret.exists) caret.updateHitbox();
 		}
+		syncLayout();
+		applyTheme(true);
 	}
 	
 	override public function updateHitbox()
@@ -598,7 +621,94 @@ class PsychUIInputText extends FlxSpriteGroup
 		textObj.textField.selectable = false;
 		textObj.textField.wordWrap = false;
 		textObj.textField.multiline = false;
+		applyTheme(true);
 		return (fieldWidth = v);
+	}
+
+	function refreshTheme(force:Bool = false):Void
+	{
+		if (!useDynamicTheme)
+			return;
+
+		var signature:String = PsychUISkin.signature();
+		if (force || _themeSignature != signature)
+			applyTheme(true);
+	}
+
+	function updateVisualState():Void
+	{
+		var focused:Bool = (focusOn == this);
+		var hovered:Bool = false;
+		if (camera != null && behindText != null && behindText.exists)
+		{
+			try
+			{
+				hovered = FlxG.mouse.overlaps(behindText, camera);
+			}
+			catch (e:Any) {}
+		}
+
+		if (focused != _lastFocused || hovered != _lastHovered)
+			applyTheme();
+	}
+
+	function applyTheme(forceRedraw:Bool = false):Void
+	{
+		if (bg == null || behindText == null)
+			return;
+
+		syncLayout();
+
+		var focused:Bool = (focusOn == this);
+		var hovered:Bool = false;
+		if (camera != null && behindText.exists)
+		{
+			try
+			{
+				hovered = FlxG.mouse.overlaps(behindText, camera);
+			}
+			catch (e:Any) {}
+		}
+
+		PsychUISkin.drawStyledRect(bg, _drawWidth, _drawHeight, PsychUISkin.inputOuterStyle(focused, hovered));
+		PsychUISkin.drawStyledRect(behindText, _innerDrawWidth, _innerDrawHeight, {
+			bgColor: PsychUISkin.inputInnerColor(focused),
+			textColor: PsychUISkin.textPrimary(),
+			bgAlpha: 1.0,
+			strokeColor: PsychUISkin.inputInnerStrokeColor(focused, hovered),
+			radius: PsychUISkin.CONTROL_RADIUS - 1
+		});
+		textObj.color = PsychUISkin.textPrimary();
+		selection.color = PsychUISkin.inputSelectionColor();
+		caret.color = PsychUISkin.inputCaretColor();
+		selectedFormat = new FlxTextFormat(PsychUISkin.inputSelectedTextColor());
+		_themeSignature = PsychUISkin.signature();
+		_lastFocused = focused;
+		_lastHovered = hovered;
+		if (forceRedraw)
+			updateCaret();
+	}
+
+	function syncLayout():Void
+	{
+		if (bg == null || behindText == null || textObj == null)
+			return;
+
+		bg.x = x;
+		bg.y = y;
+		behindText.x = x + 1;
+		behindText.y = y + 1;
+		textObj.x = behindText.x + 2;
+		textObj.y = behindText.y + (_innerDrawHeight - textObj.height) / 2 - 1;
+	}
+
+	function setInnerDrawSize(width:Int, height:Int):Void
+	{
+		_innerDrawWidth = Std.int(Math.max(1, width));
+		_innerDrawHeight = Std.int(Math.max(1, height));
+		if (textObj != null && textObj.exists)
+			textObj.fieldWidth = Math.max(1, _innerDrawWidth - 4);
+		syncLayout();
 	}
 
 	function set_maxLength(v:Int)

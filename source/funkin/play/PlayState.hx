@@ -3775,9 +3775,9 @@ class PlayState extends MusicBeatState
 		// Taken from Psych Engine 0.4.2
 		if (ClientPrefs.data.iconBounceType == 'Old')
 		{
-			iconP1.setGraphicSize(Std.int(FlxMath.lerp(150, iconP1.width, 0.50)));
-			iconP2.setGraphicSize(Std.int(FlxMath.lerp(150, iconP2.width, 0.50)));
-			iconGF.setGraphicSize(Std.int(FlxMath.lerp(150, iconGF.width, 0.50)));
+			iconP1.setGraphicSize(Std.int(FlxMath.lerp(150, iconP1.width, CoolUtil.boundTo(1 - (elapsed * 30), 0, 1))));
+		    iconP2.setGraphicSize(Std.int(FlxMath.lerp(150, iconP2.width, CoolUtil.boundTo(1 - (elapsed * 30), 0, 1))));
+			iconGF.setGraphicSize(Std.int(FlxMath.lerp(150, iconGF.width, CoolUtil.boundTo(1 - (elapsed * 30), 0, 1))));
 
 			iconP1.updateHitbox();
 			iconP2.updateHitbox();
@@ -6315,8 +6315,10 @@ class PlayState extends MusicBeatState
 		{
             iconP1.scale.set(1.2, 1.2);
 		    iconP2.scale.set(1.2, 1.2);
+
 			iconP1.updateHitbox();
 		    iconP2.updateHitbox();
+			iconGF.updateHitbox();
 		}
 
 		if (ClientPrefs.data.iconBounceType == 'NF')
@@ -6327,14 +6329,16 @@ class PlayState extends MusicBeatState
 
 			iconP1.updateHitbox();
 			iconP2.updateHitbox();
+			iconGF.updateHitbox();
 		}
 
-		// Taken from Kade Engine
+		// Taken from Psych Engine 0.4.2
 		if (ClientPrefs.data.iconBounceType == 'Old')
 		{
-			iconP1.setGraphicSize(Std.int(iconP1.width + 40));
-			iconP2.setGraphicSize(Std.int(iconP2.width + 40));
-			iconGF.setGraphicSize(Std.int(iconGF.width + 40));
+			iconP1.setGraphicSize(Std.int(iconP1.width + 30));
+		    iconP2.setGraphicSize(Std.int(iconP2.width + 30));
+			iconGF.setGraphicSize(Std.int(iconGF.width + 30));
+
 			iconP1.updateHitbox();
 			iconP2.updateHitbox();
 			iconGF.updateHitbox();

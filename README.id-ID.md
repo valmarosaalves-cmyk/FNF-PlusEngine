@@ -126,7 +126,7 @@ Anda memerlukan:
 * Dukungan untuk level NotITG (tanpa modifikasi) dan Stepmania, termasuk antarmuka pengguna (UI)
 ![Stepmania](docs/img/Stepmania.png)
 - Dukungan Android
-- Ditambahkan sprite "miss"" dan "kombo rusak"
+- Ditambahkan sprite "miss" dan "kombo rusak"
 - Ditambahkan opsi "buruk" dan "jancok" untuk memecah kombo
 - Fungsi VideoSprite baru dengan hxvlc yang dioptimalkan
 - Kompatibilitas shader baru tergantung pada kartu grafis Anda

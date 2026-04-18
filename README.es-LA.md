@@ -32,7 +32,7 @@ Motor basado en Psych 1.0.4 con modcharts como NotITG y compatible con videos hx
 
 <a href="https://github.com/Psych-Plus-Team/FNF-PlusEngine/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=Psych-Plus-Team/FNF-PlusEngine&max=10" />
-  And 100+ others...
+  Y más de 100 más...
 </a>
 
 Creado con (contrib.rocks)[https://contrib.rocks/].

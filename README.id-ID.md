@@ -32,7 +32,7 @@ Mesin berbasis Psych 1.0.4 dengan modcharts seperti NotITG dan kompatibel dengan
 
 <a href="https://github.com/Psych-Plus-Team/FNF-PlusEngine/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=Psych-Plus-Team/FNF-PlusEngine&max=10" />
-  And 100+ others...
+  Dan 100+ lainnya...
 </a>
 
 Dibuat dengan (contrib.rocks)[https://contrib.rocks/].

@@ -16,6 +16,7 @@ class Reverse extends Modifier {
 	var _unboundedReverseID:Int;
 	var _centeredID:Int;
 	var _xmodID:Int;
+	var _randomSpeedID:Int;
 	var _xmodIDs:Array<Int>;
 	var _scrollAngleXID:Int;
 	var _scrollAngleYID:Int;
@@ -44,6 +45,7 @@ class Reverse extends Modifier {
 		_unboundedReverseID = findID('unboundedReverse');
 		_centeredID = findID('centered');
 		_xmodID = findID('xmod');
+		_randomSpeedID = findID('randomspeed');
 		_scrollAngleXID = findID('scrollAngleX');
 		_scrollAngleYID = findID('scrollAngleY');
 		_scrollAngleZID = findID('scrollAngleZ');
@@ -132,6 +134,10 @@ class Reverse extends Modifier {
 		// Speed (no string allocation)
 		scroll.y = scroll.y * (getUnsafe(_xmodID, player) + getUnsafe(_xmodIDs[lane], player));
 
+		final randomSpeed = Math.max(0, getUnsafe(_randomSpeedID, player));
+		if (randomSpeed > 0 && params.distance > 0)
+			scroll.y *= 1 + (__stableRandom(params.sourceTime, lane, player) * randomSpeed);
+
 		// Main
 		angleX = angleX + getUnsafe(_scrollAngleXID, player) + getUnsafe(_scrollAngleXIDs[lane], player);
 		angleY = angleY + getUnsafe(_scrollAngleYID, player) + getUnsafe(_scrollAngleYIDs[lane], player);
@@ -153,6 +159,11 @@ class Reverse extends Modifier {
 		scroll.x = rotated.x;
 		scroll.y = rotated.y;
 		scroll.z = rotated.z;
+	}
+
+	inline function __stableRandom(sourceTime:Float, lane:Int, player:Int):Float {
+		final seed = (sourceTime * 0.001 * 12.9898) + (lane * 78.233) + (player * 37.719);
+		return Math.abs(sin(seed) * 43758.5453123) % 1;
 	}
 
 	override public function shouldRun(params:ModifierParameters):Bool

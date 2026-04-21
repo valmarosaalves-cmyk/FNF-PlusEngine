@@ -5736,7 +5736,7 @@ class PlayState extends MusicBeatState
 		{
 			for (i in 0...arr.length)
 			{
-				var note:Array<FlxKey> = Controls.instance.keyboardBinds[arr[i]];
+				var note:Array<FlxKey> = Controls.instance.getKeyboardBind(arr[i]);
 				for (noteKey in note)
 					if(key == noteKey)
 						return i;
@@ -6266,6 +6266,8 @@ class PlayState extends MusicBeatState
 	}
 
 	override function destroy() {
+		Controls.instance.clearTemporaryGameplayBinds();
+
 		// Limpieza agresiva de memoria antes de destruir (Android)
 		#if android
 		funkin.util.MemoryManager.aggressiveCleanup();

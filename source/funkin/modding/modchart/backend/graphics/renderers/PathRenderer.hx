@@ -45,7 +45,7 @@ final class PathRenderer extends BaseRenderer<FlxSprite> {
 
 	// Scratch objects reused every iteration to avoid per-sample allocations.
 	final _scratch:Vector3 = new Vector3();
-	final _paramBuf:ArrowData = {hitTime: 0, distance: 0, lane: 0, player: 0, isTapArrow: true};
+	final _paramBuf:ArrowData = {hitTime: 0, distance: 0, sourceTime: 0, lane: 0, player: 0, isTapArrow: true, straightHolds: false};
 
 	public function updateTris(divisions:Int) {
 		if (divisions == __lastDivisions)
@@ -167,6 +167,7 @@ final class PathRenderer extends BaseRenderer<FlxSprite> {
 			_scratch.z = baseZ;
 			_paramBuf.hitTime = songPos + hitTime;
 			_paramBuf.distance = hitTime;
+			_paramBuf.sourceTime = songPos + hitTime;
 
 			final output = parent.modifiers.getPath(_scratch, _paramBuf);
 

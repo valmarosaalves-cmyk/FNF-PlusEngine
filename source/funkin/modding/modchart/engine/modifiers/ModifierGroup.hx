@@ -67,6 +67,8 @@ final class ModifierGroup {
 
 	/** Pre-allocated args struct to avoid per-call heap allocation in getPath(). */
 	@:noCompletion private var __cachedArgs:ModifierParameters;
+	/** Reused anchor args for straight holds so blocked mods follow the head uniformly. */
+	@:noCompletion private var __cachedStraightArgs:ModifierParameters;
 
 	@:noCompletion private var __sortedModifiers:Vector<Modifier> = new Vector<Modifier>(32);
 	@:noCompletion private var __modifierCount:Int = 0;
@@ -85,7 +87,8 @@ final class ModifierGroup {
 		this.playfield = playfield;
 
 		// Pre-allocate reusable args struct to avoid 1 heap alloc per getPath() call
-		__cachedArgs = {songTime: 0, hitTime: 0, distance: 0, curBeat: 0};
+		__cachedArgs = {songTime: 0, hitTime: 0, distance: 0, sourceTime: 0, curBeat: 0};
+		__cachedStraightArgs = {songTime: 0, hitTime: 0, distance: 0, sourceTime: 0, curBeat: 0};
 
 		__loadModifiers();
 	}
@@ -126,9 +129,22 @@ final class ModifierGroup {
 		args.curBeat = beat;
 		args.hitTime = hitTime;
 		args.distance = distance;
+		args.sourceTime = data.sourceTime;
 		args.lane = data.lane;
 		args.player = data.player;
 		args.isTapArrow = data.isTapArrow;
+		args.straightHolds = data.straightHolds;
+
+		final straightArgs = __cachedStraightArgs;
+		straightArgs.songTime = songPos;
+		straightArgs.curBeat = beat;
+		straightArgs.hitTime = data.sourceTime;
+		straightArgs.distance = Math.max(0, data.sourceTime - songPos);
+		straightArgs.sourceTime = data.sourceTime;
+		straightArgs.lane = data.lane;
+		straightArgs.player = data.player;
+		straightArgs.isTapArrow = data.isTapArrow;
+		straightArgs.straightHolds = data.straightHolds;
 
 		// sorta optimizations
 		final mods = __sortedModifiers;
@@ -136,14 +152,16 @@ final class ModifierGroup {
 
 		for (i in 0...len) {
 			final mod = mods[i];
+			final useStraightAnchor = args.straightHolds && !mod.allowOnStraightHolds();
+			final activeArgs = useStraightAnchor ? straightArgs : args;
 
-			if (!mod.shouldRun(args))
+			if (!mod.shouldRun(activeArgs))
 				continue;
 
 			if (allowPos)
-				pos = mod.render(pos, args);
+				pos = mod.render(pos, activeArgs);
 			if (allowVis)
-				visuals = mod.visuals(visuals, args);
+				visuals = mod.visuals(visuals, activeArgs);
 		}
 		pos.z *= 0.001 * Config.Z_SCALE;
 		final rawX = pos.x;

@@ -86,9 +86,38 @@ class Controls
 	public var keyboardBinds:Map<String, Array<FlxKey>>;
 	public var gamepadBinds:Map<String, Array<FlxGamepadInputID>>;
 	public var mobileBinds:Map<String, Array<MobileInputID>>;
+	private var temporaryKeyboardBinds:Map<String, Array<FlxKey>> = [];
+	public static final GAMEPLAY_KEY_NAMES:Array<String> = ['note_left', 'note_down', 'note_up', 'note_right'];
+
+	public inline function getKeyboardBind(key:String):Array<FlxKey>
+	{
+		final temporaryBind = temporaryKeyboardBinds.get(key);
+		return temporaryBind != null ? temporaryBind : keyboardBinds[key];
+	}
+
+	public function setTemporaryKeyboardBind(key:String, keys:Array<FlxKey>):Void
+	{
+		if (keys == null || keys.length <= 0)
+		{
+			temporaryKeyboardBinds.remove(key);
+			return;
+		}
+
+		temporaryKeyboardBinds.set(key, keys.copy());
+	}
+
+	public inline function clearTemporaryKeyboardBind(key:String):Void
+		temporaryKeyboardBinds.remove(key);
+
+	public function clearTemporaryGameplayBinds():Void
+	{
+		for (key in GAMEPLAY_KEY_NAMES)
+			temporaryKeyboardBinds.remove(key);
+	}
+
 	public function justPressed(key:String)
 	{
-		var result:Bool = (FlxG.keys.anyJustPressed(keyboardBinds[key]) == true);
+		var result:Bool = (FlxG.keys.anyJustPressed(getKeyboardBind(key)) == true);
 		if(result) controllerMode = false;
 
 		#if android
@@ -106,7 +135,7 @@ class Controls
 
 	public function pressed(key:String)
 	{
-		var result:Bool = (FlxG.keys.anyPressed(keyboardBinds[key]) == true);
+		var result:Bool = (FlxG.keys.anyPressed(getKeyboardBind(key)) == true);
 		if(result) controllerMode = false;
 
 		#if android
@@ -124,7 +153,7 @@ class Controls
 
 	public function justReleased(key:String)
 	{
-		var result:Bool = (FlxG.keys.anyJustReleased(keyboardBinds[key]) == true);
+		var result:Bool = (FlxG.keys.anyJustReleased(getKeyboardBind(key)) == true);
 		if(result) controllerMode = false;
 
 		#if android

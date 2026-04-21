@@ -56,9 +56,10 @@ final class ArrowRenderer extends BaseRenderer<FlxSprite> {
 		final arrowPosition = helperVector;
 
 		final player = Adapter.instance.getPlayerFromArrow(arrow);
+		final sourceTime = Adapter.instance.getTimeFromArrow(arrow);
 
 		// setup the position
-		var arrowTime = Adapter.instance.getTimeFromArrow(arrow);
+		var arrowTime = sourceTime;
 		var songPos = Adapter.instance.getSongPosition();
 		var arrowDiff = arrowTime - songPos;
 
@@ -77,6 +78,7 @@ final class ArrowRenderer extends BaseRenderer<FlxSprite> {
 		var arrowData:ArrowData = {
 			hitTime: arrowTime,
 			distance: arrowDiff,
+			sourceTime: sourceTime,
 			lane: Adapter.instance.getLaneFromArrow(arrow),
 			player: player,
 			isTapArrow: Adapter.instance.isTapNote(arrow)

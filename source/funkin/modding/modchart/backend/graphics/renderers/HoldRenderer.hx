@@ -187,6 +187,7 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 	private var __rotateY:Float = 0;
 	private var __rotateZ:Float = 0;
 	private var __dizzy:Float = 0;
+	private var __straightHolds:Float = 0;
 	private var __parentOutput:ModifierOutput;
 	private var __centered2:Float = 0;
 	private var basePos:Vector3;
@@ -210,6 +211,7 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 	var __lastLong:Float = 0;
 	var __lastC2:Float = 0;
 	var __lastDizzy:Float = 0;
+	var __lastStraightHolds:Float = 0;
 
 	var __lastRX:Float = 0;
 	var __lastRY:Float = 0;
@@ -219,9 +221,9 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 	var __lastPlayer:Int = -1;
 
 	/** Pre-allocated ArrowData buffer reused by getArrowParams() to avoid per-segment heap allocation. */
-	final _holdArrowBuf:ArrowData = {hitTime: 0, distance: 0, lane: 0, player: 0, hitten: false, isTapArrow: false};
+	final _holdArrowBuf:ArrowData = {hitTime: 0, distance: 0, sourceTime: 0, lane: 0, player: 0, hitten: false, isTapArrow: false, straightHolds: false};
 	/** Pre-allocated ArrowData buffer for parentData (rotate path) to avoid per-hold heap allocation. */
-	final _parentDataBuf:ArrowData = {hitTime: 0, distance: 0, lane: 0, player: 0, hitten: false, isTapArrow: false};
+	final _parentDataBuf:ArrowData = {hitTime: 0, distance: 0, sourceTime: 0, lane: 0, player: 0, hitten: false, isTapArrow: false, straightHolds: false};
 
 	override public function prepare(item:FlxSprite):Null<DrawCommand> {
 		if (item.alpha <= 0) {
@@ -260,6 +262,7 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 		__long = canUseLast ? __lastLong : (__lastLong = parent.getPercent('longHolds', player) - parent.getPercent('shortHolds', player) + 1);
 		__centered2 = canUseLast ? __lastC2 : (__lastC2 = parent.getPercent('centered2', player));
 		__dizzy = canUseLast ? __lastDizzy : (__lastDizzy = parent.getPercent('dizzyHolds', player));
+		__straightHolds = canUseLast ? __lastStraightHolds : (__lastStraightHolds = parent.getPercent('straightHolds', player));
 
 		__rotateX = canUseLast ? __lastRX : (__lastRX = parent.getPercent('holdRotateX', player));
 		__rotateY = canUseLast ? __lastRY : (__lastRY = parent.getPercent('holdRotateY', player));
@@ -269,10 +272,12 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 		_parentDataBuf.hitTime = parentTime;
 		// this fixed the clipping gaps
 		_parentDataBuf.distance = Math.max(0, parentTime - Adapter.instance.getSongPosition());
+		_parentDataBuf.sourceTime = parentTime;
 		_parentDataBuf.lane = lane;
 		_parentDataBuf.player = player;
 		_parentDataBuf.hitten = Adapter.instance.arrowHit(item);
 		_parentDataBuf.isTapArrow = true;
+		_parentDataBuf.straightHolds = __straightHolds > 0;
 		final parentData = _parentDataBuf;
 		if (__rotateX != 0 || __rotateY != 0 || __rotateZ != 0) {
 			__parentOutput = parent.modifiers.getPath(basePos.clone(), parentData);
@@ -386,10 +391,12 @@ final class HoldRenderer extends BaseRenderer<FlxSprite> {
 		// Reuse _holdArrowBuf to avoid a heap allocation per segment.
 		_holdArrowBuf.hitTime = hitTime + posOff + timeC2;
 		_holdArrowBuf.distance = pos;
+		_holdArrowBuf.sourceTime = Adapter.instance.getHoldParentTime(arrow);
 		_holdArrowBuf.lane = lane;
 		_holdArrowBuf.player = player;
 		_holdArrowBuf.hitten = Adapter.instance.arrowHit(arrow);
 		_holdArrowBuf.isTapArrow = true;
+		_holdArrowBuf.straightHolds = __straightHolds > 0;
 		return _holdArrowBuf;
 	}
 }

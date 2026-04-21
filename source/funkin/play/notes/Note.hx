@@ -558,6 +558,19 @@ class Note extends FlxSprite
 		var skinPixel:String = skin;
 		var lastScaleY:Float = scale.y;
 		var skinPostfix:String = (skin == legacyNoteSkin && !ClientPrefs.data.noteRGB) ? '' : getNoteSkinPostfix();
+		var pixelSkinBase:String = skinPixel;
+		var pixelSkinPostfix:String = skinPostfix;
+		var activeNoteSkinPostfix:String = getNoteSkinPostfix();
+		if (skinPixel == legacyNoteSkin)
+		{
+			pixelSkinBase = defaultNoteSkin;
+			pixelSkinPostfix = '-legacy';
+		}
+		else if (activeNoteSkinPostfix.length > 0 && skinPixel.endsWith(activeNoteSkinPostfix))
+		{
+			pixelSkinBase = skinPixel.substr(0, skinPixel.length - activeNoteSkinPostfix.length);
+			pixelSkinPostfix = activeNoteSkinPostfix;
+		}
 		var customSkin:String = skin + skinPostfix;
 		// NotITG skins have no pixel variant - treat them as normal skins on any stage
 		var skinLower:String = skin.toLowerCase();
@@ -572,7 +585,11 @@ class Note extends FlxSprite
 
 		if(PlayState.isPixelStage && !isSpecialSkin) {
 			if(isSustainNote) {
-				var graphic = Paths.image('pixelUI/' + skinPixel + 'ENDS' + skinPostfix);
+				var sustainPath:String = 'pixelUI/' + pixelSkinBase + 'ENDS' + pixelSkinPostfix;
+				if (!Paths.fileExists('images/' + sustainPath + '.png', IMAGE))
+					sustainPath = 'pixelUI/NOTE_assetsENDS';
+
+				var graphic = Paths.image(sustainPath);
 				loadGraphic(graphic, true, Math.floor(graphic.width / 4), Math.floor(graphic.height / 2));
 				originalHeight = graphic.height / 2;
 			} else {

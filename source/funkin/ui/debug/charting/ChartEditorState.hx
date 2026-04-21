@@ -487,6 +487,7 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 		addFileTab();
 		addEditTab();
 		addViewTab();
+		reloadNotesDropdowns();
 		//
 
 		loadMusic();
@@ -2470,7 +2471,13 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 		swagNote.gfNote = (section.gfSection && gottaHitNote == section.mustHitSection);
 		swagNote.noteType = note[3];
 		swagNote.scrollFactor.x = 0;
-		var txt:FlxText = swagNote.findNoteTypeText(swagNote.noteType != null ? noteTypes.indexOf(swagNote.noteType) : 0);
+		var noteTypeIndex:Int = 0;
+		if(swagNote.noteType != null && noteTypes != null)
+		{
+			noteTypeIndex = noteTypes.indexOf(swagNote.noteType);
+			if(noteTypeIndex < 0) noteTypeIndex = 0;
+		}
+		var txt:FlxText = swagNote.findNoteTypeText(noteTypeIndex);
 		if(txt != null) txt.visible = showNoteTypeLabels;
 
 		swagNote.updateHitbox();

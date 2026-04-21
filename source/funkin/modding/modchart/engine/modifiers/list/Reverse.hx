@@ -136,7 +136,11 @@ class Reverse extends Modifier {
 
 		final randomSpeed = Math.max(0, getUnsafe(_randomSpeedID, player));
 		if (randomSpeed > 0 && params.distance > 0)
-			scroll.y *= 1 + (__stableRandom(params.sourceTime, lane, player) * randomSpeed);
+		{
+			final randomOffset = (__stableRandom(params.sourceTime, lane, player) * 2) - 1;
+			final randomMultiplier = Math.max(0.05, 1 + (randomOffset * randomSpeed));
+			scroll.y *= randomMultiplier;
+		}
 
 		// Main
 		angleX = angleX + getUnsafe(_scrollAngleXID, player) + getUnsafe(_scrollAngleXIDs[lane], player);

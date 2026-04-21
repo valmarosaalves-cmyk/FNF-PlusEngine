@@ -1816,7 +1816,6 @@ class FunkinLua {
 		CustomSubstate.implement(this);
 		ShaderFunctions.implement(this);
 		CameraFunctions.implement(this);
-		CharacterFunctions.implement(this);
 		MiscellaneousFunctions.implement(this);
 		DeprecatedFunctions.implement(this);
 		#if MODCHARTS_NOTITG_ALLOWED LuaModchart.implement(this); #end

@@ -3436,8 +3436,8 @@ class PlayState extends MusicBeatState
 				openChartEditor();
 			else if (controls.justPressed('debug_2'))
 				openCharacterEditor();
-			else if (!funkin.ui.debug.modcharting.ModchartLuaEditorState.shouldIgnorePlayStateHotkey(controls.pressed('modchart_editor'))
-				&& controls.justPressed('modchart_editor'))
+			else if (!funkin.ui.debug.modcharting.ModchartEditorState.shouldIgnorePlayStateHotkey(controls.pressed('debug_3'))
+				&& controls.justPressed('debug_3'))
 				openModchartEditor();
 		}
 
@@ -4221,8 +4221,8 @@ class PlayState extends MusicBeatState
 
 		#if DISCORD_ALLOWED DiscordClient.resetClientID(); #end
 		restoreWindowState();
-		funkin.ui.debug.modcharting.ModchartLuaEditorState.capturePlayStateContext(this);
-		MusicBeatState.switchState(new funkin.ui.debug.modcharting.ModchartLuaEditorState(true));
+		funkin.ui.debug.modcharting.ModchartEditorState.capturePlayStateContext(this);
+		MusicBeatState.switchState(new funkin.ui.debug.modcharting.ModchartEditorState(true));
 	}
 
 	public var isDead:Bool = false; //Don't mess with this on Lua!!!

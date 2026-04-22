@@ -669,7 +669,7 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 			player2: 'dad',
 			gfVersion: 'gf',
 			stage: 'stage',
-			format: 'psych_v2'
+			format: 'psych_v1'
 		};
 		Song.chartPath = null;
 		loadChart(song);
@@ -872,8 +872,9 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 				}
 				chartName += DateTools.format(Date.now(), '_%Y-%m-%d_%H-%M-%S');
 				var songCopy:SwagSong = Reflect.copy(PlayState.SONG);
+				songCopy.format = 'psych_v1';
 				Reflect.setField(songCopy, '__original_path', Song.chartPath);
-				var dataToSave:String = haxe.Json.stringify(songCopy);
+				var dataToSave:String = PsychJsonPrinter.print(songCopy, ['sectionNotes', 'events']);
 				//trace(chartName, dataToSave);
 				if(!FileSystem.isDirectory(backupDir)) FileSystem.createDirectory(backupDir);
 				File.saveContent('$backupDir/$chartName.$BACKUP_EXT', dataToSave);
@@ -5428,13 +5429,16 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 		PlayState.SONG.events = [];
 		for (event in events)
 			PlayState.SONG.events.push(event.songData);
+
+		PlayState.SONG.format = 'psych_v1';
 	}
 
 	function saveChart(canQuickSave:Bool = true)
 	{
 		updateChartData();
-		var v2:Dynamic = Song.upgradeToV2(PlayState.SONG);
-		var chartData:String = PsychJsonPrinter.print(v2, ['notes', 'events', 'bpmChanges', 'characters']);
+		var songCopy:SwagSong = Reflect.copy(PlayState.SONG);
+		songCopy.format = 'psych_v1';
+		var chartData:String = PsychJsonPrinter.print(songCopy, ['sectionNotes', 'events']);
 		if(canQuickSave && Song.chartPath != null)
 		{
 			#if mobile

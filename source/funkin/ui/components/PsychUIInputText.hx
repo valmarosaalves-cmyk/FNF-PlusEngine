@@ -21,7 +21,7 @@ enum abstract FilterMode(Int) from Int from UInt to Int to UInt
 {
 	var NO_FILTER:Int = 0;
 	var ONLY_ALPHA:Int = 1;
-	var ONLY_NUMERIC:Int = 2;
+	var ONLY_NUMERIC:Int = 2; 
 	var ONLY_ALPHANUMERIC:Int = 3;
 	var ONLY_HEXADECIMAL:Int = 4;
 	var CUSTOM_FILTER:Int = 5;
@@ -625,7 +625,15 @@ class PsychUIInputText extends FlxSpriteGroup
 
 	override public function setGraphicSize(width:Float = 0, height:Float = 0)
 	{
-		super.setGraphicSize(width, height);
+		if(width <= 0 && height <= 0)
+			return;
+
+		setSize(width > 0 ? width : _drawWidth, height > 0 ? height : _drawHeight);
+	}
+
+	override public function setSize(width:Float, height:Float):Void
+	{
+		super.setSize(width, height);
 		_drawWidth = Std.int(Math.max(3, width));
 		_drawHeight = Std.int(Math.max(20, height));
 		_innerDrawWidth = Std.int(Math.max(1, _drawWidth - 2));
@@ -657,10 +665,12 @@ class PsychUIInputText extends FlxSpriteGroup
 
 	function set_fieldWidth(v:Int)
 	{
-		textObj.fieldWidth = Math.max(1, v - 2);
+		v = Std.int(Math.max(1, v));
+		textObj.fieldWidth = Math.max(1, v - 4);
 		textObj.textField.selectable = false;
 		textObj.textField.wordWrap = false;
 		textObj.textField.multiline = false;
+		setSize(v + 2, _drawHeight);
 		applyTheme(true);
 		return (fieldWidth = v);
 	}
@@ -699,7 +709,6 @@ class PsychUIInputText extends FlxSpriteGroup
 			bgColor: PsychUISkin.inputInnerColor(focused),
 			textColor: PsychUISkin.textPrimary(),
 			bgAlpha: 1.0,
-			strokeColor: PsychUISkin.inputInnerStrokeColor(focused, hovered),
 			radius: PsychUISkin.CONTROL_RADIUS - 1
 		});
 		textObj.color = PsychUISkin.textPrimary();
@@ -722,7 +731,7 @@ class PsychUIInputText extends FlxSpriteGroup
 		bg.y = y;
 		behindText.x = x + 1;
 		behindText.y = y + 1;
-		textObj.x = behindText.x + 2;
+		textObj.x = behindText.x + 6;
 		textObj.y = behindText.y + (_innerDrawHeight - textObj.height) / 2 - 1;
 	}
 

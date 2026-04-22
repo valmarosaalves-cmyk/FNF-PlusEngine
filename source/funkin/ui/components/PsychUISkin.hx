@@ -162,7 +162,7 @@ class PsychUISkin
 			bgColor: blend(OptionsMenuTheme.panelHeaderColor(), accent(), tintAmount),
 			textColor: textPrimary(),
 			bgAlpha: 1.0,
-			strokeColor: focused ? accent() : (hovered ? accentSoft() : blend(textPrimary(), neutralStroke(), 0.5)),
+			strokeColor: focused ? accent() : (hovered ? accentSoft() : blend(neutralStroke(), accent(), 0.28)),
 			radius: CONTROL_RADIUS
 		};
 	}
@@ -176,7 +176,7 @@ class PsychUISkin
 
 	public static inline function inputInnerStrokeColor(focused:Bool, hovered:Bool):Int
 	{
-		return focused ? accentSoft() : (hovered ? blend(accentSoft(), textPrimary(), 0.2) : blend(textPrimary(), neutralStroke(), 0.4));
+		return focused ? accentSoft() : (hovered ? blend(accentSoft(), accent(), 0.45) : blend(neutralStroke(), accent(), 0.32));
 	}
 
 	public static inline function inputSelectionColor():Int

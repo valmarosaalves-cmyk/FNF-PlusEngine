@@ -3,6 +3,9 @@ package funkin.ui.components;
 class PsychUINumericStepper extends PsychUIInputText
 {
 	public static final CHANGE_EVENT = "numericstepper_change";
+	static inline var BUTTON_SIZE:Int = 14;
+	static inline var BUTTON_PADDING:Int = 2;
+	static inline var TEXT_BUTTON_GAP:Int = 4;
 
 	public var step:Float = 0;
 	public var min(default, set):Float = 0;
@@ -34,13 +37,13 @@ class PsychUINumericStepper extends PsychUIInputText
 
 		buttonPlus = new FlxSprite();
 		add(buttonPlus);
-		plusLabel = new FlxText(0, 0, 16, '+', 10);
+		plusLabel = new FlxText(0, 0, BUTTON_SIZE, '+', 10);
 		plusLabel.alignment = CENTER;
 		add(plusLabel);
 		
 		buttonMinus = new FlxSprite();
 		add(buttonMinus);
-		minusLabel = new FlxText(0, 0, 16, '-', 10);
+		minusLabel = new FlxText(0, 0, BUTTON_SIZE, '-', 10);
 		minusLabel.alignment = CENTER;
 		add(minusLabel);
 		layoutStepper();
@@ -226,8 +229,9 @@ class PsychUINumericStepper extends PsychUIInputText
 
 	function refreshTextLayout():Void
 	{
-		textObj.fieldWidth = Std.int(Math.max(1, _innerDrawWidth - 4));
-		textObj.x = behindText.x + 2;
+		var horizontalReserved:Int = (BUTTON_SIZE + BUTTON_PADDING + TEXT_BUTTON_GAP) * 2;
+		textObj.fieldWidth = Std.int(Math.max(1, _innerDrawWidth - horizontalReserved));
+		textObj.x = behindText.x + BUTTON_SIZE + BUTTON_PADDING + TEXT_BUTTON_GAP;
 		textObj.y = behindText.y + (_innerDrawHeight - textObj.height) / 2 - 1;
 	}
 
@@ -236,9 +240,9 @@ class PsychUINumericStepper extends PsychUIInputText
 		if (buttonPlus == null || buttonMinus == null || plusLabel == null || minusLabel == null)
 			return;
 
-		buttonPlus.x = x + _drawWidth + 4;
-		buttonPlus.y = y + (_drawHeight - 16) / 2;
-		buttonMinus.x = buttonPlus.x + 18;
+		buttonPlus.x = behindText.x + BUTTON_PADDING;
+		buttonPlus.y = behindText.y + (_innerDrawHeight - BUTTON_SIZE) / 2;
+		buttonMinus.x = behindText.x + _innerDrawWidth - BUTTON_PADDING - BUTTON_SIZE;
 		buttonMinus.y = buttonPlus.y;
 		refreshTextLayout();
 		textObj.updateHitbox();
@@ -252,8 +256,8 @@ class PsychUINumericStepper extends PsychUIInputText
 
 	function redrawButtons():Void
 	{
-		PsychUISkin.drawStyledRect(buttonPlus, 16, 16, PsychUISkin.navButtonStyle(_plusPressed));
-		PsychUISkin.drawStyledRect(buttonMinus, 16, 16, PsychUISkin.navButtonStyle(_minusPressed));
+		PsychUISkin.drawStyledRect(buttonPlus, BUTTON_SIZE, BUTTON_SIZE, PsychUISkin.navButtonStyle(_plusPressed));
+		PsychUISkin.drawStyledRect(buttonMinus, BUTTON_SIZE, BUTTON_SIZE, PsychUISkin.navButtonStyle(_minusPressed));
 		buttonPlus.updateHitbox();
 		buttonMinus.updateHitbox();
 		plusLabel.color = PsychUISkin.navButtonStyle(_plusPressed).textColor;

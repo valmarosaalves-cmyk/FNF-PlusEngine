@@ -221,8 +221,8 @@ class MaterialVolumeTray extends Sprite
 			var radius:Float = 5 + i * 4;
 			var topY:Float = 10 - radius * 0.55;
 			var bottomY:Float = 10 + radius * 0.55;
-			var controlX:Float = 14 + radius * 0.78;
-			var endX:Float = 14 + radius * 0.4;
+			var controlX:Float = 8 + radius * 0.78;
+			var endX:Float = 8 + radius * 0.4;
 			graphics.moveTo(endX, topY);
 			graphics.curveTo(controlX, 10, endX, bottomY);
 		}

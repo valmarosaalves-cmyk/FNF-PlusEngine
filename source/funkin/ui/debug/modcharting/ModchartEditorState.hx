@@ -203,7 +203,6 @@ class ModchartEditorState extends MusicBeatState
 	var transportScrubResumeAfter:Bool = false;
 	var transportScrubRebuildCooldown:Float = 0;
 	var modchartScriptPaths:Array<String> = [];
-	var editorLuaCallbacksDirty:Bool = true;
 	var editorLuaCallbackStates:Array<ModchartEditorLuaCallbackState> = [];
 	var modifiers:Array<LuaEditorModifierEntry> = [];
 	var events:Array<LuaEditorEventEntry> = [];
@@ -1019,7 +1018,6 @@ class ModchartEditorState extends MusicBeatState
 		NoteSplash.configs.clear();
 			cleanupFileReference();
 		destroyModchartManager();
-		destroyEditorLuaCallbacks();
 		cleanupSound(inst);
 		cleanupSound(vocals);
 		cleanupSound(opponentVocals);
@@ -1518,33 +1516,13 @@ class ModchartEditorState extends MusicBeatState
 	public function finishSong():Void
 	{
 		previewPlaying = false;
-
-		var pauseAtSongEnd = function(_:FlxTimer)
-		{
-			transportScrubActive = false;
-			transportScrubPendingRebuild = false;
-			transportScrubResumeAfter = false;
-			transportScrubRebuildCooldown = 0;
-			setPreviewTime(Math.max(songLength - 1, 0), false);
-			if (editorStatusText != null)
-				editorStatusText.text = 'Song finished. Preview paused.';
-			finishTimer = null;
-		};
-
-		if (finishTimer != null)
-		{
-			finishTimer.cancel();
-			finishTimer.destroy();
-			finishTimer = null;
-		}
-
 		if(ClientPrefs.data.noteOffset <= 0)
-			pauseAtSongEnd(null);
+			endSong();
 		else
 		{
 			finishTimer = new FlxTimer().start(ClientPrefs.data.noteOffset / 1000, function(tmr:FlxTimer)
 			{
-				pauseAtSongEnd(tmr);
+				endSong();
 			});
 		}
 	}
@@ -2210,6 +2188,7 @@ class ModchartEditorState extends MusicBeatState
 	function destroyModchartManager():Void
 	{
 		ModchartEditorPreviewContext.active = null;
+		destroyEditorLuaCallbacks();
 		if (modchartManager != null)
 		{
 			remove(modchartManager, true);
@@ -2221,17 +2200,11 @@ class ModchartEditorState extends MusicBeatState
 
 	function initializeEditorLuaCallbacks():Void
 	{
-		if (!editorLuaCallbacksDirty && editorLuaCallbackStates.length > 0)
-			return;
-
 		destroyEditorLuaCallbacks();
 		var generatedFunctionScript = buildEditorFunctionLuaScript(false);
 		var hasGeneratedScript = generatedFunctionScript.trim().length > 0;
 		if ((modchartScriptPaths == null || modchartScriptPaths.length <= 0) && !hasGeneratedScript)
-		{
-			editorLuaCallbacksDirty = false;
 			return;
-		}
 
 		if (hasGeneratedScript)
 			registerGeneratedEditorLuaState(generatedFunctionScript);
@@ -2261,8 +2234,6 @@ class ModchartEditorState extends MusicBeatState
 				hxluajit.Lua.close(lua);
 			}
 		}
-
-		editorLuaCallbacksDirty = false;
 	}
 
 	function registerGeneratedEditorLuaState(scriptSource:String):Void
@@ -2628,7 +2599,6 @@ class ModchartEditorState extends MusicBeatState
 		var clearFunctionsButton = new PsychUIButton(254, 102, 'Clear Funcs', function()
 		{
 			customFunctionLua = '';
-			editorLuaCallbacksDirty = true;
 			markUnsaved();
 			refreshDerivedViews();
 		}, 110);
@@ -2636,7 +2606,6 @@ class ModchartEditorState extends MusicBeatState
 		var clearInitButton = new PsychUIButton(374, 102, 'Clear Init', function()
 		{
 			customInitLua = '';
-			editorLuaCallbacksDirty = true;
 			markUnsaved();
 			refreshDerivedViews();
 		}, 100);
@@ -3026,7 +2995,6 @@ class ModchartEditorState extends MusicBeatState
 		timelineBeat = 0;
 		customFunctionLua = '';
 		customInitLua = '';
-		editorLuaCallbacksDirty = true;
 		if (projectNameInput != null)
 			projectNameInput.text = projectName;
 		if (playfieldCountStepper != null)
@@ -3044,7 +3012,6 @@ class ModchartEditorState extends MusicBeatState
 		modchartScriptPaths = capturedPlayStateContext.scriptPaths != null ? capturedPlayStateContext.scriptPaths.copy() : [];
 		customFunctionLua = '';
 		customInitLua = '';
-		editorLuaCallbacksDirty = true;
 		timelineBeat = capturedPlayStateContext.timelineBeat;
 		if (capturedPlayStateContext.projectName != null)
 			projectNameInput.text = capturedPlayStateContext.projectName;
@@ -3443,7 +3410,6 @@ class ModchartEditorState extends MusicBeatState
 		var functionName = sanitizeLuaIdentifier(functionNameInput != null ? functionNameInput.text : 'newFunction');
 		var templateName = functionTemplateDropDown != null ? defaultString(functionTemplateDropDown.selectedLabel, 'helper_blank') : 'helper_blank';
 		customFunctionLua = appendLuaSnippet(customFunctionLua, buildFunctionTemplate(functionName, templateName));
-		editorLuaCallbacksDirty = true;
 		if (functionNameInput != null)
 			functionNameInput.text = functionName;
 		markUnsaved();
@@ -3465,7 +3431,6 @@ class ModchartEditorState extends MusicBeatState
 		else
 		{
 			customInitLua = appendLuaSnippet(customInitLua, functionName + '(' + fmt(snapBeat(timelineBeat)) + ')');
-			editorLuaCallbacksDirty = true;
 			editorStatusText.text = 'Init call for "$functionName" added at beat ${fmt(snapBeat(timelineBeat))}.';
 		}
 		markUnsaved();
@@ -3484,13 +3449,11 @@ class ModchartEditorState extends MusicBeatState
 		if (isFunctionBlock)
 		{
 			customFunctionLua = appendLuaSnippet(customFunctionLua, clip);
-			editorLuaCallbacksDirty = true;
 			editorStatusText.text = 'Clipboard appended to custom functions block.';
 		}
 		else
 		{
 			customInitLua = appendLuaSnippet(customInitLua, clip);
-			editorLuaCallbacksDirty = true;
 			editorStatusText.text = 'Clipboard appended to custom onInitModchart block.';
 		}
 

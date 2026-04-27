@@ -19,8 +19,8 @@ import sys.FileSystem;
 import sys.io.File;
 #end
 #if MODS_ALLOWED
-	import funkin.modding.Mods;
-	#end
+import funkin.modding.Mods;
+#end
 
 @:access(openfl.display.BitmapData)
 class Paths
@@ -32,6 +32,7 @@ class Paths
 	 * Temporary frames cache that gets cleared between states.
 	 */
 	static var tempFramesCache:Map<String, FlxAtlasFrames> = [];
+
 	static var animateAtlasExistenceCache:Map<String, Bool> = [];
 	static var animateAtlasAnimationCache:Map<String, String> = [];
 	static var animateAtlasSpriteJsonCache:Map<String, Array<String>> = [];
@@ -71,7 +72,6 @@ class Paths
 		}
 
 		tempFramesCache.clear();
-
 	}
 
 	public static function hasAnimateAtlas(key:String):Bool

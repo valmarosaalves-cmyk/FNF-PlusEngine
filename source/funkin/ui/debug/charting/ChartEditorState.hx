@@ -2274,7 +2274,7 @@ class ChartEditorState extends MusicBeatState implements PsychUIEventHandler.Psy
 			return;
 
 		var members:Array<Dynamic> = cast tabGroup.members;
-		for(member in members)
+		for (member in members)
 		{
 			if (!Std.isOfType(member, PsychUIButton))
 				continue;

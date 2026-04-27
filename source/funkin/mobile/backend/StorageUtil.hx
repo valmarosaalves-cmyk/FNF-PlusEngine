@@ -3,7 +3,6 @@ package funkin.mobile.backend;
 import lime.system.System as LimeSystem;
 import haxe.io.Path;
 import haxe.Exception;
-
 #if android
 import funkin.external.android.JNIUtil;
 #end
@@ -46,7 +45,8 @@ class StorageUtil
 
 		var storageRoot:String = null;
 		if (getExternalStoragePathJNI == null)
-			getExternalStoragePathJNI = JNIUtil.createStaticMethod('com/leninasto/plusengine/PlusEngineExtension', 'getExternalStoragePath', '()Ljava/lang/String;');
+			getExternalStoragePathJNI = JNIUtil.createStaticMethod('com/leninasto/plusengine/PlusEngineExtension', 'getExternalStoragePath',
+				'()Ljava/lang/String;');
 
 		if (getExternalStoragePathJNI != null)
 		{
@@ -54,7 +54,9 @@ class StorageUtil
 			{
 				storageRoot = cast getExternalStoragePathJNI();
 			}
-			catch (e:Dynamic) {}
+			catch (e:Dynamic)
+			{
+			}
 		}
 
 		if (storageRoot == null || storageRoot.length == 0)
@@ -104,8 +106,7 @@ class StorageUtil
 	}
 	#end
 
-	public static function getSMDirectory():String
-		// Use scoped storage for StepMania files: Android/data/<package>/files/sm/
+	public static function getSMDirectory():String // Use scoped storage for StepMania files: Android/data/<package>/files/sm/
 		return #if android getStorageDirectory() + 'sm/' #else './sm/' #end;
 
 	#if android
@@ -144,9 +145,10 @@ class StorageUtil
 		else
 		{
 			// Other files go to scoped storage + saves/
-			folder = #if android getStorageDirectory() + #else Sys.getCwd() + #end 'saves/';
+			folder = #if android getStorageDirectory() + #else Sys.getCwd() + #end
+			'saves/';
 		}
-		
+
 		try
 		{
 			if (!FileSystem.exists(folder))
@@ -154,14 +156,16 @@ class StorageUtil
 
 			File.saveContent(folder + fileName, fileData);
 			if (alert)
-				CoolUtil.showPopUp(Language.getPhrase('file_save_success', '{1} has been saved.', [fileName]), Language.getPhrase('mobile_success', "Success!"));
+				CoolUtil.showPopUp(Language.getPhrase('file_save_success', '{1} has been saved.', [fileName]),
+					Language.getPhrase('mobile_success', "Success!"));
 		}
 		catch (e:Dynamic)
 		{
 			// Using scoped storage (EXTERNAL_DATA), no fallback needed
 			// as this storage is always writable by the app
 			if (alert)
-				CoolUtil.showPopUp(Language.getPhrase('file_save_fail', '{1} couldn\'t be saved.\n({2})', [fileName, Std.string(e)]), Language.getPhrase('mobile_error', "Error!"));
+				CoolUtil.showPopUp(Language.getPhrase('file_save_fail', '{1} couldn\'t be saved.\n({2})', [fileName, Std.string(e)]),
+					Language.getPhrase('mobile_error', "Error!"));
 		}
 	}
 
@@ -177,7 +181,12 @@ class StorageUtil
 	{
 		// Request read permissions for accessing media files (images, audio, video)
 		if (AndroidVersion.SDK_INT >= AndroidVersionCode.TIRAMISU)
-			AndroidPermissions.requestPermissions(['READ_MEDIA_IMAGES', 'READ_MEDIA_VIDEO', 'READ_MEDIA_AUDIO', 'READ_MEDIA_VISUAL_USER_SELECTED']);
+			AndroidPermissions.requestPermissions([
+				'READ_MEDIA_IMAGES',
+				'READ_MEDIA_VIDEO',
+				'READ_MEDIA_AUDIO',
+				'READ_MEDIA_VISUAL_USER_SELECTED'
+			]);
 		else
 			AndroidPermissions.requestPermissions(['READ_EXTERNAL_STORAGE', 'WRITE_EXTERNAL_STORAGE']);
 
@@ -194,7 +203,9 @@ class StorageUtil
 		}
 		catch (e:Dynamic)
 		{
-			CoolUtil.showPopUp(Language.getPhrase('create_directory_error', 'Please create directory to\n{1}\nPress OK to close the game', [StorageUtil.getStorageDirectory()]), Language.getPhrase('mobile_error', "Error!"));
+			CoolUtil.showPopUp(Language.getPhrase('create_directory_error', 'Please create directory to\n{1}\nPress OK to close the game',
+				[StorageUtil.getStorageDirectory()]),
+				Language.getPhrase('mobile_error', "Error!"));
 			LimeSystem.exit(1);
 		}
 
@@ -206,7 +217,9 @@ class StorageUtil
 		}
 		catch (e:Dynamic)
 		{
-			CoolUtil.showPopUp(Language.getPhrase('create_directory_error', 'Please create directory to\n{1}\nPress OK to close the game', [StorageUtil.getStorageDirectory()]), Language.getPhrase('mobile_error', "Error!"));
+			CoolUtil.showPopUp(Language.getPhrase('create_directory_error', 'Please create directory to\n{1}\nPress OK to close the game',
+				[StorageUtil.getStorageDirectory()]),
+				Language.getPhrase('mobile_error', "Error!"));
 			lime.system.System.exit(1);
 		}
 
@@ -219,7 +232,8 @@ class StorageUtil
 				FileSystem.createDirectory(StorageUtil.getPublicModsDirectory());
 		}
 		catch (e:Dynamic)
-		{}
+		{
+		}
 
 		// Create StepMania directory
 		try
@@ -229,7 +243,9 @@ class StorageUtil
 		}
 		catch (e:Dynamic)
 		{
-			CoolUtil.showPopUp(Language.getPhrase('create_directory_error', 'Please create directory to\n{1}\nPress OK to close the game', [StorageUtil.getSMDirectory()]), Language.getPhrase('mobile_error', "Error!"));
+			CoolUtil.showPopUp(Language.getPhrase('create_directory_error', 'Please create directory to\n{1}\nPress OK to close the game',
+				[StorageUtil.getSMDirectory()]),
+				Language.getPhrase('mobile_error', "Error!"));
 			LimeSystem.exit(1);
 		}
 	}
@@ -259,69 +275,68 @@ class StorageUtil
 	 * Now using only scoped storage (EXTERNAL_DATA), so no migration needed.
 	 */
 	/*
-	public static function migrateStorage(oldType:String, newType:String):Void
-	{
-		// Migration disabled - using only scoped storage
-		return;
-	}
-	*/
-
+		public static function migrateStorage(oldType:String, newType:String):Void
+		{
+			// Migration disabled - using only scoped storage
+			return;
+		}
+	 */
 	// Migration helper functions commented out - no longer needed with single storage type
+
 	/*
-	static function copyFileIfExists(src:String, dst:String):Void
-	{
-		try
+		static function copyFileIfExists(src:String, dst:String):Void
 		{
-			if (!FileSystem.exists(src) || FileSystem.isDirectory(src)) return;
-
-			var dstDir = haxe.io.Path.directory(dst);
-			if (dstDir != null && dstDir.length > 0 && !FileSystem.exists(dstDir))
-				FileSystem.createDirectory(dstDir);
-
-			sys.io.File.copy(src, dst);
-		}
-		catch (_:Dynamic) {}
-	}
-
-	static function copyDirectoryIfExists(srcDir:String, dstDir:String):Void
-	{
-		try
-		{
-			if (!FileSystem.exists(srcDir) || !FileSystem.isDirectory(srcDir)) return;
-			if (!FileSystem.exists(dstDir)) FileSystem.createDirectory(dstDir);
-
-			for (name in FileSystem.readDirectory(srcDir))
+			try
 			{
-				var src = haxe.io.Path.join([srcDir, name]);
-				var dst = haxe.io.Path.join([dstDir, name]);
-				if (FileSystem.isDirectory(src))
-					copyDirectoryIfExists(src, dst);
-				else
-					copyFileIfExists(src, dst);
-			}
-		}
-		catch (_:Dynamic) {}
-	}
+				if (!FileSystem.exists(src) || FileSystem.isDirectory(src)) return;
 
-	static function deleteDirectoryIfExists(dir:String):Void
-	{
-		try
-		{
-			if (!FileSystem.exists(dir) || !FileSystem.isDirectory(dir)) return;
-			for (name in FileSystem.readDirectory(dir))
-			{
-				var path = haxe.io.Path.join([dir, name]);
-				if (FileSystem.isDirectory(path))
-					deleteDirectoryIfExists(path);
-				else
-					FileSystem.deleteFile(path);
+				var dstDir = haxe.io.Path.directory(dst);
+				if (dstDir != null && dstDir.length > 0 && !FileSystem.exists(dstDir))
+					FileSystem.createDirectory(dstDir);
+
+				sys.io.File.copy(src, dst);
 			}
-			FileSystem.deleteDirectory(dir);
+			catch (_:Dynamic) {}
 		}
-		catch (_:Dynamic) {}
-	}
-	*/
-	
+
+		static function copyDirectoryIfExists(srcDir:String, dstDir:String):Void
+		{
+			try
+			{
+				if (!FileSystem.exists(srcDir) || !FileSystem.isDirectory(srcDir)) return;
+				if (!FileSystem.exists(dstDir)) FileSystem.createDirectory(dstDir);
+
+				for (name in FileSystem.readDirectory(srcDir))
+				{
+					var src = haxe.io.Path.join([srcDir, name]);
+					var dst = haxe.io.Path.join([dstDir, name]);
+					if (FileSystem.isDirectory(src))
+						copyDirectoryIfExists(src, dst);
+					else
+						copyFileIfExists(src, dst);
+				}
+			}
+			catch (_:Dynamic) {}
+		}
+
+		static function deleteDirectoryIfExists(dir:String):Void
+		{
+			try
+			{
+				if (!FileSystem.exists(dir) || !FileSystem.isDirectory(dir)) return;
+				for (name in FileSystem.readDirectory(dir))
+				{
+					var path = haxe.io.Path.join([dir, name]);
+					if (FileSystem.isDirectory(path))
+						deleteDirectoryIfExists(path);
+					else
+						FileSystem.deleteFile(path);
+				}
+				FileSystem.deleteDirectory(dir);
+			}
+			catch (_:Dynamic) {}
+		}
+	 */
 	public static function getAvailableStorageTypes():Array<StorageTypeInfo>
 	{
 		return [
@@ -337,7 +352,7 @@ class StorageUtil
 			}
 		];
 	}
-	
+
 	public static function getStoragePathForType(storageType:String):String
 	{
 		return switch (normalizeModsStorageType(storageType))
@@ -346,7 +361,7 @@ class StorageUtil
 			default: haxe.io.Path.addTrailingSlash(AndroidContext.getExternalFilesDir());
 		}
 	}
-	
+
 	public static function requiresSpecialPermissions(storageType:String):Bool
 	{
 		return normalizeModsStorageType(storageType) == STORAGE_TYPE_EXTERNAL && AndroidVersion.SDK_INT >= AndroidVersionCode.R;
@@ -355,7 +370,7 @@ class StorageUtil
 	#end
 }
 
-typedef StorageTypeInfo = 
+typedef StorageTypeInfo =
 {
 	var id:String;
 	var name:String;

@@ -30,8 +30,102 @@ class Mods
 		'scripts',
 		'achievements'
 	];
+	public static final ignorePublicRootFolders:Array<String> = ['mods', 'assets', 'saves', 'logs', 'sm', 'cache', 'backups'];
 
 	private static var globalMods:Array<String> = [];
+	#if android
+	private static var lastStorageType:String = StorageUtil.getModsStorageType();
+	#end
+
+	public static function refreshStorageTypeContext():Bool
+	{
+		#if android
+		var currentStorageType:String = StorageUtil.getModsStorageType();
+		if (lastStorageType != currentStorageType)
+		{
+			lastStorageType = currentStorageType;
+			updatedOnState = false;
+			currentModDirectory = '';
+			globalMods = [];
+			return true;
+		}
+		#end
+		return false;
+	}
+
+	static function safeExists(path:String):Bool
+	{
+		try
+		{
+			return FileSystem.exists(path);
+		}
+		catch (_:Dynamic)
+		{
+			return false;
+		}
+	}
+
+	static function safeIsDirectory(path:String):Bool
+	{
+		try
+		{
+			return FileSystem.isDirectory(path);
+		}
+		catch (_:Dynamic)
+		{
+			return false;
+		}
+	}
+
+	static function safeReadDirectory(path:String):Array<String>
+	{
+		try
+		{
+			return Paths.readDirectory(path);
+		}
+		catch (e:Dynamic)
+		{
+			return [];
+		}
+	}
+
+	static function isLegacyRootModFolder(path:String, folder:String):Bool
+	{
+		var folderLower:String = folder.toLowerCase();
+		if (ignoreModFolders.contains(folderLower) || ignorePublicRootFolders.contains(folderLower))
+			return false;
+
+		var markers:Array<String> = ['pack.json', 'pack.png', 'pack-pixel.png', 'data', 'weeks', 'songs', 'images', 'scripts', 'stages', 'music', 'sounds'];
+		for (marker in markers)
+		{
+			if (safeExists(path + '/' + marker))
+				return true;
+		}
+
+		return false;
+	}
+
+	static function scanModsRoot(root:String, list:Array<String>, legacyRoot:Bool):Void
+	{
+		if (!safeExists(root) || !safeIsDirectory(root))
+			return;
+
+		for (folder in safeReadDirectory(root))
+		{
+			var path:String = root + folder;
+			if (!safeIsDirectory(path) || list.contains(folder))
+				continue;
+
+			var folderLower:String = folder.toLowerCase();
+			if (ignoreModFolders.contains(folderLower))
+				continue;
+
+			if (legacyRoot && !isLegacyRootModFolder(path, folder))
+				continue;
+
+			list.push(folder);
+		}
+	}
 
 	inline public static function getGlobalMods()
 		return globalMods;
@@ -51,15 +145,11 @@ class Mods
 	{
 		var list:Array<String> = [];
 		#if MODS_ALLOWED
-		var modsFolder:String = Paths.mods();
-		if(FileSystem.exists(modsFolder)) {
-			for (folder in Paths.readDirectory(modsFolder))
-			{
-				var path = haxe.io.Path.join([modsFolder, folder]);
-				if (FileSystem.isDirectory(path) && !ignoreModFolders.contains(folder.toLowerCase()) && !list.contains(folder))
-					list.push(folder);
-			}
-		}
+		refreshStorageTypeContext();
+		for (modsRoot in Paths.getModsRootDirectories())
+			scanModsRoot(modsRoot, list, false);
+		for (legacyRoot in Paths.getLegacyModsRootDirectories())
+			scanModsRoot(legacyRoot, list, true);
 		#end
 		return list;
 	}
@@ -159,9 +249,8 @@ class Mods
 	}
 
 	public static var updatedOnState:Bool = false;
-	// Use scoped storage for mods list: Android/data/<package>/files/modsList.txt
 	inline static function getModsListPath():String
-		return #if android StorageUtil.getStorageDirectory() + #else Sys.getCwd() + #end 'modsList.txt';
+		return #if android StorageUtil.getStoragePathForType(StorageUtil.getModsStorageType()) + #else Sys.getCwd() + #end 'modsList.txt';
 
 	inline static function getFallbackModsListPath():String
 		return #if android StorageUtil.getStorageDirectory() + #else Sys.getCwd() + #end 'modsList.txt';
@@ -169,17 +258,14 @@ class Mods
 	static function resolveModsListReadPath():String
 	{
 		#if android
-		var primary = getModsListPath();
-		if (FileSystem.exists(primary)) return primary;
-		var fallback = getFallbackModsListPath();
-		if (FileSystem.exists(fallback)) return fallback;
-		return primary;
+		return getModsListPath();
 		#else
 		return getModsListPath();
 		#end
 	}
 
 	inline public static function parseList():ModsList {
+		refreshStorageTypeContext();
 		if(!updatedOnState) updateModList();
 		var list:ModsList = {enabled: [], disabled: [], all: []};
 
@@ -207,6 +293,8 @@ class Mods
 	private static function updateModList()
 	{
 		#if MODS_ALLOWED
+		var discoveredMods:Array<String> = getModDirectories();
+
 		// Find all that are already ordered
 		var list:Array<Array<Dynamic>> = [];
 		var added:Array<String> = [];
@@ -226,7 +314,7 @@ class Mods
 		}
 		
 		// Scan for folders that aren't on modsList.txt yet
-		for (folder in getModDirectories())
+		for (folder in discoveredMods)
 		{
 			if(folder.trim().length > 0 && FileSystem.exists(Paths.mods(folder)) && FileSystem.isDirectory(Paths.mods(folder)) &&
 			!ignoreModFolders.contains(folder.toLowerCase()) && !added.contains(folder))
@@ -261,6 +349,7 @@ class Mods
 
 	public static function loadTopMod()
 	{
+		refreshStorageTypeContext();
 		Mods.currentModDirectory = '';
 		
 		#if MODS_ALLOWED

@@ -141,6 +141,9 @@ class FreeplayState extends MusicBeatState {
     static inline var VIZ_SMOOTH_SPEED:Float = 18;
     var _lastAppliedBgZoom:Float = -1;
     var _lastAppliedAlbumZoom:Float = -1;
+    #if android
+    var _lastObservedModsStorageType:String = StorageUtil.getModsStorageType();
+    #end
 
     var diffViewOffset:Float = 0;
     var lerpDiffViewOffset:Float = 0;
@@ -262,6 +265,9 @@ class FreeplayState extends MusicBeatState {
         instance = this;
         persistentUpdate = true;
         PlayState.isStoryMode = false;
+        #if android
+        _lastObservedModsStorageType = StorageUtil.getModsStorageType();
+        #end
         WeekData.reloadWeekFiles(false);
 
         #if DISCORD_ALLOWED
@@ -2657,6 +2663,17 @@ class FreeplayState extends MusicBeatState {
      * Close substate handler
      */
     override function closeSubState():Void {
+        #if android
+        var currentStorageType:String = StorageUtil.getModsStorageType();
+        if (_lastObservedModsStorageType != currentStorageType)
+        {
+            _lastObservedModsStorageType = currentStorageType;
+            FlxTransitionableState.skipNextTransIn = true;
+            MusicBeatState.switchState(new FreeplayState());
+            return;
+        }
+        #end
+
         changeSelection(0, false);
         persistentUpdate = true;
         super.closeSubState();

@@ -118,7 +118,7 @@ class FPSCounter extends Sprite
 	public var sscriptsErrors:Int = 0;
 
 	/**
-		Instancia singleton para acceso global
+		Singleton instance for global access.
 	**/
 	public static var instance:FPSCounter;
 
@@ -144,14 +144,14 @@ class FPSCounter extends Sprite
 	private var lastCacheUpdateTime:Float = 0.0;
 	
 	/**
-		Control de actualización de texto para reducir lag en modo debug
+		Text update throttling to reduce overhead in debug mode.
 	**/
 	private var lastTextUpdateTime:Float = 0.0;
-	private var textUpdateInterval:Float = 0.5; // Actualizar texto estático cada 500ms
-	private var cachedStaticText:String = ""; // Cache del texto estático (OS, commit, etc.)
+	private var textUpdateInterval:Float = 0.5; // Refresh static text every 500ms.
+	private var cachedStaticText:String = ""; // Cached static text (OS, commit, etc.).
 	
 	/**
-		Frame timing para medición de delay
+		Frame timing used to track delay and stutter.
 	**/
 	private var lastFrameTime:Float = 0.0;
 	private var frameTimeMs:Float = 0.0;
@@ -169,10 +169,10 @@ class FPSCounter extends Sprite
 	   {
 		   super();
 
-		   // Asignar singleton
+		   // Assign singleton instance.
 		   instance = this;
 
-		   // Leer nivel de debug guardado
+		   // Load the persisted debug level.
 		   #if (ClientPrefs && ClientPrefs.data)
 		   if (Reflect.hasField(ClientPrefs.data, "fpsDebugLevel")) {
 			   debugLevel = ClientPrefs.data.fpsDebugLevel;
@@ -274,7 +274,7 @@ class FPSCounter extends Sprite
 		textDisplay.defaultTextFormat = new TextFormat('Monsterrat', 14, textColorValue);
 		textDisplay.setTextFormat(textDisplay.defaultTextFormat);
 
-		// Actualizar contadores para modo debug extendido (siempre, sin intervalo)
+		// Update counters for extended debug mode without extra throttling.
 		if (debugLevel == 3) {
 			updateCountersOptimized();
 		}
@@ -397,18 +397,18 @@ class FPSCounter extends Sprite
 	var deltaTimeout:Float = 0.0;
 	private override function __enterFrame(deltaTime:Float):Void
 	{
-		// Compute frame time (delay)
+		// Compute frame time (delay).
 		var currentFrameTime = Timer.stamp();
 		frameTimeMs = (currentFrameTime - lastFrameTime) * 1000.0; // Convert to milliseconds
 		lastFrameTime = currentFrameTime;
 		
-		// Keep a moving average for the last 10 frames
+		// Keep a moving average for the last 10 frames.
 		frameTimesArray.push(frameTimeMs);
 		if (frameTimesArray.length > 10) {
 			frameTimesArray.shift();
 		}
 		
-		// Compute average
+		// Compute average.
 		var sum:Float = 0.0;
 		for (time in frameTimesArray) {
 			sum += time;
@@ -436,29 +436,31 @@ class FPSCounter extends Sprite
 		}
 		else
 		{
-			// Improved standard FPS calculation - more accurate and responsive
+			// Improved standard FPS calculation for a more responsive value.
 			final now:Float = haxe.Timer.stamp() * 1000;
 			times.push(now);
 			while (times[0] < now - 1000)
 				times.shift();
 			
-			// Update more frequently for better accuracy (every 33ms instead of 50ms)
+			// Update more frequently for better accuracy.
 			if (deltaTimeout < 33)
 			{
 				deltaTimeout += deltaTime;
 				return;
 			}
 
-			// Show actual FPS instead of capping at updateFramerate
-			// This gives more accurate representation of performance
+			// Show actual FPS instead of clamping to the configured update rate.
 			currentFPS = times.length;
 			deltaTimeout = 0.0;
 		}
 
+		var targetFPS:Int = Std.int(FlxG.stage.window.frameRate);
+		targetFPS = ClientPrefs.data.framerate;
+
 		updateText();
 	}
 
-	// Función para manejar el evento de F2
+	// Handle the F2 key event.
 	   private function onKeyDown(event:KeyboardEvent):Void {
 		   if (event.keyCode == Keyboard.F2) {
 			   debugLevel = (debugLevel + 1) % 4; // Cycle: 0, 1, 2, 3
@@ -467,7 +469,7 @@ class FPSCounter extends Sprite
 			   ClientPrefs.save();
 			   #end
 			   updateBackground();
-			   // Forzar actualización inmediata del texto y fondo
+			   // Force an immediate text/background refresh.
 			   updateText();
 		   }
 	   }

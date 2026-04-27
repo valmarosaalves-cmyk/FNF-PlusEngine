@@ -4,6 +4,10 @@ import lime.system.System as LimeSystem;
 import haxe.io.Path;
 import haxe.Exception;
 
+#if android
+import funkin.external.android.JNIUtil;
+#end
+
 using Lambda;
 
 /**
@@ -13,6 +17,14 @@ using Lambda;
 class StorageUtil
 {
 	#if sys
+	#if android
+	public static inline var STORAGE_TYPE_SCOPED:String = 'EXTERNAL_DATA';
+	public static inline var STORAGE_TYPE_EXTERNAL:String = 'EXTERNAL';
+	private static inline var PUBLIC_PLUS_ENGINE_DIR:String = '/sdcard/.PlusEngine/';
+	private static var getExternalStoragePathJNI:Null<Dynamic> = null;
+	private static var cachedPublicStorageDirectory:Null<String> = null;
+	#end
+
 	public static function getStorageDirectory():String
 	{
 		#if android
@@ -26,9 +38,95 @@ class StorageUtil
 		#end
 	}
 
+	#if android
+	public static function getPublicStorageDirectory():String
+	{
+		if (cachedPublicStorageDirectory != null)
+			return cachedPublicStorageDirectory;
+
+		var storageRoot:String = null;
+		if (getExternalStoragePathJNI == null)
+			getExternalStoragePathJNI = JNIUtil.createStaticMethod('com/leninasto/plusengine/PlusEngineExtension', 'getExternalStoragePath', '()Ljava/lang/String;');
+
+		if (getExternalStoragePathJNI != null)
+		{
+			try
+			{
+				storageRoot = cast getExternalStoragePathJNI();
+			}
+			catch (e:Dynamic) {}
+		}
+
+		if (storageRoot == null || storageRoot.length == 0)
+			storageRoot = Path.directory(PUBLIC_PLUS_ENGINE_DIR.substr(0, PUBLIC_PLUS_ENGINE_DIR.length - 1));
+
+		cachedPublicStorageDirectory = Path.addTrailingSlash(storageRoot);
+		return cachedPublicStorageDirectory;
+	}
+
+	public static inline function getPublicPlusEngineDirectory():String
+		return PUBLIC_PLUS_ENGINE_DIR;
+
+	public static inline function getPublicModsDirectory():String
+		return getPublicPlusEngineDirectory() + 'mods/';
+
+	public static function getPublicStorageDirectoryCandidates():Array<String>
+	{
+		var candidates:Array<String> = [];
+
+		function pushUnique(path:String):Void
+		{
+			if (path == null || path.length == 0)
+				return;
+
+			var normalized:String = Path.addTrailingSlash(path.replace('\\', '/'));
+			if (!candidates.contains(normalized))
+				candidates.push(normalized);
+		}
+
+		pushUnique(getPublicStorageDirectory());
+		pushUnique('/storage/emulated/0');
+		pushUnique('/sdcard');
+
+		return candidates;
+	}
+
+	public static function getPublicModsDirectoryCandidates():Array<String>
+	{
+		var candidates:Array<String> = [];
+		for (storageRoot in getPublicStorageDirectoryCandidates())
+		{
+			var modsRoot:String = storageRoot + '.PlusEngine/mods/';
+			if (!candidates.contains(modsRoot))
+				candidates.push(modsRoot);
+		}
+		return candidates;
+	}
+	#end
+
 	public static function getSMDirectory():String
 		// Use scoped storage for StepMania files: Android/data/<package>/files/sm/
 		return #if android getStorageDirectory() + 'sm/' #else './sm/' #end;
+
+	#if android
+	public static function normalizeModsStorageType(storageType:String):String
+	{
+		return switch (storageType)
+		{
+			case STORAGE_TYPE_EXTERNAL: STORAGE_TYPE_EXTERNAL;
+			default: STORAGE_TYPE_SCOPED;
+		}
+	}
+
+	public static function getModsStorageType():String
+		return normalizeModsStorageType(ClientPrefs.data.storageType);
+
+	public static inline function useScopedModsStorage():Bool
+		return getModsStorageType() == STORAGE_TYPE_SCOPED;
+
+	public static inline function useExternalModsStorage():Bool
+		return getModsStorageType() == STORAGE_TYPE_EXTERNAL;
+	#end
 
 	public static function saveContent(fileName:String, fileData:String, ?alert:Bool = true):Void
 	{
@@ -64,27 +162,28 @@ class StorageUtil
 			// as this storage is always writable by the app
 			if (alert)
 				CoolUtil.showPopUp(Language.getPhrase('file_save_fail', '{1} couldn\'t be saved.\n({2})', [fileName, Std.string(e)]), Language.getPhrase('mobile_error', "Error!"));
-			else
-				trace('$fileName couldn\'t be saved. (${e.message})');
 		}
 	}
 
 	#if android
 	/**
-	 * @deprecated Use getStorageDirectory() instead. Kept for compatibility.
-	 * Now points to scoped storage like getStorageDirectory().
+	 * @deprecated Kept for compatibility with older mobile codepaths.
+	 * Returns the public Plus Engine root: /sdcard/.PlusEngine/
 	 */
 	public static function getExternalStorageDirectory():String
-		return getStorageDirectory();
+		return getPublicPlusEngineDirectory();
 
 	public static function requestPermissions():Void
 	{
 		// Request read permissions for accessing media files (images, audio, video)
-		// Scoped storage doesn't require WRITE_EXTERNAL_STORAGE for app-specific directory
 		if (AndroidVersion.SDK_INT >= AndroidVersionCode.TIRAMISU)
-			AndroidPermissions.requestPermissions(['READ_MEDIA_IMAGES', 'READ_MEDIA_VIDEO', 'READ_MEDIA_AUDIO']);
+			AndroidPermissions.requestPermissions(['READ_MEDIA_IMAGES', 'READ_MEDIA_VIDEO', 'READ_MEDIA_AUDIO', 'READ_MEDIA_VISUAL_USER_SELECTED']);
 		else
-			AndroidPermissions.requestPermissions(['READ_EXTERNAL_STORAGE']);
+			AndroidPermissions.requestPermissions(['READ_EXTERNAL_STORAGE', 'WRITE_EXTERNAL_STORAGE']);
+
+		// Public mod folders require broad file access on Android 11+.
+		if (requiresSpecialPermissions(getModsStorageType()) && !AndroidEnvironment.isExternalStorageManager())
+			AndroidSettings.requestSetting('MANAGE_APP_ALL_FILES_ACCESS_PERMISSION');
 
 		// Create main storage directory
 		try
@@ -110,6 +209,17 @@ class StorageUtil
 			CoolUtil.showPopUp(Language.getPhrase('create_directory_error', 'Please create directory to\n{1}\nPress OK to close the game', [StorageUtil.getStorageDirectory()]), Language.getPhrase('mobile_error', "Error!"));
 			lime.system.System.exit(1);
 		}
+
+		// Create public Plus Engine directories for shared mods when permissions allow it.
+		try
+		{
+			if (!FileSystem.exists(StorageUtil.getPublicPlusEngineDirectory()))
+				FileSystem.createDirectory(StorageUtil.getPublicPlusEngineDirectory());
+			if (!FileSystem.exists(StorageUtil.getPublicModsDirectory()))
+				FileSystem.createDirectory(StorageUtil.getPublicModsDirectory());
+		}
+		catch (e:Dynamic)
+		{}
 
 		// Create StepMania directory
 		try
@@ -212,44 +322,35 @@ class StorageUtil
 	}
 	*/
 	
-	/**
-	 * Storage type info - kept for compatibility but only EXTERNAL_DATA is used
-	 */
-	/*
 	public static function getAvailableStorageTypes():Array<StorageTypeInfo>
 	{
 		return [
 			{
-				id: "EXTERNAL_DATA",
-				name: "App Data (Scoped Storage)",
-				description: "Android/data/<package>/files/\nScoped storage, no special permissions needed.\nData cleared when app is uninstalled."
+				id: STORAGE_TYPE_SCOPED,
+				name: 'Scoped Storage',
+				description: 'Android/data/<package>/files/mods/\nRecommended default. No all-files access required.'
+			},
+			{
+				id: STORAGE_TYPE_EXTERNAL,
+				name: 'External Shared Storage',
+				description: '/sdcard/.PlusEngine/mods/\nEasier to access from file managers, but may require full file access on Android 11+.'
 			}
 		];
 	}
-	*/
 	
-	/**
-	 * Gets the storage path - now always returns EXTERNAL_DATA (scoped storage)
-	 * Function kept for compatibility with existing code
-	 */
-	/*
 	public static function getStoragePathForType(storageType:String):String
 	{
-		// Always return scoped storage path
-		return haxe.io.Path.addTrailingSlash(AndroidContext.getExternalFilesDir());
+		return switch (normalizeModsStorageType(storageType))
+		{
+			case STORAGE_TYPE_EXTERNAL: getPublicPlusEngineDirectory();
+			default: haxe.io.Path.addTrailingSlash(AndroidContext.getExternalFilesDir());
+		}
 	}
-	*/
 	
-	/**
-	 * Scoped storage (EXTERNAL_DATA) does not require special permissions
-	 */
-	/*
 	public static function requiresSpecialPermissions(storageType:String):Bool
 	{
-		// Scoped storage doesn't need special permissions
-		return false;
+		return normalizeModsStorageType(storageType) == STORAGE_TYPE_EXTERNAL && AndroidVersion.SDK_INT >= AndroidVersionCode.R;
 	}
-	*/
 	#end
 	#end
 }

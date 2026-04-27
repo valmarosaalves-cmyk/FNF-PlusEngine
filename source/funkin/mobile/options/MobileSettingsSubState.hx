@@ -25,6 +25,9 @@ class MobileSettingsSubState extends MusicBeatSubstate
 
 	final exControlTypes:Array<String> = ['NONE', 'SINGLE', 'DOUBLE'];
 	final hintOptions:Array<String> = ['No Gradient', 'No Gradient (Old)', 'Gradient', 'Hidden'];
+	#if android
+	final modsStorageTypes:Array<String> = [StorageUtil.STORAGE_TYPE_SCOPED, StorageUtil.STORAGE_TYPE_EXTERNAL];
+	#end
 
 	var backdrop:FlxSprite;
 	var menuBG:FlxSprite;
@@ -165,8 +168,19 @@ class MobileSettingsSubState extends MusicBeatSubstate
 		#if android
 		var tierName = funkin.mobile.AndroidOptimizer.getTierName();
 		var gpuName = funkin.util.Native.detectGPU();
-		var tierInfo = 'Detected: ' + tierName + ' | GPU: ' + gpuName + '\nQuality settings were auto-configured. You can still override graphics manually.\nStorage is scoped to Android/data.';
+		var tierInfo = 'Detected: ' + tierName + ' | GPU: ' + gpuName + '\nQuality settings were auto-configured. You can still override graphics manually.\nCurrent mods storage: ' + getModsStorageLabel(ClientPrefs.data.storageType) + '.';
 		cardY = addCard(new MobileInfoCard('deviceInfo', Language.getPhrase('mobile_device_info', 'Device Performance Info'), tierInfo, cardWidth), cardX, cardY);
+
+		cardY = addCard(new MobileChoiceCard('modsStorageType', Language.getPhrase('mobile_mods_storage_title', 'Mods Storage'), Language.getPhrase('mobile_mods_storage_desc', 'Choose where Android should read mods from. Scoped is the default and safest option; External reads from /sdcard/.PlusEngine/mods/.'), cardWidth, modsStorageTypes, StorageUtil.normalizeModsStorageType(ClientPrefs.data.storageType), StorageUtil.STORAGE_TYPE_SCOPED, openChoiceMenu, function(value:String) {
+			var normalizedValue:String = StorageUtil.normalizeModsStorageType(value);
+			ClientPrefs.data.storageType = normalizedValue;
+			StorageUtil.requestPermissions();
+			Mods.updatedOnState = false;
+			Mods.parseList();
+			Mods.pushGlobalMods();
+			Mods.loadTopMod();
+			saveSetting(Language.getPhrase('mobile_mods_storage_saved', 'Mods storage: {1}', [getModsStorageLabel(normalizedValue)]), false);
+		}, 'mobile_mods_storage'), cardX, cardY);
 		#end
 
 		cardY = addCard(new MobileChoiceCard('extraButtons', Language.getPhrase('setting_extra_controls', 'Extra Controls'), Language.getPhrase('description_extra_controls', 'Choose how many extra mobile buttons you want available for mod mechanics.'), cardWidth, exControlTypes, ClientPrefs.data.extraButtons, ClientPrefs.defaultData.extraButtons, openChoiceMenu, function(value:String) {
@@ -254,6 +268,19 @@ class MobileSettingsSubState extends MusicBeatSubstate
 		ClientPrefs.saveSettings();
 		announce(message, playSound);
 	}
+
+	#if android
+	function getModsStorageLabel(storageType:String):String
+	{
+		return switch (StorageUtil.normalizeModsStorageType(storageType))
+		{
+			case StorageUtil.STORAGE_TYPE_EXTERNAL:
+				Language.getPhrase('setting_mobile_mods_storage-external', 'External Shared Storage');
+			default:
+				Language.getPhrase('setting_mobile_mods_storage-external_data', 'Scoped Storage');
+		}
+	}
+	#end
 
 	function announce(message:String, playSound:Bool = true):Void
 	{

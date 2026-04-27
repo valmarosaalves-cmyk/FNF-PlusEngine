@@ -68,9 +68,17 @@ class FunkinLua {
 		
 		// Configure Lua package.path for 0.7.3 mods compatibility on Android
 		#if (android && MODS_ALLOWED)
-		var modsPath:String = StorageUtil.getStorageDirectory() + 'mods/';
-		var packagePathConfig:String = 'package.path = package.path .. ";' + modsPath + '?.lua;' + modsPath + '?/init.lua"';
-		LuaL.dostring(lua, packagePathConfig);
+		var packageSearchPaths:Array<String> = [];
+		for (modsRoot in Paths.getModsRootDirectories())
+		{
+			packageSearchPaths.push(modsRoot + '?.lua');
+			packageSearchPaths.push(modsRoot + '?/init.lua');
+		}
+		if (packageSearchPaths.length > 0)
+		{
+			var packagePathConfig:String = 'package.path = package.path .. ";' + packageSearchPaths.join(';') + '"';
+			LuaL.dostring(lua, packagePathConfig);
+		}
 		#end
 
 		this.scriptName = scriptName.trim();
@@ -97,13 +105,11 @@ class FunkinLua {
 		// Don't add to any array, it will be managed separately
 
 		#if MODS_ALLOWED
-		var modsBasePath:String = Paths.mods();
 		var normalizedScriptName:String = this.scriptName.replace('\\', '/');
-		if(normalizedScriptName.startsWith(modsBasePath)) {
-			var relative:String = normalizedScriptName.substr(modsBasePath.length);
-			var modName:String = relative.split('/')[0];
-			if(Mods.currentModDirectory == modName || Mods.getGlobalMods().contains(modName))
-				this.modFolder = modName;
+		var resolvedModName:String = Paths.getModFolderNameFromPath(normalizedScriptName);
+		if(resolvedModName != null) {
+			if(Mods.currentModDirectory == resolvedModName || Mods.getGlobalMods().contains(resolvedModName))
+				this.modFolder = resolvedModName;
 		} else {
 			// Fallback for relative paths (e.g. 'mods/ModName/...')
 			var myFolder:Array<String> = normalizedScriptName.split('/');

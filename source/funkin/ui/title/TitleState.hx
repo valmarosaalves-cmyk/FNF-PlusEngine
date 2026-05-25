@@ -614,3 +614,4 @@ class TitleState extends MusicBeatState
 									FlxTransitionableState.skipNextTransIn = true;
 									FlxTransitionableState.skipNextTransOut = true;
 			
+								}

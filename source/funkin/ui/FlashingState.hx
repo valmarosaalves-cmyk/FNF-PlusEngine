@@ -31,7 +31,7 @@ class FlashingState extends MusicBeatState
 
 		var warnText:FlxText = new FlxText(0, 0, FlxG.width,
 			"ei vc mesmo\n
-			essemod é um beta do que ta por vir entao...\n
+			esse mod é um beta do que ta por vir entao...\n
 			se poder ajudar nos a encontrar bugs agradeço se aceita?");
 		warnText.setFormat(Paths.font("Super Warming.ttf"), 32, FlxColor.WHITE, CENTER);
 		warnText.screenCenter(Y);

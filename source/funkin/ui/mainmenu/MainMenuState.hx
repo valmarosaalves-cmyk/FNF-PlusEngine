@@ -172,18 +172,18 @@ class MainMenuState extends MusicBeatState
 		}
 
 		#if DEV_BUILD
-		var devText:FlxText = new FlxText(12, FlxG.height - 64, 0, "Dev Version: " + devUpdate, 12);
+		var devText:FlxText = new FlxText(12, FlxG.height - 64, 0, "beta Version: " + devUpdate, 12);
 		devText.scrollFactor.set();
-		devText.setFormat(Paths.font("phantom.ttf"), 16, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		devText.setFormat(Paths.font("Matcha Cih.ttf"), 16, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 		add(devText);
 		#end
-		var psychVer:FlxText = new FlxText(12, FlxG.height - 44, 0, "Psych Engine v" + psychEngineVersion, 12);
+		var psychVer:FlxText = new FlxText(12, FlxG.height - 44, 0, "Psych Engine noobs" + psychEngineVersion, 12);
 		psychVer.scrollFactor.set();
-		psychVer.setFormat(Paths.font("phantom.ttf"), 16, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		psychVer.setFormat(Paths.font("Matcha Cih.ttf"), 16, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 		add(psychVer);
-		var fnfVer:FlxText = new FlxText(12, FlxG.height - 24, 0, "Friday Night Funkin' v" + fnfVersion, 12);
+		var fnfVer:FlxText = new FlxText(12, FlxG.height - 24, 0, "Friday Night Funkin' uau" + fnfVersion, 12);
 		fnfVer.scrollFactor.set();
-		fnfVer.setFormat(Paths.font("phantom.ttf"), 16, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		fnfVer.setFormat(Paths.font("Matcha Cih.ttf"), 16, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 		add(fnfVer);
 		
 		changeItem();
